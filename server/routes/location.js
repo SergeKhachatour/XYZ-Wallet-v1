@@ -6,8 +6,10 @@ const locationData = new Map();
 
 // Rate limiting for location submissions (prevent spam)
 const rateLimitMap = new Map();
+const lastSubmissionMap = new Map();
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
-const RATE_LIMIT_MAX_REQUESTS = 10; // Max 10 requests per minute per user
+const RATE_LIMIT_MAX_REQUESTS = 3; // Max 3 requests per minute per user (more restrictive)
+const MIN_INTERVAL_BETWEEN_REQUESTS = 20 * 1000; // Minimum 20 seconds between requests
 
 // Rate limiting middleware
 const rateLimitMiddleware = (req, res, next) => {
@@ -17,6 +19,18 @@ const rateLimitMiddleware = (req, res, next) => {
   }
 
   const now = Date.now();
+  
+  // Check minimum interval between requests
+  const lastSubmission = lastSubmissionMap.get(publicKey);
+  if (lastSubmission && (now - lastSubmission) < MIN_INTERVAL_BETWEEN_REQUESTS) {
+    const waitTime = Math.ceil((MIN_INTERVAL_BETWEEN_REQUESTS - (now - lastSubmission)) / 1000);
+    return res.status(429).json({
+      error: 'Request too frequent',
+      message: `Please wait ${waitTime} seconds before submitting another location update.`,
+      retryAfter: waitTime
+    });
+  }
+
   const userRateLimit = rateLimitMap.get(publicKey) || { count: 0, resetTime: now + RATE_LIMIT_WINDOW };
 
   // Reset counter if window has expired
@@ -34,9 +48,10 @@ const rateLimitMiddleware = (req, res, next) => {
     });
   }
 
-  // Increment counter
+  // Increment counter and update last submission time
   userRateLimit.count++;
   rateLimitMap.set(publicKey, userRateLimit);
+  lastSubmissionMap.set(publicKey, now);
 
   next();
 };

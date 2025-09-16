@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import toast from 'react-hot-toast';
 
 interface LocationData {
@@ -48,8 +48,9 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
   const [locationHistory, setLocationHistory] = useState<LocationData[]>([]);
   const [nearbyUsers, setNearbyUsers] = useState<any[]>([]);
   const [isLocationLoading, setIsLocationLoading] = useState(false);
+  const hasCalledUpdateOnMount = useRef(false);
 
-  const submitLocationToBackend = async (locationData: LocationData) => {
+  const submitLocationToBackend = useCallback(async (locationData: LocationData) => {
     try {
       const response = await fetch('http://localhost:5000/api/location/submit', {
         method: 'POST',
@@ -81,21 +82,34 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
         localStorage.setItem('cachedLocations', JSON.stringify(cachedLocations));
       }
     }
-  };
+  }, []);
 
   const updateLocation = useCallback(async () => {
-    if (!navigator.geolocation || !isLocationEnabled) return;
+    console.log('updateLocation called - isLocationEnabled:', isLocationEnabled, 'navigator.geolocation:', !!navigator.geolocation);
+    
+    if (!navigator.geolocation) {
+      console.warn('Geolocation not supported');
+      return;
+    }
+    
+    if (!isLocationEnabled) {
+      console.warn('Location not enabled');
+      return;
+    }
 
     try {
       setIsLocationLoading(true);
+      console.log('Requesting geolocation...');
       
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject, {
           enableHighAccuracy: true,
           timeout: 15000, // 15 seconds timeout
-          maximumAge: 30000 // 30 seconds cache to match update interval
+          maximumAge: 60000 // 60 seconds cache to match update interval
         });
       });
+
+      console.log('Geolocation position received:', position.coords);
 
       const locationData: LocationData = {
         latitude: position.coords.latitude,
@@ -104,6 +118,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
         ipAddress: ''
       };
 
+      console.log('Setting current location:', locationData);
       setCurrentLocation(locationData);
       
       // Submit location to backend
@@ -120,11 +135,14 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
         if (error.code === error.TIMEOUT) {
           console.warn('Location update timed out, will retry on next interval');
         } else if (error.code === error.PERMISSION_DENIED) {
+          console.warn('Location permission denied');
           toast.error('Location permission denied');
         } else if (error.code === error.POSITION_UNAVAILABLE) {
+          console.warn('Location unavailable');
           toast.error('Location unavailable');
         }
       } else {
+        console.warn('Failed to update location:', error);
         toast.error('Failed to update location');
       }
     } finally {
@@ -137,13 +155,27 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     const savedLocationEnabled = localStorage.getItem('location_enabled') === 'true';
     const savedVisibility = localStorage.getItem('location_visible') === 'true';
     
+    console.log('Loading location settings from localStorage:', { savedLocationEnabled, savedVisibility });
+    
     setIsLocationEnabled(savedLocationEnabled);
     setIsVisible(savedVisibility);
     
     if (savedLocationEnabled) {
+      console.log('Location is enabled, will call updateLocation after state update...');
+      // We'll call updateLocation in a separate useEffect that depends on isLocationEnabled
+    } else {
+      console.log('Location is not enabled, skipping updateLocation');
+    }
+  }, []); // Removed updateLocation dependency to prevent infinite loop
+
+  // Separate effect to call updateLocation when isLocationEnabled becomes true (only on mount)
+  useEffect(() => {
+    if (isLocationEnabled && !hasCalledUpdateOnMount.current) {
+      console.log('isLocationEnabled is now true, calling updateLocation...');
+      hasCalledUpdateOnMount.current = true;
       updateLocation();
     }
-  }, [updateLocation]);
+  }, [isLocationEnabled, updateLocation]);
 
   const enableLocation = async () => {
     if (!navigator.geolocation) {
@@ -274,13 +306,13 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     }
   }, []);
 
-  // Auto-update location every 30 seconds when enabled to prevent rate limiting
+  // Auto-update location every 60 seconds when enabled to prevent rate limiting
   useEffect(() => {
     if (!isLocationEnabled) return;
 
     const interval = setInterval(() => {
       updateLocation();
-    }, 30000); // 30 seconds - increased interval to prevent rate limiting
+    }, 60000); // 60 seconds - increased interval to prevent rate limiting
 
     return () => clearInterval(interval);
   }, [isLocationEnabled, updateLocation]);
