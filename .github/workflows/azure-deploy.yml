@@ -1,10 +1,11 @@
 name: Deploy to Azure App Service
 
-on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
+# Disabled to prevent conflicts with main workflow
+# on:
+#   push:
+#     branches: [ main, master ]
+#   pull_request:
+#     branches: [ main, master ]
 
 jobs:
   build-and-deploy:
