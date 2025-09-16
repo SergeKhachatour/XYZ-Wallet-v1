@@ -75,6 +75,10 @@ A Stellar wallet application with location services integration, built using the
    REACT_APP_BACKEND_URL=http://localhost:5000
    ```
 
+## Deployment
+
+🚀 **Azure Deployment**: This project includes GitHub Actions for automatic deployment to Azure App Service. See `AZURE_SETUP.md` for quick setup instructions.
+
 ## Running the Application
 
 ### Development Mode
