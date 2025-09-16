@@ -23,19 +23,10 @@
 3. Click **New repository secret** and add:
 
    **Secret Name**: `AZUREAPPSERVICE_APPNAME`
-   **Secret Value**: `xyz-wallet-[your-name]` (your app name from Step 1)
+   **Secret Value**: `xyz-wallet-g6btf6ashjbxayfj` (your app name from Step 1)
 
    **Secret Name**: `AZUREAPPSERVICE_PUBLISHPROFILE`
    **Secret Value**: [paste the entire content from the .PublishSettings file]
-
-   **Secret Name**: `AZUREAPPSERVICE_CLIENTID`
-   **Secret Value**: `B46DA82E36BE4D59830287FC638EF863`
-
-   **Secret Name**: `AZUREAPPSERVICE_TENANTID`
-   **Secret Value**: `D217EDFCBC3A4E63B9F6B9251F95BDA4`
-
-   **Secret Name**: `AZUREAPPSERVICE_SUBSCRIPTIONID`
-   **Secret Value**: `E81140B41D734C479F29DB056521657D`
 
 ### Step 4: Configure Environment Variables
 In Azure Portal → Your App Service → Configuration → Application settings, add:
