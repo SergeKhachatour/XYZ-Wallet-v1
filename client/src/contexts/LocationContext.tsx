@@ -92,8 +92,8 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject, {
           enableHighAccuracy: true,
-          timeout: 15000, // Increased to 15 seconds
-          maximumAge: 10000 // 10 seconds for more frequent updates
+          timeout: 15000, // 15 seconds timeout
+          maximumAge: 30000 // 30 seconds cache to match update interval
         });
       });
 
@@ -274,13 +274,13 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     }
   }, []);
 
-  // Auto-update location every 15 seconds when enabled for better accuracy
+  // Auto-update location every 30 seconds when enabled to prevent rate limiting
   useEffect(() => {
     if (!isLocationEnabled) return;
 
     const interval = setInterval(() => {
       updateLocation();
-    }, 15000); // 15 seconds - reduced frequency to prevent timeout issues
+    }, 30000); // 30 seconds - increased interval to prevent rate limiting
 
     return () => clearInterval(interval);
   }, [isLocationEnabled, updateLocation]);

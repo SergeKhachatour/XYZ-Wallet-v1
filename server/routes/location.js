@@ -4,8 +4,45 @@ const router = express.Router();
 // In-memory storage for location data (in production, use a database)
 const locationData = new Map();
 
+// Rate limiting for location submissions (prevent spam)
+const rateLimitMap = new Map();
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 10; // Max 10 requests per minute per user
+
+// Rate limiting middleware
+const rateLimitMiddleware = (req, res, next) => {
+  const publicKey = req.body.publicKey;
+  if (!publicKey) {
+    return next();
+  }
+
+  const now = Date.now();
+  const userRateLimit = rateLimitMap.get(publicKey) || { count: 0, resetTime: now + RATE_LIMIT_WINDOW };
+
+  // Reset counter if window has expired
+  if (now > userRateLimit.resetTime) {
+    userRateLimit.count = 0;
+    userRateLimit.resetTime = now + RATE_LIMIT_WINDOW;
+  }
+
+  // Check if user has exceeded rate limit
+  if (userRateLimit.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return res.status(429).json({
+      error: 'Rate limit exceeded',
+      message: `Too many location submissions. Please wait ${Math.ceil((userRateLimit.resetTime - now) / 1000)} seconds before trying again.`,
+      retryAfter: Math.ceil((userRateLimit.resetTime - now) / 1000)
+    });
+  }
+
+  // Increment counter
+  userRateLimit.count++;
+  rateLimitMap.set(publicKey, userRateLimit);
+
+  next();
+};
+
 // Submit location data
-router.post('/submit', async (req, res) => {
+router.post('/submit', rateLimitMiddleware, async (req, res) => {
   try {
     const { publicKey, latitude, longitude, timestamp, ipAddress } = req.body;
     
