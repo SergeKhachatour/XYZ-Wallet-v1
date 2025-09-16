@@ -40,12 +40,22 @@ app.get('/health', (req, res) => {
 // Serve static files from the React app build directory (for production)
 if (process.env.NODE_ENV === 'production') {
   const buildPath = path.join(__dirname, '../client/build');
-  app.use(express.static(buildPath));
   
-  // Handle React routing, return all requests to React app
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(buildPath, 'index.html'));
-  });
+  // Check if build directory exists
+  if (require('fs').existsSync(buildPath)) {
+    app.use(express.static(buildPath));
+    
+    // Handle React routing, return all requests to React app
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(buildPath, 'index.html'));
+    });
+  } else {
+    console.warn('⚠️  React build directory not found. Make sure to run "npm run build" in the client directory.');
+    // 404 handler for production without build
+    app.use('*', (req, res) => {
+      res.status(404).json({ error: 'React app not built. Please run npm run build in client directory.' });
+    });
+  }
 } else {
   // 404 handler for development
   app.use('*', (req, res) => {

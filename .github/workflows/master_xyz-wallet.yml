@@ -9,6 +9,11 @@ on:
       - master
   workflow_dispatch:
 
+env:
+  NODE_VERSION: '18.x'
+  AZURE_WEBAPP_NAME: 'xyz-wallet-g6btf6ashjbxayfj'
+  AZURE_WEBAPP_PACKAGE_PATH: '.'
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -16,23 +21,38 @@ jobs:
       contents: read #This is required for actions/checkout
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Set up Node.js version
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '18.x'
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+            client/package-lock.json
 
-      - name: Install all dependencies
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install server dependencies
         run: |
-          npm install
-          cd server && npm install
-          cd ../client && npm install
+          cd server
+          npm ci
+
+      - name: Install client dependencies
+        run: |
+          cd client
+          npm ci
 
       - name: Verify installations
         run: |
           echo "Root node_modules:"
           ls -la node_modules/ | head -5
+          echo "Server node_modules:"
+          ls -la server/node_modules/ | head -5
           echo "Client node_modules:"
           ls -la client/node_modules/ | head -5
           echo "Checking for react-scripts:"
@@ -41,13 +61,24 @@ jobs:
       - name: Build React app
         run: |
           cd client
-          npx react-scripts build
+          npm run build
+        env:
+          CI: false
+          GENERATE_SOURCEMAP: false
+
+      - name: Verify build output
+        run: |
+          echo "Build directory contents:"
+          ls -la client/build/
+          echo "Checking for index.html:"
+          ls -la client/build/index.html || echo "index.html not found"
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
           path: .
+          retention-days: 1
 
   deploy:
     runs-on: ubuntu-latest
@@ -73,6 +104,11 @@ jobs:
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'xyz-wallet-g6btf6ashjbxayfj'
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
           slot-name: 'Production'
-          package: .
+          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+
+      - name: Verify deployment
+        run: |
+          echo "Deployment completed successfully!"
+          echo "App URL: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
