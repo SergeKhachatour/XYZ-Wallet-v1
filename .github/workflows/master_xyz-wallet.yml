@@ -11,7 +11,7 @@ on:
 
 env:
   NODE_VERSION: '18.x'
-  AZURE_WEBAPP_NAME: 'xyz-wallet-g6btf6ashjbxayfj'
+  AZURE_WEBAPP_NAME: 'xyz-wallet-app'  # Update this to your actual App Service name
   AZURE_WEBAPP_PACKAGE_PATH: '.'
 
 jobs:
@@ -104,7 +104,7 @@ jobs:
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME || env.AZURE_WEBAPP_NAME }}
           slot-name: 'Production'
           package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
 
