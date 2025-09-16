@@ -140,7 +140,7 @@ const Dashboard: React.FC = () => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
       
-      const response = await fetch('http://localhost:5000/health', { 
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/health`, { 
         method: 'GET',
         signal: controller.signal
       });
@@ -155,7 +155,7 @@ const Dashboard: React.FC = () => {
   // Fetch available tokens
   const fetchAvailableTokens = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/soroswap/tokens');
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/soroswap/tokens`);
       
       let data;
       try {

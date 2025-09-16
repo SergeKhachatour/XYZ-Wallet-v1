@@ -57,7 +57,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     
     try {
       setIsLoading(true);
-      const response = await fetch(`http://localhost:5000/api/wallet/balance/${publicKey}`);
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/wallet/balance/${publicKey}`);
       const data = await response.json();
       
       if (response.ok) {
@@ -89,7 +89,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     
     try {
       setIsLoading(true);
-      const response = await fetch(`http://localhost:5000/api/wallet/transactions/${publicKey}?limit=20`);
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/wallet/transactions/${publicKey}?limit=20`);
       const data = await response.json();
       
       if (response.ok) {
@@ -212,7 +212,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       setIsLoading(true);
       
       // Create payment transaction
-      const response = await fetch('http://localhost:5000/api/wallet/create-payment', {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/wallet/create-payment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -234,7 +234,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       }
 
       // Submit transaction
-      const submitResponse = await fetch('http://localhost:5000/api/wallet/submit-transaction', {
+      const submitResponse = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/wallet/submit-transaction`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -280,7 +280,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       
-      const response = await fetch('http://localhost:5000/api/wallet/fund-account', {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/wallet/fund-account`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -326,7 +326,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       
-      const response = await fetch(`http://localhost:5000/api/wallet/contract-balance/${publicKey}/CDWEFYYHMGEZEFC5TBUDXM3IJJ7K7W5BDGE765UIYQEV4JFWDOLSTOEK`);
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/wallet/contract-balance/${publicKey}/CDWEFYYHMGEZEFC5TBUDXM3IJJ7K7W5BDGE765UIYQEV4JFWDOLSTOEK`);
       const data = await response.json();
 
       if (response.ok) {

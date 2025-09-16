@@ -52,7 +52,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
 
   const submitLocationToBackend = useCallback(async (locationData: LocationData) => {
     try {
-      const response = await fetch('http://localhost:5000/api/location/submit', {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/location/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -236,7 +236,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     try {
       setIsLocationLoading(true);
       
-      const response = await fetch('http://localhost:5000/api/location/toggle-visibility', {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/location/toggle-visibility`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -282,7 +282,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     try {
       setIsLocationLoading(true);
       
-      const response = await fetch(`http://localhost:5000/api/location/nearby/${publicKey}?radius=${radius}`);
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/location/nearby/${publicKey}?radius=${radius}`);
       const data = await response.json();
       
       if (response.ok) {

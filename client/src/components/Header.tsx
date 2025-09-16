@@ -44,7 +44,7 @@ const Nav = styled.nav<{ $isOpen: boolean }>`
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.98);
+    background: rgba(0, 0, 0, 0.95);
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     flex-direction: column;
@@ -53,7 +53,9 @@ const Nav = styled.nav<{ $isOpen: boolean }>`
     gap: 2rem;
     transform: ${props => props.$isOpen ? 'translateX(0)' : 'translateX(-100%)'};
     transition: transform 0.3s ease;
-    z-index: 100;
+    z-index: 1000;
+    opacity: ${props => props.$isOpen ? 1 : 0};
+    visibility: ${props => props.$isOpen ? 'visible' : 'hidden'};
   }
 `;
 
@@ -82,18 +84,20 @@ const CloseButton = styled.button`
   position: absolute;
   top: 2rem;
   right: 2rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   color: white;
   cursor: pointer;
-  padding: 0.5rem;
+  padding: 0.75rem;
   border-radius: 8px;
   display: none;
   transition: all 0.2s ease;
+  z-index: 1001;
   
   &:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: scale(1.05);
   }
   
   @media (max-width: 768px) {
@@ -120,15 +124,18 @@ const NavLink = styled(Link)<{ $isActive: boolean }>`
     font-size: 1.2rem;
     padding: 1rem 2rem;
     border-radius: 12px;
-    background: ${props => props.$isActive ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)'};
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: ${props => props.$isActive ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.15)'};
+    border: 1px solid rgba(255, 255, 255, 0.3);
     min-width: 200px;
     text-align: center;
     justify-content: center;
+    color: white !important;
+    font-weight: 500;
     
     &:hover {
-      background: rgba(255, 255, 255, 0.2);
-      border-color: rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.25);
+      border-color: rgba(255, 255, 255, 0.4);
+      transform: translateY(-2px);
     }
   }
 `;
