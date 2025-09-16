@@ -90,6 +90,12 @@ jobs:
         with:
           name: node-app
       
+      - name: Debug app name
+        run: |
+          echo "App name from secret: '${{ secrets.AZUREAPPSERVICE_APPNAME }}'"
+          echo "Expected app name: 'xyz-wallet-g6btf6ashjbxayfj'"
+          echo "App names match: ${{ secrets.AZUREAPPSERVICE_APPNAME == 'xyz-wallet-g6btf6ashjbxayfj' }}"
+
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
