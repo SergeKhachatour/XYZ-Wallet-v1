@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { ArrowLeftRight, RefreshCw } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
@@ -241,7 +241,11 @@ const Swap: React.FC = () => {
     loadTokens();
   }, []);
 
-  const getQuote = async () => {
+  const getTokenByContract = (contract: string) => {
+    return tokens.find(token => token.contract === contract);
+  };
+
+  const getQuote = useCallback(async () => {
     if (!selectedTokenIn || !selectedTokenOut || !amountIn || parseFloat(amountIn) <= 0) return;
 
     try {
@@ -332,7 +336,7 @@ const Swap: React.FC = () => {
     } finally {
       setIsGettingQuote(false);
     }
-  };
+  }, [selectedTokenIn, selectedTokenOut, amountIn, getTokenByContract]);
 
   // Get quote when inputs change (with debouncing)
   useEffect(() => {
@@ -417,10 +421,6 @@ const Swap: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const getTokenByContract = (contract: string) => {
-    return tokens.find(token => token.contract === contract);
   };
 
   const getBalanceForAsset = (assetContract: string) => {

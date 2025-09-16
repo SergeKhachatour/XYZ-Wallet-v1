@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import toast from 'react-hot-toast';
 
 interface LocationData {
@@ -49,7 +49,41 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
   const [nearbyUsers, setNearbyUsers] = useState<any[]>([]);
   const [isLocationLoading, setIsLocationLoading] = useState(false);
 
-  const updateLocation = async () => {
+  const submitLocationToBackend = async (locationData: LocationData) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/location/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          publicKey: localStorage.getItem('wallet_publicKey'),
+          latitude: locationData.latitude,
+          longitude: locationData.longitude,
+          timestamp: locationData.timestamp,
+          ipAddress: locationData.ipAddress
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to submit location to backend');
+      }
+    } catch (error) {
+      console.error('Error submitting location to backend:', error);
+      
+      // Check if it's a connection error
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('ERR_CONNECTION_REFUSED')) {
+        console.warn('Server is not running. Location data will be cached locally.');
+        // Store location data locally when server is unavailable
+        const cachedLocations = JSON.parse(localStorage.getItem('cachedLocations') || '[]');
+        cachedLocations.push(locationData);
+        localStorage.setItem('cachedLocations', JSON.stringify(cachedLocations));
+      }
+    }
+  };
+
+  const updateLocation = useCallback(async () => {
     if (!navigator.geolocation || !isLocationEnabled) return;
 
     try {
@@ -96,7 +130,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     } finally {
       setIsLocationLoading(false);
     }
-  };
+  }, [isLocationEnabled, submitLocationToBackend]);
 
   // Load location settings from localStorage on mount
   useEffect(() => {
@@ -164,40 +198,6 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     localStorage.removeItem('location_visible');
     
     toast.success('Location services disabled');
-  };
-
-  const submitLocationToBackend = async (locationData: LocationData) => {
-    try {
-      const response = await fetch('http://localhost:5000/api/location/submit', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          publicKey: localStorage.getItem('wallet_publicKey'),
-          latitude: locationData.latitude,
-          longitude: locationData.longitude,
-          timestamp: locationData.timestamp,
-          ipAddress: locationData.ipAddress
-        }),
-      });
-
-      if (!response.ok) {
-        console.error('Failed to submit location to backend');
-      }
-    } catch (error) {
-      console.error('Error submitting location to backend:', error);
-      
-      // Check if it's a connection error
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('ERR_CONNECTION_REFUSED')) {
-        console.warn('Server is not running. Location data will be cached locally.');
-        // Store location data locally when server is unavailable
-        const cachedLocations = JSON.parse(localStorage.getItem('cachedLocations') || '[]');
-        cachedLocations.push(locationData);
-        localStorage.setItem('cachedLocations', JSON.stringify(cachedLocations));
-      }
-    }
   };
 
   const toggleVisibility = async (visible: boolean) => {
