@@ -2,6 +2,8 @@
 
 A Stellar wallet application with location services integration, built using the Stellar SDK and Soroswap API.
 
+<!-- Deployment trigger -->
+
 ## Features
 
 - **Stellar Wallet**: Create, connect, and manage Stellar accounts on testnet

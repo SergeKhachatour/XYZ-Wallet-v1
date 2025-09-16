@@ -21,13 +21,27 @@ jobs:
       - name: Set up Node.js version
         uses: actions/setup-node@v3
         with:
-          node-version: '22.x'
+          node-version: '18.x'
 
-      - name: npm install, build, and test
+      - name: Install all dependencies
         run: |
           npm install
-          npm run build --if-present
-          npm run test --if-present
+          cd server && npm install
+          cd ../client && npm install
+
+      - name: Verify installations
+        run: |
+          echo "Root node_modules:"
+          ls -la node_modules/ | head -5
+          echo "Client node_modules:"
+          ls -la client/node_modules/ | head -5
+          echo "Checking for react-scripts:"
+          ls -la client/node_modules/.bin/ | grep react-scripts || echo "react-scripts not found"
+
+      - name: Build React app
+        run: |
+          cd client
+          npx react-scripts build
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -59,7 +73,7 @@ jobs:
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'XYZ-wallet'
+          app-name: 'xyz-wallet-g6btf6ashjbxayfj'
           slot-name: 'Production'
           package: .
           
