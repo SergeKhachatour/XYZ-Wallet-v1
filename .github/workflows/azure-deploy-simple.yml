@@ -17,38 +17,17 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'npm'
         
-    - name: Install root dependencies
-      run: npm install
-        
-    - name: Install server dependencies
+    - name: Install dependencies
       run: |
-        cd server
         npm install
-        
-    - name: Install client dependencies
-      run: |
-        cd client
-        npm install
+        cd server && npm install
+        cd ../client && npm install
         
     - name: Build React app
       run: |
         cd client
         npm run build
-        
-    - name: Create deployment package
-      run: |
-        # Create a deployment package excluding unnecessary files
-        zip -r deployment.zip . \
-          -x "*.git*" \
-          -x "node_modules/*" \
-          -x "client/node_modules/*" \
-          -x "server/node_modules/*" \
-          -x "client/src/*" \
-          -x "*.md" \
-          -x ".github/*" \
-          -x "azure-deploy.md"
         
     - name: Deploy to Azure Web App
       if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
@@ -56,4 +35,4 @@ jobs:
       with:
         app-name: 'xyz-wallet-app'  # Replace with your actual app name
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        package: deployment.zip
+        package: .
