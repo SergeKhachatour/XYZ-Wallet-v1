@@ -49,8 +49,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const hasLoadedWallet = useRef(false);
 
-  // Initialize Stellar server
-  const server = new StellarSdk.Horizon.Server(process.env.REACT_APP_STELLAR_HORIZON_URL || 'https://horizon-testnet.stellar.org');
+  // Initialize Stellar server (unused but kept for potential future use)
+  // const server = new StellarSdk.Horizon.Server(process.env.REACT_APP_STELLAR_HORIZON_URL || 'https://horizon-testnet.stellar.org');
 
   const refreshBalance = useCallback(async () => {
     if (!publicKey) return;
@@ -137,7 +137,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         refreshTransactions();
       }, 0);
     }
-  }, [publicKey, isConnected]); // Remove functions from dependency array
+  }, [publicKey, isConnected, refreshBalance, refreshTransactions]);
 
   const createAccount = () => {
     try {

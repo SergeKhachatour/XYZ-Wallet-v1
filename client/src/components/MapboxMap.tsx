@@ -228,31 +228,6 @@ const LocationInfo = styled.div`
   }
 `;
 
-const WalletMarker = styled.div`
-  background: linear-gradient(45deg, #00d4ff, #0099cc);
-  color: white;
-  padding: 0.5rem;
-  border-radius: 8px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  border: 2px solid white;
-  max-width: 200px;
-  word-break: break-all;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    bottom: -8px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 0;
-    height: 0;
-    border-left: 8px solid transparent;
-    border-right: 8px solid transparent;
-    border-top: 8px solid white;
-  }
-`;
 
 type ViewType = 'globe' | 'flat';
 

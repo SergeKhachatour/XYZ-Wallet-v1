@@ -49,6 +49,55 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
   const [nearbyUsers, setNearbyUsers] = useState<any[]>([]);
   const [isLocationLoading, setIsLocationLoading] = useState(false);
 
+  const updateLocation = async () => {
+    if (!navigator.geolocation || !isLocationEnabled) return;
+
+    try {
+      setIsLocationLoading(true);
+      
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 15000, // Increased to 15 seconds
+          maximumAge: 10000 // 10 seconds for more frequent updates
+        });
+      });
+
+      const locationData: LocationData = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        timestamp: new Date().toISOString(),
+        ipAddress: ''
+      };
+
+      setCurrentLocation(locationData);
+      
+      // Submit location to backend
+      await submitLocationToBackend(locationData);
+      
+      // Update location history
+      setLocationHistory(prev => [...prev.slice(-49), locationData]);
+      
+    } catch (error) {
+      console.error('Error updating location:', error);
+      
+      // Don't show toast for timeout errors to avoid spam
+      if (error instanceof GeolocationPositionError) {
+        if (error.code === error.TIMEOUT) {
+          console.warn('Location update timed out, will retry on next interval');
+        } else if (error.code === error.PERMISSION_DENIED) {
+          toast.error('Location permission denied');
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          toast.error('Location unavailable');
+        }
+      } else {
+        toast.error('Failed to update location');
+      }
+    } finally {
+      setIsLocationLoading(false);
+    }
+  };
+
   // Load location settings from localStorage on mount
   useEffect(() => {
     const savedLocationEnabled = localStorage.getItem('location_enabled') === 'true';
@@ -60,7 +109,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     if (savedLocationEnabled) {
       updateLocation();
     }
-  }, []);
+  }, [updateLocation]);
 
   const enableLocation = async () => {
     if (!navigator.geolocation) {
@@ -115,55 +164,6 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     localStorage.removeItem('location_visible');
     
     toast.success('Location services disabled');
-  };
-
-  const updateLocation = async () => {
-    if (!navigator.geolocation || !isLocationEnabled) return;
-
-    try {
-      setIsLocationLoading(true);
-      
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 15000, // Increased to 15 seconds
-          maximumAge: 10000 // 10 seconds for more frequent updates
-        });
-      });
-
-      const locationData: LocationData = {
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-        timestamp: new Date().toISOString(),
-        ipAddress: ''
-      };
-
-      setCurrentLocation(locationData);
-      
-      // Submit location to backend
-      await submitLocationToBackend(locationData);
-      
-      // Update location history
-      setLocationHistory(prev => [...prev.slice(-49), locationData]);
-      
-    } catch (error) {
-      console.error('Error updating location:', error);
-      
-      // Don't show toast for timeout errors to avoid spam
-      if (error instanceof GeolocationPositionError) {
-        if (error.code === error.TIMEOUT) {
-          console.warn('Location update timed out, will retry on next interval');
-        } else if (error.code === error.PERMISSION_DENIED) {
-          toast.error('Location permission denied');
-        } else if (error.code === error.POSITION_UNAVAILABLE) {
-          toast.error('Location unavailable');
-        }
-      } else {
-        toast.error('Failed to update location');
-      }
-    } finally {
-      setIsLocationLoading(false);
-    }
   };
 
   const submitLocationToBackend = async (locationData: LocationData) => {
@@ -283,7 +283,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     }, 15000); // 15 seconds - reduced frequency to prevent timeout issues
 
     return () => clearInterval(interval);
-  }, [isLocationEnabled]);
+  }, [isLocationEnabled, updateLocation]);
 
   const value: LocationContextType = {
     currentLocation,

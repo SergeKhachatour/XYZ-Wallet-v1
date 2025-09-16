@@ -3,7 +3,6 @@ import styled from 'styled-components';
 import { MapPin, Eye, EyeOff, Users, RefreshCw, Navigation } from 'lucide-react';
 import { useLocation } from '../contexts/LocationContext';
 import { useWallet } from '../contexts/WalletContext';
-import toast from 'react-hot-toast';
 
 const LocationContainer = styled.div`
   max-width: 1000px;
@@ -58,14 +57,6 @@ const Button = styled.button`
   }
 `;
 
-const SecondaryButton = styled(Button)`
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  
-  &:hover {
-    background: rgba(255, 255, 255, 0.2);
-  }
-`;
 
 const DangerButton = styled(Button)`
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
@@ -242,7 +233,7 @@ const Location: React.FC = () => {
     if (isLocationEnabled && isConnected) {
       getNearbyUsers(radius);
     }
-  }, [isLocationEnabled, isConnected, radius]);
+  }, [isLocationEnabled, isConnected, radius, getNearbyUsers]);
 
   const handleToggleVisibility = async () => {
     await toggleVisibility(!isVisible);

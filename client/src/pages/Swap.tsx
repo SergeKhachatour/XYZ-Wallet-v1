@@ -241,21 +241,6 @@ const Swap: React.FC = () => {
     loadTokens();
   }, []);
 
-  // Get quote when inputs change (with debouncing)
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      if (selectedTokenIn && selectedTokenOut && amountIn && parseFloat(amountIn) > 0) {
-        getQuote();
-      } else {
-        setQuote(null);
-        setAmountOut('');
-      }
-    }, 1000); // 1 second debounce to avoid rate limiting
-
-    return () => clearTimeout(handler);
-  }, [selectedTokenIn, selectedTokenOut, amountIn]);
-
-
   const getQuote = async () => {
     if (!selectedTokenIn || !selectedTokenOut || !amountIn || parseFloat(amountIn) <= 0) return;
 
@@ -348,6 +333,20 @@ const Swap: React.FC = () => {
       setIsGettingQuote(false);
     }
   };
+
+  // Get quote when inputs change (with debouncing)
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (selectedTokenIn && selectedTokenOut && amountIn && parseFloat(amountIn) > 0) {
+        getQuote();
+      } else {
+        setQuote(null);
+        setAmountOut('');
+      }
+    }, 1000); // 1 second debounce to avoid rate limiting
+
+    return () => clearTimeout(handler);
+  }, [selectedTokenIn, selectedTokenOut, amountIn, getQuote]);
 
   const executeSwap = async () => {
     if (!quote || !publicKey) return;

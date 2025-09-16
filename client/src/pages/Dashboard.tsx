@@ -115,7 +115,6 @@ const EmptyState = styled.div`
 const Dashboard: React.FC = () => {
   const { 
     isConnected, 
-    publicKey, 
     balances, 
     transactions, 
     refreshBalance, 
@@ -202,7 +201,7 @@ const Dashboard: React.FC = () => {
         getNearbyUsers();
       }
     }
-  }, [isConnected, isLocationEnabled, serverStatus]);
+  }, [isConnected, isLocationEnabled, serverStatus, refreshBalance, refreshTransactions, getNearbyUsers]);
 
   if (!isConnected) {
     return (
