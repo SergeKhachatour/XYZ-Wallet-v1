@@ -11,7 +11,7 @@ on:
 
 env:
   NODE_VERSION: '18.x'
-  AZURE_WEBAPP_NAME: 'xyz-wallet-g6btf6ashjbxayfj'  # Your actual App Service name
+  # App name is now taken from secrets.AZUREAPPSERVICE_APPNAME
   AZURE_WEBAPP_PACKAGE_PATH: '.'
 
 jobs:
@@ -94,11 +94,11 @@ jobs:
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: ${{ secrets.AZURE_WEBAPP_NAME || env.AZURE_WEBAPP_NAME }}
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          app-name: ${{ secrets.AZUREAPPSERVICE_APPNAME }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
           package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
 
       - name: Verify deployment
         run: |
           echo "Deployment completed successfully!"
-          echo "App URL: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
+          echo "App URL: https://${{ secrets.AZUREAPPSERVICE_APPNAME }}.azurewebsites.net"
