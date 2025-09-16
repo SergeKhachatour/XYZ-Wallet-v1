@@ -43,19 +43,10 @@ jobs:
         ls -la client/build/
         echo "Build completed successfully"
         
-    - name: Azure Login
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-        
-    - name: Deploy to Azure Web App using CLI
+    - name: Deploy to Azure Web App
       if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-      run: |
-        # Create deployment package
-        zip -r deployment.zip . -x "*.git*" "node_modules/*" "client/node_modules/*" "server/node_modules/*" "client/src/*" "*.md" ".github/*"
-        
-        # Deploy using Azure CLI
-        az webapp deployment source config-zip \
-          --resource-group xyz-wallet-rg \
-          --name xyz-wallet-g6btf6ashjbxayfj \
-          --src deployment.zip
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ secrets.AZUREAPPSERVICE_APPNAME }}
+        publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
+        package: .
