@@ -1,10 +1,10 @@
-      - name: Install all dependencies
-        run: |
+- name: Install all dependencies
+      run: |
           npm install
           cd server && npm install
           cd ../client && npm install
 
-      - name: Verify installations
+- name: Verify installations
         run: |
           echo "Root node_modules:"
           ls -la node_modules/ | head -5
@@ -13,7 +13,7 @@
           echo "Checking for react-scripts:"
           ls -la client/node_modules/.bin/ | grep react-scripts || echo "react-scripts not found"
 
-      - name: Build React app
+- name: Build React app
         run: |
           cd client
           npm run build
