@@ -240,7 +240,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     }
   };
 
-  const getNearbyUsers = async (radius: number = 10) => {
+  const getNearbyUsers = useCallback(async (radius: number = 10) => {
     const publicKey = localStorage.getItem('wallet_publicKey');
     if (!publicKey) {
       toast.error('No wallet connected');
@@ -272,7 +272,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     } finally {
       setIsLocationLoading(false);
     }
-  };
+  }, []);
 
   // Auto-update location every 15 seconds when enabled for better accuracy
   useEffect(() => {

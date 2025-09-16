@@ -194,14 +194,10 @@ const Dashboard: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (isConnected && serverStatus === 'online') {
-      refreshBalance();
-      refreshTransactions();
-      if (isLocationEnabled) {
-        getNearbyUsers();
-      }
+    if (isConnected && serverStatus === 'online' && isLocationEnabled) {
+      getNearbyUsers();
     }
-  }, [isConnected, isLocationEnabled, serverStatus, refreshBalance, refreshTransactions, getNearbyUsers]);
+  }, [isConnected, isLocationEnabled, serverStatus]); // Removed getNearbyUsers dependency to prevent infinite loops
 
   if (!isConnected) {
     return (

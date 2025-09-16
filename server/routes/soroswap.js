@@ -95,7 +95,7 @@ router.post('/quote', async (req, res) => {
     });
     
     // Add delay to avoid rate limiting
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 3000));
     
     const headers = {
       'Content-Type': 'application/json',
@@ -299,8 +299,8 @@ router.post('/build', async (req, res) => {
         console.log('buildQuote successful, got XDR:', buildQuoteResponse.data.xdr.substring(0, 50) + '...');
         
         // Add delay to respect rate limits
-        console.log('Waiting 2 seconds to respect rate limits...');
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        console.log('Waiting 3 seconds to respect rate limits...');
+        await new Promise(resolve => setTimeout(resolve, 3000));
         
         // Since the Soroswap /send endpoint is having authentication issues,
         // let's use the Stellar SDK to submit the transaction directly

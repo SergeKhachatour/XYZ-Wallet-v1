@@ -123,8 +123,8 @@ const PriceChart: React.FC = () => {
 
     fetchPriceData();
     
-    // Refresh price every 10 minutes to avoid rate limiting
-    const interval = setInterval(fetchPriceData, 10 * 60 * 1000);
+    // Refresh price every 15 minutes to avoid rate limiting
+    const interval = setInterval(fetchPriceData, 15 * 60 * 1000);
     
     return () => clearInterval(interval);
   }, []);

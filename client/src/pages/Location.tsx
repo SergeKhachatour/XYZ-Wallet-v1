@@ -233,7 +233,7 @@ const Location: React.FC = () => {
     if (isLocationEnabled && isConnected) {
       getNearbyUsers(radius);
     }
-  }, [isLocationEnabled, isConnected, radius, getNearbyUsers]);
+  }, [isLocationEnabled, isConnected, radius]); // Removed getNearbyUsers dependency to prevent infinite loops
 
   const handleToggleVisibility = async () => {
     await toggleVisibility(!isVisible);

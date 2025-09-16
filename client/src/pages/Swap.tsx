@@ -347,10 +347,10 @@ const Swap: React.FC = () => {
         setQuote(null);
         setAmountOut('');
       }
-    }, 1000); // 1 second debounce to avoid rate limiting
+    }, 2000); // Increased to 2 seconds debounce to avoid rate limiting
 
     return () => clearTimeout(handler);
-  }, [selectedTokenIn, selectedTokenOut, amountIn, getQuote]);
+  }, [selectedTokenIn, selectedTokenOut, amountIn]); // Removed getQuote dependency to prevent infinite loops
 
   const executeSwap = async () => {
     if (!quote || !publicKey) return;
