@@ -94,11 +94,11 @@ jobs:
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: ${{ secrets.AZUREAPPSERVICE_APPNAME }}
+          app-name: 'xyz-wallet-g6btf6ashjbxayfj'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
           package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
 
       - name: Verify deployment
         run: |
           echo "Deployment completed successfully!"
-          echo "App URL: https://${{ secrets.AZUREAPPSERVICE_APPNAME }}.azurewebsites.net"
+          echo "App URL: https://xyz-wallet-g6btf6ashjbxayfj.westus-01.azurewebsites.net"
