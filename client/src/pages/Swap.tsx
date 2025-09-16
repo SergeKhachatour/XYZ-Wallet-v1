@@ -241,9 +241,9 @@ const Swap: React.FC = () => {
     loadTokens();
   }, []);
 
-  const getTokenByContract = (contract: string) => {
+  const getTokenByContract = useCallback((contract: string) => {
     return tokens.find(token => token.contract === contract);
-  };
+  }, [tokens]);
 
   const getQuote = useCallback(async () => {
     if (!selectedTokenIn || !selectedTokenOut || !amountIn || parseFloat(amountIn) <= 0) return;
@@ -350,7 +350,7 @@ const Swap: React.FC = () => {
     }, 2000); // Increased to 2 seconds debounce to avoid rate limiting
 
     return () => clearTimeout(handler);
-  }, [selectedTokenIn, selectedTokenOut, amountIn]); // Removed getQuote dependency to prevent infinite loops
+  }, [selectedTokenIn, selectedTokenOut, amountIn, getQuote]);
 
   const executeSwap = async () => {
     if (!quote || !publicKey) return;

@@ -137,7 +137,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         refreshTransactions();
       }, 0);
     }
-  }, [publicKey, isConnected]); // Removed function dependencies to prevent infinite loops
+  }, [publicKey, isConnected, refreshBalance, refreshTransactions]);
 
   const createAccount = () => {
     try {

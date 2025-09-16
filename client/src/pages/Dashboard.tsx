@@ -118,7 +118,6 @@ const Dashboard: React.FC = () => {
     balances, 
     transactions, 
     refreshBalance, 
-    refreshTransactions,
     checkUSDCBalance,
     isLoading 
   } = useWallet();
@@ -197,7 +196,7 @@ const Dashboard: React.FC = () => {
     if (isConnected && serverStatus === 'online' && isLocationEnabled) {
       getNearbyUsers();
     }
-  }, [isConnected, isLocationEnabled, serverStatus]); // Removed getNearbyUsers dependency to prevent infinite loops
+  }, [isConnected, isLocationEnabled, serverStatus, getNearbyUsers]);
 
   if (!isConnected) {
     return (
