@@ -1,5 +1,5 @@
 # XYZ Stellar Wallet
-
+<!-- Updated -->
 A Stellar wallet application with location services integration, built using the Stellar SDK and Soroswap API.
 
 <!-- Deployment trigger -->

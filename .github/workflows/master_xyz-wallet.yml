@@ -76,4 +76,3 @@ jobs:
           app-name: 'xyz-wallet-g6btf6ashjbxayfj'
           slot-name: 'Production'
           package: .
-          
