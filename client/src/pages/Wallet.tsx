@@ -463,14 +463,6 @@ const Wallet: React.FC = () => {
   const startQRScanner = async () => {
     console.log('Starting QR scanner...');
     
-    // First, just open the modal to test
-    setShowQRScanner(true);
-    toast('QR Scanner opened - testing basic functionality');
-    
-    // For now, let's just test the modal opening
-    // We'll add the actual scanner logic once we confirm the modal works
-    return;
-    
     try {
       // Check if camera is available
       const hasCamera = await QrScanner.hasCamera();
@@ -480,12 +472,25 @@ const Wallet: React.FC = () => {
         return;
       }
 
+      // Open the modal first
+      setShowQRScanner(true);
+      toast('Requesting camera access...');
+
       // Wait for modal to render, then start scanner
       setTimeout(async () => {
         try {
           console.log('Video ref:', videoRef.current);
           if (videoRef.current) {
             console.log('Creating QrScanner instance...');
+            
+            // Check if we're on HTTPS or localhost
+            const isSecure = location.protocol === 'https:' || location.hostname === 'localhost';
+            if (!isSecure) {
+              toast.error('Camera access requires HTTPS. Please use the secure version of the site.');
+              setShowQRScanner(false);
+              return;
+            }
+            
             const scanner = new QrScanner(
               videoRef.current,
               (result) => {
@@ -499,6 +504,7 @@ const Wallet: React.FC = () => {
                 highlightScanRegion: true,
                 highlightCodeOutline: true,
                 preferredCamera: 'environment', // Use back camera on mobile
+                maxScansPerSecond: 5,
               }
             );
             
@@ -506,6 +512,7 @@ const Wallet: React.FC = () => {
             console.log('Starting scanner...');
             await scanner.start();
             console.log('Scanner started successfully');
+            toast.success('Camera started - position QR code in frame');
           } else {
             console.error('Video ref is null');
             toast.error('Video element not found');
@@ -513,10 +520,18 @@ const Wallet: React.FC = () => {
           }
         } catch (scannerError) {
           console.error('Scanner error:', scannerError);
-          toast.error('Failed to start camera scanner: ' + (scannerError instanceof Error ? scannerError.message : String(scannerError)));
+          const errorMessage = scannerError instanceof Error ? scannerError.message : String(scannerError);
+          
+          if (errorMessage.includes('Permission denied') || errorMessage.includes('NotAllowedError')) {
+            toast.error('Camera permission denied. Please allow camera access and try again.');
+          } else if (errorMessage.includes('NotFoundError')) {
+            toast.error('No camera found on this device.');
+          } else {
+            toast.error('Failed to start camera scanner: ' + errorMessage);
+          }
           setShowQRScanner(false);
         }
-      }, 200); // Increased timeout to ensure modal is rendered
+      }, 500); // Increased timeout to ensure modal is rendered
     } catch (error) {
       console.error('Error starting QR scanner:', error);
       toast.error('Failed to start camera. Please check permissions.');
