@@ -90,7 +90,7 @@ const StatValue = styled.span`
 `;
 
 const ActionButton = styled.button`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
   border: none;
   color: white;
   padding: 0.75rem 1.5rem;
@@ -444,8 +444,8 @@ const Dashboard: React.FC = () => {
                 <div 
                   key={token.contract} 
                   style={{ 
-                    background: 'rgba(102, 126, 234, 0.1)', 
-                    border: '1px solid rgba(102, 126, 234, 0.3)', 
+                    background: 'rgba(74, 74, 74, 0.2)', 
+                    border: '1px solid rgba(74, 74, 74, 0.4)', 
                     borderRadius: '8px', 
                     padding: '0.75rem', 
                     textAlign: 'center' 
@@ -459,8 +459,8 @@ const Dashboard: React.FC = () => {
               ))
             ) : (
               <div style={{ 
-                background: 'rgba(102, 126, 234, 0.1)', 
-                border: '1px solid rgba(102, 126, 234, 0.3)', 
+                background: 'rgba(74, 74, 74, 0.2)', 
+                border: '1px solid rgba(74, 74, 74, 0.4)', 
                 borderRadius: '8px', 
                 padding: '0.75rem', 
                 textAlign: 'center',

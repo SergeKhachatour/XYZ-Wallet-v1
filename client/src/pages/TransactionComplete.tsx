@@ -117,7 +117,7 @@ const ButtonGroup = styled.div`
 `;
 
 const Button = styled.button`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
   border: none;
   color: white;
   padding: 0.75rem 1.5rem;

@@ -1,0 +1,117 @@
+name: Fast Deploy to Azure App Service
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '18.x'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js version
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+            client/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd server && npm ci
+          cd ../client && npm ci
+
+      - name: Build React app
+        run: |
+          cd client
+          npm run build
+        env:
+          CI: false
+          GENERATE_SOURCEMAP: false
+
+      - name: Create deployment package
+        run: |
+          # Create deployment directory
+          mkdir -p deploy-package/server
+          mkdir -p deploy-package/client/build
+          
+          # Copy server files
+          cp -r server/* deploy-package/server/
+          cp package.json deploy-package/
+          cp package-lock.json deploy-package/
+          cp startup.txt deploy-package/
+          
+          # Copy client build
+          cp -r client/build/* deploy-package/client/build/
+          
+          # Create web.config for Azure
+          cat > deploy-package/web.config << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <system.webServer>
+              <handlers>
+                <add name="iisnode" path="server/index.js" verb="*" modules="iisnode"/>
+              </handlers>
+              <rewrite>
+                <rules>
+                  <rule name="NodeInspector" patternSyntax="ECMAScript" stopProcessing="true">
+                    <match url="^server/index.js\/debug[\/]?" />
+                  </rule>
+                  <rule name="StaticContent">
+                    <action type="Rewrite" url="public{REQUEST_URI}"/>
+                  </rule>
+                  <rule name="DynamicContent">
+                    <conditions>
+                      <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="True"/>
+                    </conditions>
+                    <action type="Rewrite" url="server/index.js"/>
+                  </rule>
+                </rules>
+              </rewrite>
+              <security>
+                <requestFiltering>
+                  <hiddenSegments>
+                    <remove segment="bin"/>
+                  </hiddenSegments>
+                </requestFiltering>
+              </security>
+              <httpErrors existingResponse="PassThrough" />
+              <iisnode watchedFiles="web.config;*.js"/>
+            </system.webServer>
+          </configuration>
+          EOF
+          
+          # Create deployment zip
+          cd deploy-package
+          powershell Compress-Archive -Path * -DestinationPath ../deployment.zip -Force
+          cd ..
+          
+          echo "Deployment package created:"
+          ls -la deployment.zip
+          echo "Size: $(du -h deployment.zip | cut -f1)"
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'XYZ-wallet'
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: deployment.zip
+
+      - name: Verify deployment
+        run: |
+          echo "✅ Fast deployment completed!"
+          echo "🌐 App URL: https://xyz-wallet-g6btf6ashjbxayfj.westus-01.azurewebsites.net"

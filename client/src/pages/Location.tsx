@@ -33,7 +33,7 @@ const SectionTitle = styled.h2`
 `;
 
 const Button = styled.button`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
   border: none;
   color: white;
   padding: 0.75rem 1.5rem;
@@ -178,7 +178,7 @@ const ToggleInput = styled.input`
   height: 0;
   
   &:checked + span {
-    background-color: #667eea;
+    background-color: #4a4a4a;
   }
   
   &:checked + span:before {
