@@ -461,30 +461,66 @@ const Wallet: React.FC = () => {
 
   // Start QR scanner
   const startQRScanner = async () => {
+    console.log('Starting QR scanner...');
+    
+    // First, just open the modal to test
+    setShowQRScanner(true);
+    toast.info('QR Scanner opened - testing basic functionality');
+    
+    // For now, let's just test the modal opening
+    // We'll add the actual scanner logic once we confirm the modal works
+    return;
+    
     try {
-      if (videoRef.current) {
-        const scanner = new QrScanner(
-          videoRef.current,
-          (result) => {
-            console.log('QR Code detected:', result);
-            setSendDestination(result.data);
-            setShowQRScanner(false);
-            stopQRScanner();
-            toast.success('Address scanned successfully!');
-          },
-          {
-            highlightScanRegion: true,
-            highlightCodeOutline: true,
-          }
-        );
-        
-        qrScannerRef.current = scanner;
-        await scanner.start();
-        setShowQRScanner(true);
+      // Check if camera is available
+      const hasCamera = await QrScanner.hasCamera();
+      console.log('Camera available:', hasCamera);
+      if (!hasCamera) {
+        toast.error('No camera found on this device');
+        return;
       }
+
+      // Wait for modal to render, then start scanner
+      setTimeout(async () => {
+        try {
+          console.log('Video ref:', videoRef.current);
+          if (videoRef.current) {
+            console.log('Creating QrScanner instance...');
+            const scanner = new QrScanner(
+              videoRef.current,
+              (result) => {
+                console.log('QR Code detected:', result);
+                setSendDestination(result.data);
+                setShowQRScanner(false);
+                stopQRScanner();
+                toast.success('Address scanned successfully!');
+              },
+              {
+                highlightScanRegion: true,
+                highlightCodeOutline: true,
+                preferredCamera: 'environment', // Use back camera on mobile
+              }
+            );
+            
+            qrScannerRef.current = scanner;
+            console.log('Starting scanner...');
+            await scanner.start();
+            console.log('Scanner started successfully');
+          } else {
+            console.error('Video ref is null');
+            toast.error('Video element not found');
+            setShowQRScanner(false);
+          }
+        } catch (scannerError) {
+          console.error('Scanner error:', scannerError);
+          toast.error('Failed to start camera scanner: ' + scannerError.message);
+          setShowQRScanner(false);
+        }
+      }, 200); // Increased timeout to ensure modal is rendered
     } catch (error) {
       console.error('Error starting QR scanner:', error);
       toast.error('Failed to start camera. Please check permissions.');
+      setShowQRScanner(false);
     }
   };
 
@@ -503,6 +539,13 @@ const Wallet: React.FC = () => {
       stopQRScanner();
     };
   }, []);
+
+  // Handle scanner cleanup when modal closes
+  useEffect(() => {
+    if (!showQRScanner) {
+      stopQRScanner();
+    }
+  }, [showQRScanner]);
 
   if (!isConnected) {
     return (
@@ -768,8 +811,9 @@ const Wallet: React.FC = () => {
             <QRScannerHeader>
               <QRScannerTitle>Scan QR Code</QRScannerTitle>
               <CloseButton onClick={() => {
-                setShowQRScanner(false);
+                console.log('Closing QR scanner modal');
                 stopQRScanner();
+                setShowQRScanner(false);
               }}>
                 <X size={20} />
               </CloseButton>
