@@ -463,17 +463,6 @@ const Swap: React.FC = () => {
           </Button>
         </SectionHeader>
         
-        <div style={{ 
-          background: 'rgba(40, 167, 69, 0.1)', 
-          border: '1px solid rgba(40, 167, 69, 0.3)', 
-          borderRadius: '8px', 
-          padding: '1rem', 
-          marginBottom: '1.5rem',
-          color: '#28a745'
-        }}>
-          <strong>✅ Connected:</strong> Soroswap API is connected with your API key. 
-          You can get real-time quotes and execute token swaps. The system will attempt to use the real Soroswap API for transaction building, with fallback to custom implementation if needed.
-        </div>
         
         <SwapForm>
           <SwapRow>
