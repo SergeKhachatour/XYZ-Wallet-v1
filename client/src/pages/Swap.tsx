@@ -596,7 +596,15 @@ const Swap: React.FC = () => {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                  <img src={token.icon} alt={token.name} style={{ width: '24px', height: '24px' }} />
+                  <img 
+                    src={token.icon} 
+                    alt={token.name} 
+                    style={{ width: '24px', height: '24px' }}
+                    onError={(e) => {
+                      // Fallback to a generic token icon if the image fails to load
+                      e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiIGZpbGw9IiM2MzY2RjEiLz4KPHN2ZyB4PSI2IiB5PSI2IiB3aWR0aD0iMTIiIGhlaWdodD0iMTIiPgo8cGF0aCBkPSJNMTIgNkM4LjY5IDYgNiA4LjY5IDYgMTJTOC42OSAxOCAxMiAxOFMxOCAxNS4zMSAxOCAxMlMxNS4zMSA2IDEyIDZaTTEyIDE2QzkuNzkgMTYgOCAxNC4yMSA4IDEyUzkuNzkgOCAxMiA4UzE2IDkuNzkgMTYgMTJTMTQuMjEgMTYgMTIgMTZaTTEyIDEwQzEwLjkgMTAgMTAgMTAuOSAxMCAxMlMxMC45IDE0IDEyIDE0UzE0IDEzLjEgMTQgMTJTMTMuMSAxMCAxMiAxMFoiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo8L3N2Zz4K';
+                    }}
+                  />
                   <span style={{ fontWeight: '600' }}>{token.code}</span>
                 </div>
                 <div style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.9rem' }}>
