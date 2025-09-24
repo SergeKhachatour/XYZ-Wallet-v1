@@ -76,7 +76,7 @@ const PriceChart: React.FC = () => {
         setError(null);
         
         // Using Soroswap API for XLM price (using mainnet for real price data)
-        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/soroswap/price?network=mainnet&asset=CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75`);
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/soroswap/price?network=mainnet&asset=CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC`);
         
         let data;
         try {
