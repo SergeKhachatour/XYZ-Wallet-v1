@@ -600,12 +600,7 @@ const Swap: React.FC = () => {
                     src={token.icon} 
                     alt={token.name} 
                     style={{ width: '24px', height: '24px' }}
-                    onLoad={() => {
-                      console.log(`✅ Token image loaded successfully: ${token.code} - ${token.icon}`);
-                    }}
                     onError={(e) => {
-                      console.log(`❌ Token image failed to load: ${token.code} - ${token.icon}`);
-                      console.log('Error details:', e);
                       // Fallback to a generic token icon if the image fails to load
                       e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiIGZpbGw9IiM2MzY2RjEiLz4KPHN2ZyB4PSI2IiB5PSI2IiB3aWR0aD0iMTIiIGhlaWdodD0iMTIiPgo8cGF0aCBkPSJNMTIgNkM4LjY5IDYgNiA4LjY5IDYgMTJTOC42OSAxOCAxMiAxOFMxOCAxNS4zMSAxOCAxMlMxNS4zMSA2IDEyIDZaTTEyIDE2QzkuNzkgMTYgOCAxNC4yMSA4IDEyUzkuNzkgOCAxMiA4UzE2IDkuNzkgMTYgMTJTMTQuMjEgMTYgMTIgMTZaTTEyIDEwQzEwLjkgMTAgMTAgMTAuOSAxMCAxMlMxMC45IDE0IDEyIDE0UzE0IDEzLjEgMTQgMTJTMTMuMSAxMCAxMiAxMFoiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo8L3N2Zz4K';
                     }}
