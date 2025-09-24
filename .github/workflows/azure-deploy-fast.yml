@@ -49,14 +49,23 @@ jobs:
           mkdir -p deploy-package/server
           mkdir -p deploy-package/client/build
           
-          # Copy server files
-          cp -r server/* deploy-package/server/
+          # Copy only essential server files (no node_modules)
+          cp server/index.js deploy-package/server/
+          cp server/package.json deploy-package/server/
+          cp server/package-lock.json deploy-package/server/
+          cp -r server/routes deploy-package/server/
           cp package.json deploy-package/
           cp package-lock.json deploy-package/
           cp startup.txt deploy-package/
           
           # Copy client build
           cp -r client/build/* deploy-package/client/build/
+          
+          # Pre-install server dependencies to speed up deployment
+          echo "Pre-installing server dependencies..."
+          cd deploy-package/server
+          npm ci --production --silent
+          cd ../..
           
           # Create web.config for Azure
           cat > deploy-package/web.config << 'EOF'
@@ -103,6 +112,8 @@ jobs:
           echo "Deployment package created:"
           ls -la deployment.zip
           echo "Size: $(du -h deployment.zip | cut -f1)"
+          echo "Package contents:"
+          unzip -l deployment.zip | head -20
 
       - name: Wait for any existing deployments to complete
         run: sleep 30
