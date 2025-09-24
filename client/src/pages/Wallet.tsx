@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { Plus, Send, Download, Upload, RefreshCw } from 'lucide-react';
+import { Plus, Send, Download, Upload, RefreshCw, QrCode, Copy } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import toast from 'react-hot-toast';
+import QRCode from 'qrcode';
 
 const WalletContainer = styled.div`
   max-width: 800px;
@@ -60,6 +61,55 @@ const Button = styled.button`
 const SecondaryButton = styled(Button)`
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.3);
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+`;
+
+const QRCodeContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+`;
+
+const QRCodeImage = styled.div`
+  background: white;
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+`;
+
+const AddressDisplay = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-family: monospace;
+  font-size: 0.9rem;
+  word-break: break-all;
+  max-width: 100%;
+`;
+
+const CopyButton = styled.button`
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   
   &:hover {
     background: rgba(255, 255, 255, 0.2);
@@ -221,6 +271,8 @@ const Wallet: React.FC = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showConnectForm, setShowConnectForm] = useState(false);
   const [showSendForm, setShowSendForm] = useState(false);
+  const [showQRCode, setShowQRCode] = useState(false);
+  const [qrCodeDataURL, setQrCodeDataURL] = useState<string>('');
   
   const [connectSecret, setConnectSecret] = useState('');
   const [sendDestination, setSendDestination] = useState('');
@@ -252,6 +304,27 @@ const Wallet: React.FC = () => {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success('Copied to clipboard');
+  };
+
+  // Generate QR code for wallet address
+  const generateQRCode = async () => {
+    if (publicKey) {
+      try {
+        const qrDataURL = await QRCode.toDataURL(publicKey, {
+          width: 200,
+          margin: 2,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+          }
+        });
+        setQrCodeDataURL(qrDataURL);
+        setShowQRCode(true);
+      } catch (error) {
+        console.error('Error generating QR code:', error);
+        toast.error('Failed to generate QR code');
+      }
+    }
   };
 
   if (!isConnected) {
@@ -351,6 +424,39 @@ const Wallet: React.FC = () => {
               <Download size={16} />
             </Button>
           </div>
+        </div>
+        
+        {/* QR Code Section */}
+        <div style={{ marginTop: '2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+            <Button onClick={generateQRCode}>
+              <QrCode size={20} />
+              Generate QR Code
+            </Button>
+          </div>
+          
+          {showQRCode && qrCodeDataURL && (
+            <QRCodeContainer>
+              <h3 style={{ margin: 0, textAlign: 'center' }}>Your Wallet Address</h3>
+              <QRCodeImage>
+                <img src={qrCodeDataURL} alt="Wallet QR Code" style={{ display: 'block' }} />
+              </QRCodeImage>
+              <AddressDisplay>
+                <span style={{ flex: 1 }}>{publicKey}</span>
+                <CopyButton onClick={() => copyToClipboard(publicKey || '')}>
+                  <Copy size={16} />
+                </CopyButton>
+              </AddressDisplay>
+              <p style={{ 
+                textAlign: 'center', 
+                fontSize: '0.9rem', 
+                color: 'rgba(255, 255, 255, 0.7)',
+                margin: 0 
+              }}>
+                Scan this QR code to get your wallet address for receiving payments
+              </p>
+            </QRCodeContainer>
+          )}
         </div>
       </Section>
 

@@ -249,10 +249,12 @@ const MapboxMap: React.FC = () => {
   const fullscreenMap = useRef<mapboxgl.Map | null>(null);
   const marker = useRef<mapboxgl.Marker | null>(null);
   const fullscreenMarker = useRef<mapboxgl.Marker | null>(null);
+  const nearbyMarkers = useRef<mapboxgl.Marker[]>([]);
+  const fullscreenNearbyMarkers = useRef<mapboxgl.Marker[]>([]);
   const [currentView, setCurrentView] = useState<ViewType>('globe');
   const [currentStyle, setCurrentStyle] = useState<MapStyle>('satellite-streets');
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const { currentLocation, isLocationEnabled, enableLocation } = useLocation();
+  const { currentLocation, isLocationEnabled, enableLocation, nearbyUsers } = useLocation();
   const { publicKey } = useWallet();
   
   const latitude = currentLocation?.latitude;
@@ -263,8 +265,60 @@ const MapboxMap: React.FC = () => {
     isLocationEnabled,
     latitude,
     longitude,
-    publicKey: publicKey ? `${publicKey.slice(0, 8)}...${publicKey.slice(-8)}` : 'No wallet'
+    publicKey: publicKey ? `${publicKey.slice(0, 8)}...${publicKey.slice(-8)}` : 'No wallet',
+    nearbyUsers: nearbyUsers.length
   });
+
+  // Function to update nearby user markers
+  const updateNearbyMarkers = (mapInstance: mapboxgl.Map, markersRef: React.MutableRefObject<mapboxgl.Marker[]>) => {
+    // Clear existing nearby markers
+    markersRef.current.forEach(marker => marker.remove());
+    markersRef.current = [];
+
+    // Add markers for nearby users
+    nearbyUsers.forEach((user, index) => {
+      if (user.latitude && user.longitude) {
+        const el = document.createElement('div');
+        el.className = 'nearby-user-marker';
+        el.innerHTML = `
+          <div style="
+            background: linear-gradient(45deg, #4ade80, #22c55e);
+            color: white;
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            border: 2px solid white;
+            max-width: 150px;
+            word-break: break-all;
+            position: relative;
+          ">
+            <div style="font-size: 0.6rem; margin-bottom: 0.2rem; opacity: 0.8;">Nearby User</div>
+            <div>${user.publicKey.slice(0, 6)}...${user.publicKey.slice(-6)}</div>
+            <div style="font-size: 0.6rem; margin-top: 0.2rem; opacity: 0.8;">${user.distance}km away</div>
+            <div style="
+              position: absolute;
+              bottom: -6px;
+              left: 50%;
+              transform: translateX(-50%);
+              width: 0;
+              height: 0;
+              border-left: 6px solid transparent;
+              border-right: 6px solid transparent;
+              border-top: 6px solid white;
+            "></div>
+          </div>
+        `;
+
+        const userMarker = new mapboxgl.Marker(el)
+          .setLngLat([user.longitude, user.latitude])
+          .addTo(mapInstance);
+        
+        markersRef.current.push(userMarker);
+      }
+    });
+  };
 
   useEffect(() => {
     // Use environment variable or fallback to hardcoded token
@@ -431,6 +485,13 @@ const MapboxMap: React.FC = () => {
       }
     }
   }, [currentStyle]);
+
+  // Update nearby user markers when nearbyUsers changes
+  useEffect(() => {
+    if (map.current && nearbyUsers.length > 0) {
+      updateNearbyMarkers(map.current, nearbyMarkers);
+    }
+  }, [nearbyUsers]);
 
   // Initialize fullscreen map when fullscreen is opened
   useEffect(() => {
