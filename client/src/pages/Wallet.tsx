@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
-import { Plus, Send, Download, Upload, RefreshCw, QrCode, Copy } from 'lucide-react';
+import { Plus, Send, Download, Upload, RefreshCw, QrCode, Copy, Camera, X } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import toast from 'react-hot-toast';
 import QRCode from 'qrcode';
+import QrScanner from 'qr-scanner';
 
 const WalletContainer = styled.div`
   max-width: 800px;
@@ -113,6 +114,133 @@ const CopyButton = styled.button`
   
   &:hover {
     background: rgba(255, 255, 255, 0.2);
+  }
+`;
+
+const QRScannerModal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+`;
+
+const QRScannerContainer = styled.div`
+  position: relative;
+  width: 90%;
+  max-width: 500px;
+  height: 400px;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+`;
+
+const QRScannerHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: #1a1a1a;
+  color: white;
+`;
+
+const QRScannerTitle = styled.h3`
+  margin: 0;
+  font-size: 1.2rem;
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: background 0.2s ease;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+`;
+
+const QRScannerVideo = styled.video`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+`;
+
+const QRScannerOverlay = styled.div`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 200px;
+  height: 200px;
+  border: 2px solid #4ade80;
+  border-radius: 12px;
+  pointer-events: none;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border: 2px solid rgba(74, 222, 128, 0.3);
+    border-radius: 12px;
+    animation: pulse 2s infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+`;
+
+const QRScannerInstructions = styled.div`
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  text-align: center;
+`;
+
+const InputGroup = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+`;
+
+const ScanButton = styled.button`
+  background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+  border: none;
+  color: white;
+  padding: 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(74, 222, 128, 0.3);
   }
 `;
 
@@ -273,11 +401,15 @@ const Wallet: React.FC = () => {
   const [showSendForm, setShowSendForm] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
   const [qrCodeDataURL, setQrCodeDataURL] = useState<string>('');
+  const [showQRScanner, setShowQRScanner] = useState(false);
   
   const [connectSecret, setConnectSecret] = useState('');
   const [sendDestination, setSendDestination] = useState('');
   const [sendAmount, setSendAmount] = useState('');
   const [sendMemo, setSendMemo] = useState('');
+  
+  const qrScannerRef = useRef<QrScanner | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const handleConnect = (e: React.FormEvent) => {
     e.preventDefault();
@@ -326,6 +458,51 @@ const Wallet: React.FC = () => {
       }
     }
   };
+
+  // Start QR scanner
+  const startQRScanner = async () => {
+    try {
+      if (videoRef.current) {
+        const scanner = new QrScanner(
+          videoRef.current,
+          (result) => {
+            console.log('QR Code detected:', result);
+            setSendDestination(result.data);
+            setShowQRScanner(false);
+            stopQRScanner();
+            toast.success('Address scanned successfully!');
+          },
+          {
+            highlightScanRegion: true,
+            highlightCodeOutline: true,
+          }
+        );
+        
+        qrScannerRef.current = scanner;
+        await scanner.start();
+        setShowQRScanner(true);
+      }
+    } catch (error) {
+      console.error('Error starting QR scanner:', error);
+      toast.error('Failed to start camera. Please check permissions.');
+    }
+  };
+
+  // Stop QR scanner
+  const stopQRScanner = () => {
+    if (qrScannerRef.current) {
+      qrScannerRef.current.stop();
+      qrScannerRef.current.destroy();
+      qrScannerRef.current = null;
+    }
+  };
+
+  // Cleanup QR scanner on unmount
+  useEffect(() => {
+    return () => {
+      stopQRScanner();
+    };
+  }, []);
 
   if (!isConnected) {
     return (
@@ -499,13 +676,23 @@ const Wallet: React.FC = () => {
           <Form onSubmit={handleSend}>
             <FormGroup>
               <Label>Destination Address</Label>
-              <Input
-                type="text"
-                placeholder="Enter Stellar address"
-                value={sendDestination}
-                onChange={(e) => setSendDestination(e.target.value)}
-                required
-              />
+              <InputGroup>
+                <Input
+                  type="text"
+                  placeholder="Enter Stellar address"
+                  value={sendDestination}
+                  onChange={(e) => setSendDestination(e.target.value)}
+                  required
+                  style={{ flex: 1 }}
+                />
+                <ScanButton
+                  type="button"
+                  onClick={startQRScanner}
+                  title="Scan QR Code"
+                >
+                  <Camera size={20} />
+                </ScanButton>
+              </InputGroup>
             </FormGroup>
             
             <FormGroup>
@@ -573,6 +760,30 @@ const Wallet: React.FC = () => {
           </EmptyState>
         )}
       </Section>
+
+      {/* QR Scanner Modal */}
+      {showQRScanner && (
+        <QRScannerModal>
+          <QRScannerContainer>
+            <QRScannerHeader>
+              <QRScannerTitle>Scan QR Code</QRScannerTitle>
+              <CloseButton onClick={() => {
+                setShowQRScanner(false);
+                stopQRScanner();
+              }}>
+                <X size={20} />
+              </CloseButton>
+            </QRScannerHeader>
+            <div style={{ position: 'relative', flex: 1 }}>
+              <QRScannerVideo ref={videoRef} />
+              <QRScannerOverlay />
+              <QRScannerInstructions>
+                Position the QR code within the frame
+              </QRScannerInstructions>
+            </div>
+          </QRScannerContainer>
+        </QRScannerModal>
+      )}
     </WalletContainer>
   );
 };
