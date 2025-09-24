@@ -67,6 +67,13 @@ jobs:
           npm ci --production --silent
           cd ../..
           
+          # Remove unnecessary files to minimize package size
+          echo "Cleaning up unnecessary files..."
+          find deploy-package -name "*.md" -delete
+          find deploy-package -name "*.txt" -not -name "startup.txt" -delete
+          find deploy-package -name ".git*" -delete
+          find deploy-package -name "node_modules/.cache" -type d -exec rm -rf {} + 2>/dev/null || true
+          
           # Create web.config for Azure
           cat > deploy-package/web.config << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
@@ -104,19 +111,22 @@ jobs:
           </configuration>
           EOF
           
-          # Create deployment zip
+          # Create deployment zip with maximum compression
           cd deploy-package
-          zip -r ../deployment.zip . -x "*.git*" "node_modules/*" "*.log"
+          zip -r -9 ../deployment.zip . -x "*.git*" "*.log" "*.md" "*.txt" "node_modules/.cache/*"
           cd ..
           
           echo "Deployment package created:"
           ls -la deployment.zip
           echo "Size: $(du -h deployment.zip | cut -f1)"
+          echo "File count: $(unzip -l deployment.zip | wc -l)"
           echo "Package contents:"
           unzip -l deployment.zip | head -20
+          echo "Largest files in package:"
+          unzip -l deployment.zip | sort -k1 -nr | head -10
 
       - name: Wait for any existing deployments to complete
-        run: sleep 30
+        run: sleep 10
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
