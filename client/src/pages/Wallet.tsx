@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import { Plus, Send, Download, Upload, RefreshCw, QrCode, Copy } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';

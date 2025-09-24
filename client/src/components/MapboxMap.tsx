@@ -250,7 +250,6 @@ const MapboxMap: React.FC = () => {
   const marker = useRef<mapboxgl.Marker | null>(null);
   const fullscreenMarker = useRef<mapboxgl.Marker | null>(null);
   const nearbyMarkers = useRef<mapboxgl.Marker[]>([]);
-  const fullscreenNearbyMarkers = useRef<mapboxgl.Marker[]>([]);
   const [currentView, setCurrentView] = useState<ViewType>('globe');
   const [currentStyle, setCurrentStyle] = useState<MapStyle>('satellite-streets');
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -364,7 +363,7 @@ const MapboxMap: React.FC = () => {
       map.current.on('error', (e) => {
         console.error('Mapbox error:', e);
         // Try to fallback to a different style
-        if (currentStyle === 'satellite-streets') {
+        if (currentStyle === 'satellite-streets' && map.current) {
           console.log('Falling back to streets style');
           map.current.setStyle('mapbox://styles/mapbox/streets-v12');
         }
@@ -501,7 +500,7 @@ const MapboxMap: React.FC = () => {
     if (map.current && nearbyUsers.length > 0) {
       updateNearbyMarkers(map.current, nearbyMarkers);
     }
-  }, [nearbyUsers]);
+  }, [nearbyUsers, updateNearbyMarkers]);
 
   // Initialize fullscreen map when fullscreen is opened
   useEffect(() => {

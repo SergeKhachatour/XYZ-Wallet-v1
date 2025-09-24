@@ -502,27 +502,54 @@ router.get('/price', async (req, res) => {
       // Find the price for the requested asset
       const assetPrice = priceData.find(p => p.asset === asset);
       if (assetPrice) {
+        // Handle null price case
+        if (assetPrice.price === null || assetPrice.price === undefined) {
+          console.log('Price is null for asset:', asset, 'using fallback price');
+          res.json({
+            price: '0.088', // Fallback XLM price
+            timestamp: assetPrice.timestamp,
+            asset: assetPrice.asset,
+            change24h: 0.001,
+            changePercent24h: 0.8,
+            fallback: true,
+            note: 'Using fallback price - Soroswap returned null price'
+          });
+        } else {
+          res.json({
+            price: assetPrice.price.toString(),
+            timestamp: assetPrice.timestamp,
+            asset: assetPrice.asset,
+            // Add some mock change data since the API doesn't provide it
+            change24h: 0.001,
+            changePercent24h: 0.8
+          });
+        }
+      } else {
+        throw new Error('Asset not found in price response');
+      }
+    } else if (priceData && priceData.asset === asset) {
+      // Handle single object response
+      if (priceData.price === null || priceData.price === undefined) {
+        console.log('Price is null for asset:', asset, 'using fallback price');
         res.json({
-          price: assetPrice.price.toString(),
-          timestamp: assetPrice.timestamp,
-          asset: assetPrice.asset,
+          price: '0.088', // Fallback XLM price
+          timestamp: priceData.timestamp,
+          asset: priceData.asset,
+          change24h: 0.001,
+          changePercent24h: 0.8,
+          fallback: true,
+          note: 'Using fallback price - Soroswap returned null price'
+        });
+      } else {
+        res.json({
+          price: priceData.price.toString(),
+          timestamp: priceData.timestamp,
+          asset: priceData.asset,
           // Add some mock change data since the API doesn't provide it
           change24h: 0.001,
           changePercent24h: 0.8
         });
-      } else {
-        throw new Error('Asset not found in price response');
       }
-    } else if (priceData && priceData.price && priceData.asset === asset) {
-      // Handle single object response
-      res.json({
-        price: priceData.price.toString(),
-        timestamp: priceData.timestamp,
-        asset: priceData.asset,
-        // Add some mock change data since the API doesn't provide it
-        change24h: 0.001,
-        changePercent24h: 0.8
-      });
     } else {
       throw new Error('Invalid price response format');
     }
