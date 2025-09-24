@@ -1,245 +1,391 @@
 # XYZ Stellar Wallet
-<!-- Updated -->
-A Stellar wallet application with location services integration, built using the Stellar SDK and Soroswap API.
 
-<!-- Deployment trigger -->
+A comprehensive Stellar wallet application with advanced features including location services, token swapping, and real-time price tracking. Built with React, Node.js, and integrated with Soroswap API for seamless DeFi operations.
 
-## Features
+## 🌟 Features
 
-- **Stellar Wallet**: Create, connect, and manage Stellar accounts on testnet
-- **Token Swapping**: Swap tokens using the Soroswap API integration
-- **Location Services**: Enable/disable location tracking and visibility to nearby users
-- **Real-time Data**: Live balance updates and transaction history
-- **Modern UI**: Beautiful, responsive interface with glassmorphism design
+### 🔐 Wallet Management
+- **Create/Import Wallets**: Generate new Stellar accounts or import existing ones
+- **Multi-Asset Support**: Manage XLM and various Stellar tokens
+- **Real-time Balances**: Live balance updates with automatic refresh
+- **Transaction History**: Complete transaction tracking with detailed information
+- **Account Funding**: Easy testnet account funding with Friendbot integration
+- **Wallet Backup**: Secure wallet export and recovery options
 
-## Technology Stack
+### 💱 Token Swapping
+- **Soroswap Integration**: Advanced DEX aggregation for optimal swap routes
+- **Real-time Quotes**: Live price quotes with slippage protection
+- **Multi-Token Support**: Swap between various Stellar tokens
+- **Price Impact Analysis**: Detailed swap information and fees
+- **Transaction Building**: Automated transaction construction and signing
+
+### 📍 Location Services
+- **Geolocation Tracking**: Optional location-based features
+- **Nearby Users**: Discover other wallet users in your area
+- **Privacy Controls**: Toggle location visibility and tracking
+- **Location History**: Track and manage location data
+- **Radius Configuration**: Customizable search radius for nearby users
+
+### 📊 Real-time Data
+- **Live Price Charts**: Interactive price charts for XLM and other tokens
+- **Market Data**: Real-time token prices and market information
+- **Server Status**: Backend health monitoring and status indicators
+- **Network Information**: Stellar network status and configuration
+
+### 🎨 Modern UI/UX
+- **Responsive Design**: Mobile-first design with desktop optimization
+- **Glassmorphism**: Beautiful glass-like UI elements
+- **Dark Theme**: Elegant dark theme with customizable colors
+- **Smooth Animations**: Fluid transitions and micro-interactions
+- **Accessibility**: WCAG compliant with keyboard navigation support
+
+## 🛠 Technology Stack
 
 ### Backend
-- Node.js with Express
-- Stellar SDK for blockchain operations
-- Soroswap API integration for token swaps
-- Location services API for user positioning
+- **Node.js** with Express.js framework
+- **Stellar SDK** for blockchain operations
+- **Soroswap API** for DEX aggregation
+- **Axios** for HTTP requests
+- **CORS** and **Helmet** for security
+- **Morgan** for request logging
 
 ### Frontend
-- React with TypeScript
-- Styled Components for styling
-- React Router for navigation
-- Stellar SDK for wallet operations
+- **React 18** with TypeScript
+- **Styled Components** for CSS-in-JS styling
+- **React Router** for navigation
+- **React Hot Toast** for notifications
+- **Mapbox GL JS** for interactive maps
+- **Stellar SDK** for wallet operations
 
-## Prerequisites
+### Development Tools
+- **Concurrently** for parallel development
+- **Nodemon** for backend hot reloading
+- **TypeScript** for type safety
+- **ESLint** for code quality
 
-- Node.js (v16 or higher)
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js (v18 or higher)
 - npm or yarn
 - Git
 
-## Installation
+### Installation
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/SergeKhachatour/XYZ-wallet.git
    cd XYZ-Wallet
    ```
 
-2. **Install dependencies**
+2. **Install all dependencies**
    ```bash
    npm run install-all
    ```
 
 3. **Set up environment variables**
-   
-   **Backend (.env in server directory):**
+
+   **Backend (server/.env):**
    ```bash
    cd server
    cp env.example .env
    ```
    
-   Edit `.env` file:
-   ```
+   Edit `server/.env`:
+   ```env
    PORT=5000
    STELLAR_NETWORK=testnet
    STELLAR_HORIZON_URL=https://horizon-testnet.stellar.org
    SOROSWAP_API_URL=https://api.soroswap.finance
+   SOROSWAP_API_KEY=your_soroswap_api_key
    NODE_ENV=development
    ```
    
-   **Frontend (.env in client directory):**
+   **Frontend (client/.env):**
    ```bash
    cd client
    cp env.example .env
    ```
    
-   Edit `.env` file:
-   ```
+   Edit `client/.env`:
+   ```env
    REACT_APP_STELLAR_NETWORK=testnet
    REACT_APP_STELLAR_HORIZON_URL=https://horizon-testnet.stellar.org
    REACT_APP_BACKEND_URL=http://localhost:5000
+   REACT_APP_MAPBOX_TOKEN=your_mapbox_token
    ```
 
-## Deployment
+4. **Start the application**
+   ```bash
+   npm run dev
+   ```
 
-🚀 **Azure Deployment**: This project includes GitHub Actions for automatic deployment to Azure App Service. See `AZURE_SETUP.md` for quick setup instructions.
+5. **Access the application**
+   - Frontend: `http://localhost:3000`
+   - Backend API: `http://localhost:5000`
 
-## Running the Application
+## 🌐 Deployment
 
-### Development Mode
+### Azure App Service (Recommended)
 
-Start both backend and frontend simultaneously:
-```bash
-npm run dev
-```
+This project includes automated deployment to Azure App Service via GitHub Actions.
 
-Or start them separately:
+**Setup Instructions:**
+1. Fork this repository
+2. Set up Azure App Service
+3. Configure GitHub Secrets:
+   - `AZUREAPPSERVICE_APPNAME`: Your Azure app name
+   - `AZURE_WEBAPP_PUBLISH_PROFILE`: Your Azure publish profile
+4. Push to master branch to trigger deployment
 
-**Backend:**
-```bash
-npm run server
-```
+**Deployment URL:** `https://your-app-name.azurewebsites.net`
 
-**Frontend:**
-```bash
-npm run client
-```
-
-### Production Mode
+### Manual Deployment
 
 1. **Build the frontend:**
    ```bash
    npm run build
    ```
 
-2. **Start the backend:**
-   ```bash
-   cd server
-   npm start
-   ```
+2. **Deploy to your hosting provider:**
+   - Upload the entire project folder
+   - Ensure Node.js is installed
+   - Set environment variables
+   - Start with `npm start`
 
-## Usage
+## 📱 Usage Guide
 
 ### Getting Started
 
-1. **Access the application** at `http://localhost:3000`
+1. **Access the Application**
+   - Open `http://localhost:3000` in your browser
+   - The app will redirect to the dashboard
 
-2. **Create or connect a wallet:**
+2. **Create or Connect a Wallet**
    - Click "Create New Wallet" to generate a new Stellar account
    - Or click "Connect Existing Wallet" to import an existing secret key
-   - **Important**: Save your secret key securely!
+   - **⚠️ Important**: Save your secret key securely!
 
-3. **Fund your wallet:**
-   - Use the Stellar Testnet Friendbot to get test XLM
-   - Visit: https://www.stellar.org/laboratory/#account-creator?network=test
+3. **Fund Your Wallet**
+   - Use the Stellar Testnet Friendbot: https://www.stellar.org/laboratory/#account-creator?network=test
+   - Or use the built-in "Fund Account" feature in the wallet
 
-### Features Overview
+### Dashboard Features
 
-#### Wallet Management
-- View account balance and transaction history
-- Send payments to other Stellar addresses
-- Export wallet data for backup
+- **Server Status**: Monitor backend connectivity
+- **Wallet Overview**: Quick access to wallet functions
+- **Price Charts**: Live XLM price tracking
+- **Recent Activity**: Latest transactions and updates
 
-#### Token Swapping
-- Swap between different tokens using Soroswap
-- View real-time quotes and price impact
-- Execute swaps with optimal routing
+### Wallet Management
 
-#### Location Services
-- Enable location tracking (requires browser permission)
-- Toggle visibility to nearby users
-- View nearby users within configurable radius
-- Location history tracking
+- **Balance View**: See all token balances
+- **Send Payments**: Transfer tokens to other addresses
+- **Transaction History**: Complete transaction log
+- **Account Settings**: Manage wallet preferences
 
-## API Endpoints
+### Token Swapping
+
+1. **Select Tokens**: Choose source and destination tokens
+2. **Enter Amount**: Specify the amount to swap
+3. **Review Quote**: Check price impact and fees
+4. **Execute Swap**: Confirm and sign the transaction
+
+### Location Services
+
+1. **Enable Location**: Grant browser location permissions
+2. **Toggle Visibility**: Control who can see your location
+3. **Find Nearby Users**: Discover other wallet users
+4. **Privacy Settings**: Manage location data and history
+
+## 🔌 API Documentation
 
 ### Wallet Endpoints
-- `POST /api/wallet/create-account` - Create new wallet
-- `GET /api/wallet/balance/:publicKey` - Get account balance
-- `GET /api/wallet/transactions/:publicKey` - Get transaction history
-- `POST /api/wallet/create-payment` - Create payment transaction
-- `POST /api/wallet/submit-transaction` - Submit transaction
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/wallet/balance/:publicKey` | GET | Get account balance |
+| `/api/wallet/transactions/:publicKey` | GET | Get transaction history |
+| `/api/wallet/create-payment` | POST | Create payment transaction |
+| `/api/wallet/submit-transaction` | POST | Submit signed transaction |
+| `/api/wallet/fund-account` | POST | Fund account with test XLM |
 
 ### Location Endpoints
-- `POST /api/location/submit` - Submit location data
-- `GET /api/location/history/:publicKey` - Get location history
-- `POST /api/location/toggle-visibility` - Toggle visibility
-- `GET /api/location/nearby/:publicKey` - Get nearby users
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/location/submit` | POST | Submit location data |
+| `/api/location/history/:publicKey` | GET | Get location history |
+| `/api/location/toggle-visibility` | POST | Toggle location visibility |
+| `/api/location/nearby/:publicKey` | GET | Get nearby users |
 
 ### Soroswap Endpoints
-- `GET /api/soroswap/tokens` - Get available tokens
-- `POST /api/soroswap/quote` - Get swap quote
-- `POST /api/soroswap/build` - Build swap transaction
-- `POST /api/soroswap/send` - Send swap transaction
 
-## Security Considerations
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/soroswap/tokens` | GET | Get available tokens |
+| `/api/soroswap/quote` | POST | Get swap quote |
+| `/api/soroswap/build` | POST | Build swap transaction |
+| `/api/soroswap/price` | GET | Get token price |
 
-- **Secret Keys**: Never share your secret key with anyone
-- **Testnet Only**: This application is configured for Stellar testnet
-- **Location Privacy**: Location data is stored locally and can be toggled off
-- **HTTPS**: Use HTTPS in production environments
+### Health Check
 
-## Development
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/health` | GET | Server health status |
 
-### Project Structure
-```
-XYZ-Wallet/
-├── server/                 # Backend Express server
-│   ├── routes/            # API route handlers
-│   ├── index.js           # Server entry point
-│   └── package.json       # Backend dependencies
-├── client/                # React frontend
-│   ├── src/
-│   │   ├── components/    # Reusable components
-│   │   ├── contexts/      # React contexts
-│   │   ├── pages/         # Page components
-│   │   └── App.tsx        # Main app component
-│   └── package.json       # Frontend dependencies
-└── package.json           # Root package.json
-```
+## 🔒 Security Features
 
-### Adding New Features
+- **Secret Key Protection**: Keys are stored locally and never transmitted
+- **HTTPS Enforcement**: Secure connections in production
+- **CORS Configuration**: Proper cross-origin resource sharing
+- **Rate Limiting**: API request throttling
+- **Input Validation**: Comprehensive data validation
+- **Error Handling**: Secure error messages without sensitive data
 
-1. **Backend**: Add new routes in `server/routes/`
-2. **Frontend**: Add new pages in `client/src/pages/`
-3. **Context**: Use React contexts for state management
-4. **Styling**: Use styled-components for consistent styling
+## 🎨 UI Components
 
-## Troubleshooting
+### Pages
+- **Dashboard**: Main overview and navigation
+- **Wallet**: Wallet management and transactions
+- **Swap**: Token swapping interface
+- **Location**: Location services and nearby users
+- **Settings**: Application configuration
+
+### Components
+- **Header**: Navigation and wallet info
+- **PriceChart**: Interactive price charts
+- **MapboxMap**: Interactive maps for location features
+
+### Contexts
+- **WalletContext**: Global wallet state management
+- **LocationContext**: Location services state
+
+## 🐛 Troubleshooting
 
 ### Common Issues
 
 1. **"Failed to fetch balance"**
-   - Ensure the wallet is funded with test XLM
-   - Check if the public key is correct
+   - Ensure wallet is funded with test XLM
+   - Check public key is correct
+   - Verify backend is running
 
 2. **"Location services not working"**
    - Grant browser location permissions
-   - Ensure HTTPS is used (required for geolocation)
+   - Use HTTPS in production
+   - Check browser compatibility
 
 3. **"Swap quote failed"**
-   - Check if tokens are available on testnet
-   - Verify sufficient balance for the swap
+   - Verify tokens are available on testnet
+   - Check sufficient balance
+   - Ensure Soroswap API is accessible
 
 4. **"Connection refused"**
-   - Ensure backend server is running on port 5000
-   - Check if all dependencies are installed
+   - Ensure backend is running on port 5000
+   - Check all dependencies are installed
+   - Verify environment variables
 
-### Getting Help
+### Development Issues
 
-- Check the browser console for error messages
-- Verify all environment variables are set correctly
-- Ensure you're using the latest version of Node.js
+1. **Build failures**
+   - Clear node_modules and reinstall
+   - Check Node.js version compatibility
+   - Verify TypeScript configuration
 
-## License
+2. **Hot reload not working**
+   - Restart the development server
+   - Check file watching permissions
+   - Clear browser cache
+
+## 📁 Project Structure
+
+```
+XYZ-Wallet/
+├── server/                    # Backend Express server
+│   ├── routes/               # API route handlers
+│   │   ├── wallet.js         # Wallet operations
+│   │   ├── location.js       # Location services
+│   │   └── soroswap.js       # DEX integration
+│   ├── index.js              # Server entry point
+│   └── package.json          # Backend dependencies
+├── client/                    # React frontend
+│   ├── src/
+│   │   ├── components/       # Reusable components
+│   │   │   ├── Header.tsx    # Navigation header
+│   │   │   ├── PriceChart.tsx # Price charts
+│   │   │   └── MapboxMap.tsx # Interactive maps
+│   │   ├── contexts/         # React contexts
+│   │   │   ├── WalletContext.tsx    # Wallet state
+│   │   │   └── LocationContext.tsx  # Location state
+│   │   ├── pages/            # Page components
+│   │   │   ├── Dashboard.tsx        # Main dashboard
+│   │   │   ├── Wallet.tsx           # Wallet management
+│   │   │   ├── Swap.tsx             # Token swapping
+│   │   │   ├── Location.tsx         # Location services
+│   │   │   └── Settings.tsx         # App settings
+│   │   ├── App.tsx           # Main app component
+│   │   └── index.tsx         # App entry point
+│   └── package.json          # Frontend dependencies
+├── .github/workflows/        # GitHub Actions
+│   └── master_xyz-wallet.yml # Deployment workflow
+├── package.json              # Root package.json
+├── startup.txt               # Azure startup command
+└── web.config                # IIS configuration
+```
+
+## 🚀 Development
+
+### Adding New Features
+
+1. **Backend Routes**
+   - Add new routes in `server/routes/`
+   - Follow existing patterns for error handling
+   - Add proper validation and security
+
+2. **Frontend Pages**
+   - Create new pages in `client/src/pages/`
+   - Use existing styling patterns
+   - Implement proper TypeScript types
+
+3. **Components**
+   - Build reusable components in `client/src/components/`
+   - Use styled-components for styling
+   - Follow accessibility guidelines
+
+### Code Style
+
+- **TypeScript**: Use strict typing
+- **ESLint**: Follow configured linting rules
+- **Styled Components**: Use consistent styling patterns
+- **Error Handling**: Implement comprehensive error handling
+
+## 📄 License
 
 MIT License - see LICENSE file for details.
 
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
-- Stellar Development Foundation for the Stellar SDK
-- Soroswap for the DEX aggregation API
-- React and TypeScript communities
+- **Stellar Development Foundation** for the Stellar SDK
+- **Soroswap** for the DEX aggregation API
+- **Mapbox** for mapping services
+- **React** and **TypeScript** communities
+- **Azure** for hosting services
+
+## 📞 Support
+
+For support and questions:
+- Create an issue in the GitHub repository
+- Check the troubleshooting section
+- Review the API documentation
+
+---
+
+**Built with ❤️ for the Stellar ecosystem**
