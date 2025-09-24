@@ -71,9 +71,9 @@ jobs:
                   <rule name="NodeInspector" patternSyntax="ECMAScript" stopProcessing="true">
                     <match url="^server/index.js\/debug[\/]?" />
                   </rule>
-                  <rule name="StaticContent">
-                    <action type="Rewrite" url="public{REQUEST_URI}"/>
-                  </rule>
+          <rule name="StaticContent">
+            <action type="Rewrite" url="client/build{REQUEST_URI}"/>
+          </rule>
                   <rule name="DynamicContent">
                     <conditions>
                       <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="True"/>
@@ -97,7 +97,7 @@ jobs:
           
           # Create deployment zip
           cd deploy-package
-          powershell Compress-Archive -Path * -DestinationPath ../deployment.zip -Force
+          zip -r ../deployment.zip . -x "*.git*" "node_modules/*" "*.log"
           cd ..
           
           echo "Deployment package created:"
