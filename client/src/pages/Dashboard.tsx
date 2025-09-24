@@ -381,48 +381,57 @@ const Dashboard: React.FC = () => {
           </div>
         </CardHeader>
         <CardContent>
-          {/* USDC Information */}
-          <div style={{ 
-            background: 'rgba(40, 167, 69, 0.1)', 
-            border: '1px solid rgba(40, 167, 69, 0.3)', 
-            borderRadius: '8px', 
-            padding: '1rem', 
-            marginBottom: '1rem',
-            color: '#28a745',
-            fontSize: '0.9rem'
-          }}>
-            <strong>💡 USDC Note:</strong> USDC on Stellar testnet is a contract-based asset. 
-            If you've completed a swap and don't see USDC here, it may take a few minutes to appear. 
-            Your successful swap transaction shows you received 9.6319705 USDC.
-          </div>
-          
           {balances.length > 0 ? (
-            balances.map((balance, index) => {
-              const balanceAmount = parseFloat(balance.balance || '0');
-              // Use the assetCode field for cleaner asset name display
-              const assetName = balance.assetCode || (balance.asset === 'XLM' || balance.assetType === 'native' ? 'XLM' : balance.asset);
+            <>
+              {/* Show helpful note if USDC is present */}
+              {balances.some(b => b.assetCode === 'USDC' || b.asset === 'USDC') && (
+                <div style={{ 
+                  background: 'rgba(40, 167, 69, 0.1)', 
+                  border: '1px solid rgba(40, 167, 69, 0.3)', 
+                  borderRadius: '8px', 
+                  padding: '0.75rem', 
+                  marginBottom: '1rem',
+                  color: '#28a745',
+                  fontSize: '0.85rem'
+                }}>
+                  <strong>💡 USDC Info:</strong> USDC on Stellar testnet is a contract-based asset. 
+                  Balances may take a few minutes to update after transactions.
+                </div>
+              )}
               
-              return (
-                <StatItem key={index}>
-                  <StatLabel>
-                    {assetName}
-                    {balance.assetIssuer && (
-                      <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.6)' }}>
-                        {balance.assetIssuer.slice(0, 8)}...{balance.assetIssuer.slice(-8)}
-                      </div>
-                    )}
-                  </StatLabel>
-                  <StatValue>
-                    {balanceAmount > 0 ? balanceAmount.toFixed(7) : '0.0000000'}
-                    {balanceAmount === 0 && (
-                      <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)' }}>
-                        (No balance)
-                      </div>
-                    )}
-                  </StatValue>
-                </StatItem>
-              );
-            })
+              {balances.map((balance, index) => {
+                const balanceAmount = parseFloat(balance.balance || '0');
+                // Use the assetCode field for cleaner asset name display
+                const assetName = balance.assetCode || (balance.asset === 'XLM' || balance.assetType === 'native' ? 'XLM' : balance.asset);
+                const isUSDC = assetName === 'USDC';
+                
+                return (
+                  <StatItem key={index}>
+                    <StatLabel>
+                      {assetName}
+                      {isUSDC && (
+                        <div style={{ fontSize: '0.75rem', color: '#28a745', fontWeight: '500' }}>
+                          Contract Asset
+                        </div>
+                      )}
+                      {balance.assetIssuer && (
+                        <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+                          {balance.assetIssuer.slice(0, 8)}...{balance.assetIssuer.slice(-8)}
+                        </div>
+                      )}
+                    </StatLabel>
+                    <StatValue>
+                      {balanceAmount > 0 ? balanceAmount.toFixed(7) : '0.0000000'}
+                      {balanceAmount === 0 && (
+                        <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)' }}>
+                          (No balance)
+                        </div>
+                      )}
+                    </StatValue>
+                  </StatItem>
+                );
+              })}
+            </>
           ) : (
             <div style={{ color: 'rgba(255, 255, 255, 0.6)', textAlign: 'center', padding: '1rem' }}>
               No token balances found. Try funding your account first.
