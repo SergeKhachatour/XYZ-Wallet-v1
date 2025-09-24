@@ -1,9 +1,10 @@
 name: Deploy to Azure App Service
 
-on:
-  push:
-    branches: [ main, master ]
-  workflow_dispatch:
+# Disabled to prevent conflicts with fast deployment
+# on:
+#   push:
+#     branches: [ main, master ]
+#   workflow_dispatch:
 
 jobs:
   build-and-deploy:

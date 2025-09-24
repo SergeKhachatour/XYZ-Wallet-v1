@@ -104,7 +104,19 @@ jobs:
           ls -la deployment.zip
           echo "Size: $(du -h deployment.zip | cut -f1)"
 
+      - name: Wait for any existing deployments to complete
+        run: sleep 30
+
       - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'XYZ-wallet'
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: deployment.zip
+        continue-on-error: true
+
+      - name: Retry deployment if failed
+        if: failure()
         uses: azure/webapps-deploy@v2
         with:
           app-name: 'XYZ-wallet'
