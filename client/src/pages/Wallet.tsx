@@ -484,7 +484,7 @@ const Wallet: React.FC = () => {
             console.log('Creating QrScanner instance...');
             
             // Check if we're on HTTPS or localhost
-            const isSecure = location.protocol === 'https:' || location.hostname === 'localhost';
+            const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
             if (!isSecure) {
               toast.error('Camera access requires HTTPS. Please use the secure version of the site.');
               setShowQRScanner(false);
