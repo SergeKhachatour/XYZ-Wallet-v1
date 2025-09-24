@@ -465,7 +465,7 @@ const Wallet: React.FC = () => {
     
     // First, just open the modal to test
     setShowQRScanner(true);
-    toast.info('QR Scanner opened - testing basic functionality');
+    toast('QR Scanner opened - testing basic functionality');
     
     // For now, let's just test the modal opening
     // We'll add the actual scanner logic once we confirm the modal works
@@ -513,7 +513,7 @@ const Wallet: React.FC = () => {
           }
         } catch (scannerError) {
           console.error('Scanner error:', scannerError);
-          toast.error('Failed to start camera scanner: ' + scannerError.message);
+          toast.error('Failed to start camera scanner: ' + (scannerError instanceof Error ? scannerError.message : String(scannerError)));
           setShowQRScanner(false);
         }
       }, 200); // Increased timeout to ensure modal is rendered
