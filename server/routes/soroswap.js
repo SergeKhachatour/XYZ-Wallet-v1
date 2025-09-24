@@ -622,6 +622,55 @@ router.get('/contracts/:network/:contractName', async (req, res) => {
   }
 });
 
+// Get price for a specific asset
+router.get('/price', async (req, res) => {
+  try {
+    const { network = 'testnet', asset } = req.query;
+    
+    if (!asset) {
+      return res.status(400).json({
+        error: 'Missing required parameter',
+        message: 'asset parameter is required'
+      });
+    }
+    
+    console.log('Price request received:', { network, asset });
+    
+    const headers = {
+      'User-Agent': 'XYZ-Wallet/1.0.0'
+    };
+
+    // Add API key if available
+    if (process.env.SOROSWAP_API_KEY) {
+      headers['Authorization'] = `Bearer ${process.env.SOROSWAP_API_KEY}`;
+    }
+
+    // Add delay to avoid rate limiting
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    const response = await axios.get(`${SOROSWAP_API_URL}/price?network=${network}&asset=${asset}`, { 
+      headers,
+      timeout: 10000
+    });
+    
+    console.log('Soroswap price API response:', JSON.stringify(response.data, null, 2));
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error fetching price:', error);
+    console.error('Error details:', {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data
+    });
+    
+    res.status(500).json({ 
+      error: 'Failed to fetch price', 
+      details: error.response?.data || error.message 
+    });
+  }
+});
+
 // Health check
 router.get('/health', async (req, res) => {
   try {

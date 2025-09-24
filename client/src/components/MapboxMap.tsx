@@ -360,6 +360,16 @@ const MapboxMap: React.FC = () => {
         antialias: true
       });
 
+      // Handle style loading errors
+      map.current.on('error', (e) => {
+        console.error('Mapbox error:', e);
+        // Try to fallback to a different style
+        if (currentStyle === 'satellite-streets') {
+          console.log('Falling back to streets style');
+          map.current.setStyle('mapbox://styles/mapbox/streets-v12');
+        }
+      });
+
       // Add navigation controls
       map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
