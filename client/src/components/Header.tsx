@@ -44,6 +44,8 @@ const Nav = styled.nav<{ $isOpen: boolean }>`
     left: 0;
     right: 0;
     bottom: 0;
+    width: 100vw;
+    height: 100vh;
     background: rgba(0, 0, 0, 0.95);
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -52,12 +54,14 @@ const Nav = styled.nav<{ $isOpen: boolean }>`
     align-items: center;
     gap: 1.5rem;
     transform: ${props => props.$isOpen ? 'translateX(0)' : 'translateX(-100%)'};
-    transition: transform 0.3s ease;
-    z-index: 1000;
+    transition: all 0.3s ease;
+    z-index: 9999;
     opacity: ${props => props.$isOpen ? 1 : 0};
     visibility: ${props => props.$isOpen ? 'visible' : 'hidden'};
+    display: ${props => props.$isOpen ? 'flex' : 'none'};
     padding: 2rem;
     overflow-y: auto;
+    pointer-events: ${props => props.$isOpen ? 'auto' : 'none'};
   }
 `;
 
@@ -94,7 +98,7 @@ const CloseButton = styled.button`
   border-radius: 8px;
   display: none;
   transition: all 0.2s ease;
-  z-index: 1001;
+  z-index: 10000;
   
   &:hover {
     background: rgba(255, 255, 255, 0.25);
@@ -196,8 +200,14 @@ const Header: React.FC = () => {
   React.useEffect(() => {
     if (isMobileMenuOpen) {
       console.log('Mobile menu opened with nav items:', navItems);
+      console.log('Menu state:', { isMobileMenuOpen, navItemsCount: navItems.length });
     }
   }, [isMobileMenuOpen, navItems]);
+
+  // Debug: Log when menu state changes
+  React.useEffect(() => {
+    console.log('Mobile menu state changed:', isMobileMenuOpen);
+  }, [isMobileMenuOpen]);
 
   const handleNavClick = () => {
     setIsMobileMenuOpen(false);
@@ -211,7 +221,10 @@ const Header: React.FC = () => {
           XYZ Wallet
         </Logo>
         
-        <MobileMenuButton onClick={() => setIsMobileMenuOpen(true)}>
+        <MobileMenuButton onClick={() => {
+          console.log('Hamburger clicked, setting menu to true');
+          setIsMobileMenuOpen(true);
+        }}>
           <Menu size={24} />
         </MobileMenuButton>
         
