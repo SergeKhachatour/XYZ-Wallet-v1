@@ -197,7 +197,7 @@ const Header: React.FC = () => {
   return (
     <HeaderContainer>
       <HeaderContent>
-        <Logo>
+        <Logo as={Link} to="/dashboard">
           <Wallet size={24} />
           XYZ Wallet
         </Logo>
