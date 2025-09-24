@@ -50,12 +50,14 @@ const Nav = styled.nav<{ $isOpen: boolean }>`
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 2rem;
+    gap: 1.5rem;
     transform: ${props => props.$isOpen ? 'translateX(0)' : 'translateX(-100%)'};
     transition: transform 0.3s ease;
     z-index: 1000;
     opacity: ${props => props.$isOpen ? 1 : 0};
     visibility: ${props => props.$isOpen ? 'visible' : 'hidden'};
+    padding: 2rem;
+    overflow-y: auto;
   }
 `;
 
@@ -190,6 +192,13 @@ const Header: React.FC = () => {
     { path: '/settings', label: 'Settings', icon: Settings },
   ];
 
+  // Debug: Log nav items when mobile menu opens
+  React.useEffect(() => {
+    if (isMobileMenuOpen) {
+      console.log('Mobile menu opened with nav items:', navItems);
+    }
+  }, [isMobileMenuOpen, navItems]);
+
   const handleNavClick = () => {
     setIsMobileMenuOpen(false);
   };
@@ -211,12 +220,29 @@ const Header: React.FC = () => {
             <X size={24} />
           </CloseButton>
           
-          {navItems.map(({ path, label, icon: Icon }) => (
+          {/* Debug info - remove this later */}
+          {isMobileMenuOpen && (
+            <div style={{ 
+              color: 'white', 
+              fontSize: '0.8rem', 
+              marginBottom: '1rem',
+              textAlign: 'center'
+            }}>
+              Menu Items: {navItems.length}
+            </div>
+          )}
+          
+          {navItems.map(({ path, label, icon: Icon }, index) => (
             <NavLink
               key={path}
               to={path}
               $isActive={location.pathname === path}
               onClick={handleNavClick}
+              style={{ 
+                order: index, // Ensure proper ordering
+                display: 'flex', // Make sure it's displayed
+                opacity: 1, // Ensure visibility
+              }}
             >
               <Icon size={18} />
               {label}
