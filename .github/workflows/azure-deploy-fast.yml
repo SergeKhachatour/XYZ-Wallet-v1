@@ -69,10 +69,12 @@ jobs:
           
           # Remove unnecessary files to minimize package size
           echo "Cleaning up unnecessary files..."
-          find deploy-package -name "*.md" -delete
-          find deploy-package -name "*.txt" -not -name "startup.txt" -delete
-          find deploy-package -name ".git*" -delete
+          find deploy-package -name "*.md" -delete 2>/dev/null || true
+          find deploy-package -name "*.txt" -not -name "startup.txt" -delete 2>/dev/null || true
+          find deploy-package -name ".git*" -delete 2>/dev/null || true
+          # Clean up cache and temp files but skip problematic directories
           find deploy-package -name "node_modules/.cache" -type d -exec rm -rf {} + 2>/dev/null || true
+          echo "Cleanup completed"
           
           # Create web.config for Azure
           cat > deploy-package/web.config << 'EOF'
@@ -124,6 +126,13 @@ jobs:
           unzip -l deployment.zip | head -20
           echo "Largest files in package:"
           unzip -l deployment.zip | sort -k1 -nr | head -10
+          
+          # Verify deployment.zip exists
+          if [ ! -f "deployment.zip" ]; then
+            echo "❌ ERROR: deployment.zip was not created!"
+            exit 1
+          fi
+          echo "✅ deployment.zip created successfully"
 
       - name: Wait for any existing deployments to complete
         run: sleep 10
