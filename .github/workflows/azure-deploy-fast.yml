@@ -38,6 +38,11 @@ jobs:
       - name: Build React app
         run: |
           cd client
+          # Set environment variables for production build
+          export REACT_APP_BACKEND_URL="https://xyz-wallet-g6btf6ashjbxayfj.westus-01.azurewebsites.net"
+          export REACT_APP_STELLAR_NETWORK="testnet"
+          export REACT_APP_STELLAR_HORIZON_URL="https://horizon-testnet.stellar.org"
+          export REACT_APP_MAPBOX_TOKEN="pk.eyJ1Ijoic2VyZ2UzNjl4MzMiLCJhIjoiY20zZHkzb2xoMDA0eTJxcHU4MTNoYjNlaCJ9.Xl6OxzF9td1IgTTeUp526w"
           npm run build
         env:
           CI: false
