@@ -18,7 +18,7 @@ app.use(helmet({
       scriptSrc: ["'self'", "'unsafe-inline'", "https://api.mapbox.com"],
       workerSrc: ["'self'", "blob:"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://api.mapbox.com"],
-      imgSrc: ["'self'", "data:", "https://api.mapbox.com", "https://*.mapbox.com"],
+      imgSrc: ["'self'", "data:", "blob:", "https:", "http:"],
       fontSrc: ["'self'", "https://api.mapbox.com"]
     }
   }
