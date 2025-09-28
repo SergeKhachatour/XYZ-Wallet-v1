@@ -30,6 +30,14 @@ const MapHeader = styled.div`
   margin-bottom: 1rem;
   z-index: 10;
   position: relative;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
 `;
 
 const MapTitle = styled.h3`
@@ -39,6 +47,17 @@ const MapTitle = styled.h3`
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  
+  @media (max-width: 768px) {
+    font-size: 1rem;
+    
+    /* Hide "Global Map" text on very small screens, keep only icon */
+    @media (max-width: 480px) {
+      span {
+        display: none;
+      }
+    }
+  }
 `;
 
 const ViewControls = styled.div`
@@ -649,7 +668,7 @@ const MapboxMap: React.FC = () => {
       <MapContainer>
         <MapHeader>
           <MapTitle>
-            🌍
+            🌍 <span>Global Map</span>
           </MapTitle>
           <ViewControls>
             {/* Map Style and View Controls */}
