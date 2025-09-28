@@ -106,6 +106,24 @@ const LocationDebugger: React.FC = () => {
   
   const { isConnected, publicKey } = useWallet();
 
+  const clearRateLimits = async () => {
+    try {
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+      const response = await fetch(`${backendUrl}/api/location/debug/clear-rate-limits`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const result = await response.json();
+      
+      if (result.success) {
+        // Re-run diagnostics after clearing rate limits
+        await runDiagnostics();
+      }
+    } catch (error) {
+      console.error('Failed to clear rate limits:', error);
+    }
+  };
+
   const runDiagnostics = async () => {
     setIsLoading(true);
     try {
@@ -313,7 +331,7 @@ const LocationDebugger: React.FC = () => {
             )}
           </DebugSection>
 
-          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', flexWrap: 'wrap' }}>
             <ActionButton onClick={updateLocation}>
               <MapPin size={16} />
               Update Location
@@ -325,6 +343,10 @@ const LocationDebugger: React.FC = () => {
             <ActionButton onClick={() => getNearbyUsers(10, true)}>
               <Users size={16} />
               Search All Users
+            </ActionButton>
+            <ActionButton onClick={clearRateLimits} style={{ background: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#ef4444' }}>
+              <AlertCircle size={16} />
+              Clear Rate Limits
             </ActionButton>
           </div>
         </>

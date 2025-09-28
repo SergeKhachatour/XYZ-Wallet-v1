@@ -8,13 +8,18 @@ const locationData = new Map();
 const rateLimitMap = new Map();
 const lastSubmissionMap = new Map();
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
-const RATE_LIMIT_MAX_REQUESTS = 3; // Max 3 requests per minute per user (more restrictive)
-const MIN_INTERVAL_BETWEEN_REQUESTS = 20 * 1000; // Minimum 20 seconds between requests
+const RATE_LIMIT_MAX_REQUESTS = 10; // Max 10 requests per minute per user (more lenient for testing)
+const MIN_INTERVAL_BETWEEN_REQUESTS = 5 * 1000; // Minimum 5 seconds between requests (reduced for testing)
 
 // Rate limiting middleware
 const rateLimitMiddleware = (req, res, next) => {
   const publicKey = req.body.publicKey;
   if (!publicKey) {
+    return next();
+  }
+
+  // Skip rate limiting in development mode
+  if (process.env.NODE_ENV === 'development') {
     return next();
   }
 
@@ -202,6 +207,27 @@ router.get('/visibility/:publicKey', (req, res) => {
   } catch (error) {
     console.error('Error fetching visibility status:', error);
     res.status(500).json({ error: 'Failed to fetch visibility status', details: error.message });
+  }
+});
+
+// Debug endpoint to clear rate limiting (development only)
+router.post('/debug/clear-rate-limits', (req, res) => {
+  if (process.env.NODE_ENV !== 'development') {
+    return res.status(403).json({ error: 'Debug endpoint only available in development mode' });
+  }
+  
+  try {
+    rateLimitMap.clear();
+    lastSubmissionMap.clear();
+    
+    res.json({
+      success: true,
+      message: 'Rate limits cleared for all users',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error clearing rate limits:', error);
+    res.status(500).json({ error: 'Failed to clear rate limits', details: error.message });
   }
 });
 
