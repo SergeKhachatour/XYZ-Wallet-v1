@@ -45,7 +45,20 @@ app.get('/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
-    network: process.env.STELLAR_NETWORK || 'testnet'
+    network: process.env.STELLAR_NETWORK || 'testnet',
+    nodeEnv: process.env.NODE_ENV,
+    currentDir: __dirname,
+    buildPath: path.join(__dirname, 'client/build'),
+    buildExists: require('fs').existsSync(path.join(__dirname, 'client/build'))
+  });
+});
+
+// Simple test route
+app.get('/test', (req, res) => {
+  res.json({ 
+    message: 'Server is running!',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV
   });
 });
 
@@ -98,8 +111,25 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Add error handling for server startup
+process.on('uncaughtException', (err) => {
+  console.error('❌ Uncaught Exception:', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 XYZ-Wallet-v1 Backend running on port ${PORT}`);
   console.log(`🌐 Network: ${process.env.STELLAR_NETWORK || 'testnet'}`);
   console.log(`📡 Horizon: ${process.env.STELLAR_HORIZON_URL || 'https://horizon-testnet.stellar.org'}`);
+  console.log(`📁 Current directory: ${__dirname}`);
+  console.log(`📁 React build path: ${path.join(__dirname, 'client/build')}`);
+  console.log(`📁 React build exists: ${require('fs').existsSync(path.join(__dirname, 'client/build'))}`);
+}).on('error', (err) => {
+  console.error('❌ Server startup error:', err);
+  process.exit(1);
 });
