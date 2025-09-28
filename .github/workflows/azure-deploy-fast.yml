@@ -131,6 +131,25 @@ jobs:
       - name: Wait for any existing deployments to complete
         run: sleep 10
 
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID }}
+          client-secret: ${{ secrets.AZUREAPPSERVICE_CLIENTSECRET }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID }}
+
+      - name: Set Azure App Service environment variables
+        run: |
+          echo "Setting environment variables in Azure App Service..."
+          az webapp config appsettings set --name xyz-wallet-v1 --resource-group xyz-wallet-v1_group --settings \
+            SOROSWAP_API_KEY="${{ secrets.SOROSWAP_API_KEY }}" \
+            SOROSWAP_API_URL="https://api.soroswap.finance" \
+            STELLAR_NETWORK="testnet" \
+            STELLAR_HORIZON_URL="https://horizon-testnet.stellar.org" \
+            NODE_ENV="production"
+        continue-on-error: true
+
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
@@ -138,12 +157,6 @@ jobs:
           package: deployment.zip
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
         continue-on-error: true
-        env:
-          NODE_ENV: production
-          SOROSWAP_API_KEY: ${{ secrets.SOROSWAP_API_KEY }}
-          SOROSWAP_API_URL: https://api.soroswap.finance
-          STELLAR_NETWORK: testnet
-          STELLAR_HORIZON_URL: https://horizon-testnet.stellar.org
 
       - name: Retry deployment if failed
         if: failure()
@@ -152,12 +165,6 @@ jobs:
           app-name: 'xyz-wallet-v1'
           package: deployment.zip
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
-        env:
-          NODE_ENV: production
-          SOROSWAP_API_KEY: ${{ secrets.SOROSWAP_API_KEY }}
-          SOROSWAP_API_URL: https://api.soroswap.finance
-          STELLAR_NETWORK: testnet
-          STELLAR_HORIZON_URL: https://horizon-testnet.stellar.org
 
       - name: Verify deployment
         run: |
