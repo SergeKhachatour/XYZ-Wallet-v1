@@ -14,10 +14,11 @@ A comprehensive Stellar wallet application with advanced features including loca
 
 ### 💱 Token Swapping
 - **Soroswap Integration**: Advanced DEX aggregation for optimal swap routes
-- **Real-time Quotes**: Live price quotes with slippage protection
+- **Real-time Quotes**: Live price quotes with slippage protection (now with full API access!)
 - **Multi-Token Support**: Swap between various Stellar tokens
 - **Price Impact Analysis**: Detailed swap information and fees
 - **Transaction Building**: Automated transaction construction and signing
+- **API Authentication**: Secure API key integration for production deployments
 
 ### 📍 Location Services
 - **Geolocation Tracking**: Optional location-based features
@@ -64,6 +65,13 @@ A comprehensive Stellar wallet application with advanced features including loca
 - **ESLint** for code quality
 
 ## 🚀 Quick Start
+
+### 🌐 Live Deployment
+**Production URL**: https://xyz-wallet-v1-adh3bjdnguczdmft.westus-01.azurewebsites.net
+- ✅ **Fully deployed** with Azure App Service
+- ✅ **Soroswap API integration** with authentication
+- ✅ **Real-time quotes** and token swapping
+- ✅ **Location services** and wallet management
 
 ### Prerequisites
 - Node.js (v18 or higher)
