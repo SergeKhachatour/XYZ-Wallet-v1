@@ -81,9 +81,28 @@ jobs:
           find deploy-package -name "node_modules/.cache" -type d -exec rm -rf {} + 2>/dev/null || true
           echo "Cleanup completed"
           
-          # Use the server's package.json as the main package.json
-          echo "Using server package.json as main package.json"
-          cp server/package.json deploy-package/package.json
+          # Create package.json for the root with correct start script
+          cat > deploy-package/package.json << 'EOF'
+          {
+            "name": "xyz-wallet-v1",
+            "version": "1.0.0",
+            "main": "server/index.js",
+            "scripts": {
+              "start": "cd server && node index.js"
+            },
+            "dependencies": {
+              "express": "^4.18.2",
+              "cors": "^2.8.5",
+              "helmet": "^7.1.0",
+              "dotenv": "^16.3.1",
+              "axios": "^1.6.2",
+              "stellar-sdk": "^11.2.2",
+              "node-fetch": "^3.3.2",
+              "express-rate-limit": "^7.1.5",
+              "morgan": "^1.10.0"
+            }
+          }
+          EOF
           
           # Create deployment zip with maximum compression
           cd deploy-package
