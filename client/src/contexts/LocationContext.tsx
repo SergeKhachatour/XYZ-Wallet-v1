@@ -322,16 +322,18 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     }
   }, []);
 
-  // Auto-update location every 60 seconds when enabled to prevent rate limiting
+  // Auto-update location and nearby users every 30 seconds when enabled
   useEffect(() => {
     if (!isLocationEnabled) return;
 
     const interval = setInterval(() => {
       updateLocation();
-    }, 60000); // 60 seconds - increased interval to prevent rate limiting
+      // Also fetch nearby users automatically
+      getNearbyUsers(searchRadius, showAllUsers);
+    }, 30000); // 30 seconds - more frequent updates for better user discovery
 
     return () => clearInterval(interval);
-  }, [isLocationEnabled, updateLocation]);
+  }, [isLocationEnabled, updateLocation, getNearbyUsers, searchRadius, showAllUsers]);
 
   const setSearchRadiusHandler = (radius: number) => {
     setSearchRadius(radius);

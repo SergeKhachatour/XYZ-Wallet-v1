@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { X, MapPin, Clock, Wallet, Eye, EyeOff, MessageCircle, Star } from 'lucide-react';
+import { X, MapPin, Clock, Wallet, Eye, EyeOff, Star, Send, DollarSign } from 'lucide-react';
+import { useWallet } from '../contexts/WalletContext';
 
 const ProfileOverlay = styled.div<{ $isOpen: boolean }>`
   position: fixed;
@@ -187,6 +188,77 @@ const PrimaryButton = styled(ActionButton)`
   }
 `;
 
+const MiniMap = styled.div`
+  height: 200px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+  margin: 1rem 0;
+`;
+
+const PaymentForm = styled.div`
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+`;
+
+const InputGroup = styled.div`
+  margin-bottom: 1rem;
+`;
+
+const Label = styled.label`
+  display: block;
+  margin-bottom: 0.5rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  font-weight: 500;
+`;
+
+const Input = styled.input`
+  width: 100%;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  color: white;
+  font-size: 0.9rem;
+  
+  &:focus {
+    outline: none;
+    border-color: #4ade80;
+    box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.2);
+  }
+  
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+  }
+`;
+
+const Select = styled.select`
+  width: 100%;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  color: white;
+  font-size: 0.9rem;
+  
+  &:focus {
+    outline: none;
+    border-color: #4ade80;
+    box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.2);
+  }
+  
+  option {
+    background: #1a1a1a;
+    color: white;
+  }
+`;
+
 interface UserProfileProps {
   isOpen: boolean;
   onClose: () => void;
@@ -203,6 +275,12 @@ const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose, user }) => {
   const [userStatus, setUserStatus] = useState<'online' | 'offline' | 'away'>('offline');
   const [isVisible, setIsVisible] = useState(false);
   const [lastActive, setLastActive] = useState<string>('');
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentAsset, setPaymentAsset] = useState('XLM');
+  const [paymentMemo, setPaymentMemo] = useState('');
+  
+  const { sendPayment, balances } = useWallet();
 
   useEffect(() => {
     if (user) {
@@ -238,14 +316,21 @@ const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose, user }) => {
     return `User ${shortKey}`;
   };
 
-  const handleSendMessage = () => {
-    // TODO: Implement messaging system
-    console.log('Send message to:', user.publicKey);
+  const handleSendPayment = async () => {
+    if (!user || !paymentAmount) return;
+    
+    try {
+      await sendPayment(user.publicKey, paymentAmount, paymentAsset, paymentMemo);
+      setShowPaymentForm(false);
+      setPaymentAmount('');
+      setPaymentMemo('');
+    } catch (error) {
+      console.error('Payment failed:', error);
+    }
   };
 
-  const handleViewLocation = () => {
-    // TODO: Implement location viewing
-    console.log('View location for:', user.publicKey);
+  const handleTogglePaymentForm = () => {
+    setShowPaymentForm(!showPaymentForm);
   };
 
   return (
@@ -341,16 +426,90 @@ const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose, user }) => {
           </InfoItem>
         </ProfileSection>
 
-        <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
-          <ActionButton onClick={handleSendMessage}>
-            <MessageCircle size={16} />
-            Send Message
-          </ActionButton>
-          <PrimaryButton onClick={handleViewLocation}>
-            <MapPin size={16} />
-            View Location
-          </PrimaryButton>
-        </div>
+        {/* Mini Map */}
+        <ProfileSection>
+          <SectionTitle>
+            <MapPin size={20} />
+            Location Map
+          </SectionTitle>
+          <MiniMap>
+            <div style={{
+              width: '100%',
+              height: '100%',
+              background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexDirection: 'column',
+              color: 'rgba(255, 255, 255, 0.7)',
+              fontSize: '0.9rem'
+            }}>
+              <MapPin size={32} style={{ marginBottom: '0.5rem', opacity: 0.6 }} />
+              <div>📍 {user.latitude.toFixed(4)}, {user.longitude.toFixed(4)}</div>
+              <div style={{ fontSize: '0.8rem', marginTop: '0.25rem', opacity: 0.6 }}>
+                {user.distance} km away
+              </div>
+            </div>
+          </MiniMap>
+        </ProfileSection>
+
+        {/* Payment Section */}
+        <ProfileSection>
+          <SectionTitle>
+            <DollarSign size={20} />
+            Send Payment
+          </SectionTitle>
+          
+          {!showPaymentForm ? (
+            <PrimaryButton onClick={handleTogglePaymentForm}>
+              <Send size={16} />
+              Send Payment
+            </PrimaryButton>
+          ) : (
+            <PaymentForm>
+              <InputGroup>
+                <Label>Amount</Label>
+                <Input
+                  type="number"
+                  placeholder="Enter amount"
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(e.target.value)}
+                />
+              </InputGroup>
+              
+              <InputGroup>
+                <Label>Asset</Label>
+                <Select
+                  value={paymentAsset}
+                  onChange={(e) => setPaymentAsset(e.target.value)}
+                >
+                  <option value="XLM">XLM</option>
+                  <option value="USDC">USDC</option>
+                </Select>
+              </InputGroup>
+              
+              <InputGroup>
+                <Label>Memo (Optional)</Label>
+                <Input
+                  type="text"
+                  placeholder="Payment memo"
+                  value={paymentMemo}
+                  onChange={(e) => setPaymentMemo(e.target.value)}
+                />
+              </InputGroup>
+              
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                <PrimaryButton onClick={handleSendPayment} disabled={!paymentAmount}>
+                  <Send size={16} />
+                  Send Payment
+                </PrimaryButton>
+                <ActionButton onClick={handleTogglePaymentForm}>
+                  Cancel
+                </ActionButton>
+              </div>
+            </PaymentForm>
+          )}
+        </ProfileSection>
       </ProfileCard>
     </ProfileOverlay>
   );

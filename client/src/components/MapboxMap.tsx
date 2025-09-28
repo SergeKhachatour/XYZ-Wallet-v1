@@ -548,6 +548,11 @@ const MapboxMap: React.FC = () => {
     if (map.current && nearbyUsers.length > 0) {
       updateNearbyMarkers(map.current, nearbyMarkers);
     }
+    
+    // Also update fullscreen map if it exists
+    if (fullscreenMap.current && nearbyUsers.length > 0) {
+      updateNearbyMarkers(fullscreenMap.current, nearbyMarkers);
+    }
   }, [nearbyUsers, updateNearbyMarkers]);
 
   // Initialize fullscreen map when fullscreen is opened
@@ -585,6 +590,11 @@ const MapboxMap: React.FC = () => {
 
       // Add navigation controls
       fullscreenMap.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+      
+      // Add nearby user markers to fullscreen map
+      if (nearbyUsers.length > 0) {
+        updateNearbyMarkers(fullscreenMap.current, nearbyMarkers);
+      }
 
       // Add user location marker if coordinates are available
       if (latitude && longitude && publicKey) {
