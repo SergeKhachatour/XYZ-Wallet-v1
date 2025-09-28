@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { X, MapPin, Clock, Wallet, Eye, EyeOff, Star, Send, DollarSign } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
+import mapboxgl from 'mapbox-gl';
 
 const ProfileOverlay = styled.div<{ $isOpen: boolean }>`
   position: fixed;
@@ -24,12 +25,25 @@ const ProfileCard = styled.div`
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 20px;
   padding: 2rem;
-  max-width: 500px;
-  width: 100%;
-  max-height: 80vh;
-  overflow-y: auto;
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
   color: white;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  
+  @media (min-width: 768px) {
+    max-width: 700px;
+    width: 80%;
+  }
+  
+  @media (max-width: 768px) {
+    max-width: 95%;
+    width: 95%;
+    max-height: 95vh;
+    padding: 1.5rem;
+  }
 `;
 
 const CloseButton = styled.button`
@@ -259,6 +273,31 @@ const Select = styled.select`
   }
 `;
 
+const ScrollableContent = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  
+  /* Custom scrollbar */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+  }
+`;
+
 interface UserProfileProps {
   isOpen: boolean;
   onClose: () => void;
@@ -279,7 +318,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose, user }) => {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentAsset, setPaymentAsset] = useState('XLM');
   const [paymentMemo, setPaymentMemo] = useState('');
-  
+  const miniMapRef = useRef<HTMLDivElement>(null);
+  const miniMapInstance = useRef<mapboxgl.Map | null>(null);
+
   const { sendPayment, balances } = useWallet();
 
   useEffect(() => {
@@ -302,6 +343,38 @@ const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose, user }) => {
       setIsVisible(true); // Assume visible if they appear in nearby users
     }
   }, [user]);
+
+  // Initialize mini-map
+  useEffect(() => {
+    if (isOpen && user && miniMapRef.current && !miniMapInstance.current) {
+      const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1Ijoic2VyZ2UzNjl4MzMiLCJhIjoiY20zZHkzb2xoMDA0eTJxcHU4MTNoYjNlaCJ9.Xl6OxzF9td1IgTTeUp526w';
+      
+      if (mapboxToken) {
+        mapboxgl.accessToken = mapboxToken;
+        
+        miniMapInstance.current = new mapboxgl.Map({
+          container: miniMapRef.current,
+          style: 'mapbox://styles/mapbox/satellite-streets-v12',
+          center: [user.longitude, user.latitude],
+          zoom: 12,
+          interactive: false,
+          attributionControl: false
+        });
+
+        // Add marker for user location
+        new mapboxgl.Marker({ color: '#4ade80' })
+          .setLngLat([user.longitude, user.latitude])
+          .addTo(miniMapInstance.current);
+      }
+    }
+
+    return () => {
+      if (miniMapInstance.current) {
+        miniMapInstance.current.remove();
+        miniMapInstance.current = null;
+      }
+    };
+  }, [isOpen, user]);
 
   if (!user) return null;
 
@@ -348,168 +421,162 @@ const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose, user }) => {
           <ProfileAddress>{user.publicKey}</ProfileAddress>
         </ProfileHeader>
 
-        <ProfileSection>
-          <SectionTitle>
-            <Star size={20} />
-            Status
-          </SectionTitle>
-          <InfoItem>
-            <InfoLabel>Status</InfoLabel>
-            <StatusBadge $status={userStatus}>
-              {userStatus === 'online' && '🟢 Online'}
-              {userStatus === 'away' && '🟡 Away'}
-              {userStatus === 'offline' && '🔴 Offline'}
-            </StatusBadge>
-          </InfoItem>
-          <InfoItem>
-            <InfoLabel>Visibility</InfoLabel>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              {isVisible ? <Eye size={16} color="#22c55e" /> : <EyeOff size={16} color="#6b7280" />}
-              <span style={{ color: isVisible ? '#22c55e' : '#6b7280' }}>
-                {isVisible ? 'Visible' : 'Hidden'}
-              </span>
-            </div>
-          </InfoItem>
-        </ProfileSection>
-
-        <ProfileSection>
-          <SectionTitle>
-            <MapPin size={20} />
-            Location
-          </SectionTitle>
-          <InfoItem>
-            <InfoLabel>Distance</InfoLabel>
-            <InfoValue>{user.distance} km away</InfoValue>
-          </InfoItem>
-          <InfoItem>
-            <InfoLabel>Coordinates</InfoLabel>
-            <InfoValue>
-              {user.latitude.toFixed(4)}, {user.longitude.toFixed(4)}
-            </InfoValue>
-          </InfoItem>
-          <InfoItem>
-            <InfoLabel>Last Active</InfoLabel>
-            <InfoValue>
-              {new Date(user.lastSeen).toLocaleString()}
-            </InfoValue>
-          </InfoItem>
-        </ProfileSection>
-
-        <ProfileSection>
-          <SectionTitle>
-            <Clock size={20} />
-            Activity
-          </SectionTitle>
-          <InfoItem>
-            <InfoLabel>Last Seen</InfoLabel>
-            <InfoValue>
-              {new Date(user.lastSeen).toLocaleTimeString()}
-            </InfoValue>
-          </InfoItem>
-          <InfoItem>
-            <InfoLabel>Time Since Active</InfoLabel>
-            <InfoValue>
-              {(() => {
-                const lastSeenDate = new Date(user.lastSeen);
-                const now = new Date();
-                const timeDiff = now.getTime() - lastSeenDate.getTime();
-                const minutes = Math.floor(timeDiff / (1000 * 60));
-                const hours = Math.floor(minutes / 60);
-                const days = Math.floor(hours / 24);
-                
-                if (days > 0) return `${days}d ago`;
-                if (hours > 0) return `${hours}h ago`;
-                if (minutes > 0) return `${minutes}m ago`;
-                return 'Just now';
-              })()}
-            </InfoValue>
-          </InfoItem>
-        </ProfileSection>
-
-        {/* Mini Map */}
-        <ProfileSection>
-          <SectionTitle>
-            <MapPin size={20} />
-            Location Map
-          </SectionTitle>
-          <MiniMap>
-            <div style={{
-              width: '100%',
-              height: '100%',
-              background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexDirection: 'column',
-              color: 'rgba(255, 255, 255, 0.7)',
-              fontSize: '0.9rem'
-            }}>
-              <MapPin size={32} style={{ marginBottom: '0.5rem', opacity: 0.6 }} />
-              <div>📍 {user.latitude.toFixed(4)}, {user.longitude.toFixed(4)}</div>
-              <div style={{ fontSize: '0.8rem', marginTop: '0.25rem', opacity: 0.6 }}>
-                {user.distance} km away
+        <ScrollableContent>
+          <ProfileSection>
+            <SectionTitle>
+              <Star size={20} />
+              Status
+            </SectionTitle>
+            <InfoItem>
+              <InfoLabel>Status</InfoLabel>
+              <StatusBadge $status={userStatus}>
+                {userStatus === 'online' && '🟢 Online'}
+                {userStatus === 'away' && '🟡 Away'}
+                {userStatus === 'offline' && '🔴 Offline'}
+              </StatusBadge>
+            </InfoItem>
+            <InfoItem>
+              <InfoLabel>Visibility</InfoLabel>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                {isVisible ? <Eye size={16} color="#22c55e" /> : <EyeOff size={16} color="#6b7280" />}
+                <span style={{ color: isVisible ? '#22c55e' : '#6b7280' }}>
+                  {isVisible ? 'Visible' : 'Hidden'}
+                </span>
               </div>
-            </div>
-          </MiniMap>
-        </ProfileSection>
+            </InfoItem>
+          </ProfileSection>
 
-        {/* Payment Section */}
-        <ProfileSection>
-          <SectionTitle>
-            <DollarSign size={20} />
-            Send Payment
-          </SectionTitle>
-          
-          {!showPaymentForm ? (
-            <PrimaryButton onClick={handleTogglePaymentForm}>
-              <Send size={16} />
+          <ProfileSection>
+            <SectionTitle>
+              <MapPin size={20} />
+              Location
+            </SectionTitle>
+            <InfoItem>
+              <InfoLabel>Distance</InfoLabel>
+              <InfoValue>{user.distance} km away</InfoValue>
+            </InfoItem>
+            <InfoItem>
+              <InfoLabel>Coordinates</InfoLabel>
+              <InfoValue>
+                {user.latitude.toFixed(4)}, {user.longitude.toFixed(4)}
+              </InfoValue>
+            </InfoItem>
+            <InfoItem>
+              <InfoLabel>Last Active</InfoLabel>
+              <InfoValue>
+                {new Date(user.lastSeen).toLocaleString()}
+              </InfoValue>
+            </InfoItem>
+          </ProfileSection>
+
+          {/* Payment Section - Moved Higher */}
+          <ProfileSection>
+            <SectionTitle>
+              <DollarSign size={20} />
               Send Payment
-            </PrimaryButton>
-          ) : (
-            <PaymentForm>
-              <InputGroup>
-                <Label>Amount</Label>
-                <Input
-                  type="number"
-                  placeholder="Enter amount"
-                  value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(e.target.value)}
-                />
-              </InputGroup>
-              
-              <InputGroup>
-                <Label>Asset</Label>
-                <Select
-                  value={paymentAsset}
-                  onChange={(e) => setPaymentAsset(e.target.value)}
-                >
-                  <option value="XLM">XLM</option>
-                  <option value="USDC">USDC</option>
-                </Select>
-              </InputGroup>
-              
-              <InputGroup>
-                <Label>Memo (Optional)</Label>
-                <Input
-                  type="text"
-                  placeholder="Payment memo"
-                  value={paymentMemo}
-                  onChange={(e) => setPaymentMemo(e.target.value)}
-                />
-              </InputGroup>
-              
-              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-                <PrimaryButton onClick={handleSendPayment} disabled={!paymentAmount}>
-                  <Send size={16} />
-                  Send Payment
-                </PrimaryButton>
-                <ActionButton onClick={handleTogglePaymentForm}>
-                  Cancel
-                </ActionButton>
-              </div>
-            </PaymentForm>
-          )}
-        </ProfileSection>
+            </SectionTitle>
+            
+            {!showPaymentForm ? (
+              <PrimaryButton onClick={handleTogglePaymentForm}>
+                <Send size={16} />
+                Send Payment
+              </PrimaryButton>
+            ) : (
+              <PaymentForm>
+                <InputGroup>
+                  <Label>Amount</Label>
+                  <Input
+                    type="number"
+                    placeholder="Enter amount"
+                    value={paymentAmount}
+                    onChange={(e) => setPaymentAmount(e.target.value)}
+                  />
+                </InputGroup>
+                
+                <InputGroup>
+                  <Label>Asset</Label>
+                  <Select
+                    value={paymentAsset}
+                    onChange={(e) => setPaymentAsset(e.target.value)}
+                  >
+                    <option value="XLM">XLM</option>
+                    <option value="USDC">USDC</option>
+                  </Select>
+                </InputGroup>
+                
+                <InputGroup>
+                  <Label>Memo (Optional)</Label>
+                  <Input
+                    type="text"
+                    placeholder="Payment memo"
+                    value={paymentMemo}
+                    onChange={(e) => setPaymentMemo(e.target.value)}
+                  />
+                </InputGroup>
+                
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                  <PrimaryButton onClick={handleSendPayment} disabled={!paymentAmount}>
+                    <Send size={16} />
+                    Send Payment
+                  </PrimaryButton>
+                  <ActionButton onClick={handleTogglePaymentForm}>
+                    Cancel
+                  </ActionButton>
+                </div>
+              </PaymentForm>
+            )}
+          </ProfileSection>
+
+          <ProfileSection>
+            <SectionTitle>
+              <Clock size={20} />
+              Activity
+            </SectionTitle>
+            <InfoItem>
+              <InfoLabel>Last Seen</InfoLabel>
+              <InfoValue>
+                {new Date(user.lastSeen).toLocaleTimeString()}
+              </InfoValue>
+            </InfoItem>
+            <InfoItem>
+              <InfoLabel>Time Since Active</InfoLabel>
+              <InfoValue>
+                {(() => {
+                  const lastSeenDate = new Date(user.lastSeen);
+                  const now = new Date();
+                  const timeDiff = now.getTime() - lastSeenDate.getTime();
+                  const minutes = Math.floor(timeDiff / (1000 * 60));
+                  const hours = Math.floor(minutes / 60);
+                  const days = Math.floor(hours / 24);
+                  
+                  if (days > 0) return `${days}d ago`;
+                  if (hours > 0) return `${hours}h ago`;
+                  if (minutes > 0) return `${minutes}m ago`;
+                  return 'Just now';
+                })()}
+              </InfoValue>
+            </InfoItem>
+          </ProfileSection>
+
+          {/* Mini Map - Moved to End */}
+          <ProfileSection>
+            <SectionTitle>
+              <MapPin size={20} />
+              Location Map
+            </SectionTitle>
+            <MiniMap>
+              <div 
+                ref={miniMapRef} 
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: '8px',
+                  overflow: 'hidden'
+                }}
+              />
+            </MiniMap>
+          </ProfileSection>
+        </ScrollableContent>
       </ProfileCard>
     </ProfileOverlay>
   );
