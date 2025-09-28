@@ -49,29 +49,43 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Serve static files from the React app build directory (for production)
-if (process.env.NODE_ENV === 'production') {
-  const buildPath = path.join(__dirname, 'client/build');
+// Debug environment and paths
+console.log('🔍 Environment check:');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('Current directory:', __dirname);
+console.log('Looking for React build at:', path.join(__dirname, 'client/build'));
+
+// Always try to serve React app in production environment
+const buildPath = path.join(__dirname, 'client/build');
+console.log('Build path exists:', require('fs').existsSync(buildPath));
+
+if (require('fs').existsSync(buildPath)) {
+  console.log('✅ Serving React app from:', buildPath);
+  app.use(express.static(buildPath));
   
-  // Check if build directory exists
-  if (require('fs').existsSync(buildPath)) {
-    app.use(express.static(buildPath));
-    
-    // Handle React routing, return all requests to React app
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(buildPath, 'index.html'));
-    });
-  } else {
-    console.warn('⚠️  React build directory not found. Make sure to run "npm run build" in the client directory.');
-    // 404 handler for production without build
-    app.use('*', (req, res) => {
-      res.status(404).json({ error: 'React app not built. Please run npm run build in client directory.' });
-    });
-  }
+  // Handle React routing, return all requests to React app
+  app.get('*', (req, res) => {
+    console.log('📄 Serving React app for route:', req.path);
+    res.sendFile(path.join(buildPath, 'index.html'));
+  });
 } else {
-  // 404 handler for development
+  console.warn('⚠️  React build directory not found at:', buildPath);
+  console.log('Available directories in server folder:');
+  try {
+    const files = require('fs').readdirSync(__dirname);
+    console.log(files);
+  } catch (e) {
+    console.log('Could not read directory:', e.message);
+  }
+  
+  // 404 handler for production without build
   app.use('*', (req, res) => {
-    res.status(404).json({ error: 'Route not found' });
+    res.status(404).json({ 
+      error: 'React app not found', 
+      buildPath: buildPath,
+      exists: require('fs').existsSync(buildPath),
+      currentDir: __dirname
+    });
   });
 }
 

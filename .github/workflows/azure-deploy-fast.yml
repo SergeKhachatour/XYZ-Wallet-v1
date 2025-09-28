@@ -134,6 +134,8 @@ jobs:
           package: deployment.zip
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
         continue-on-error: true
+        env:
+          NODE_ENV: production
 
       - name: Retry deployment if failed
         if: failure()
@@ -142,6 +144,8 @@ jobs:
           app-name: 'XYZ-wallet-v1'
           package: deployment.zip
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
+        env:
+          NODE_ENV: production
 
       - name: Verify deployment
         run: |
