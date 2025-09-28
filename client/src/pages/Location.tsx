@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { MapPin, Eye, EyeOff, Users, RefreshCw, Navigation, User } from 'lucide-react';
+import { MapPin, Eye, EyeOff, Users, RefreshCw, Navigation, User, Bug } from 'lucide-react';
 import { useLocation } from '../contexts/LocationContext';
 import { useWallet } from '../contexts/WalletContext';
 import UserProfile from '../components/UserProfile';
+import LocationDebugger from '../components/LocationDebugger';
 
 const LocationContainer = styled.div`
   max-width: 1000px;
@@ -241,6 +242,7 @@ const Location: React.FC = () => {
   const { isConnected } = useWallet();
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [showDebugger, setShowDebugger] = useState(false);
 
   useEffect(() => {
     if (isLocationEnabled && isConnected) {
@@ -311,6 +313,10 @@ const Location: React.FC = () => {
       <Section>
         <SectionHeader>
           <SectionTitle>Location Controls</SectionTitle>
+          <Button onClick={() => setShowDebugger(!showDebugger)} style={{ background: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#ef4444' }}>
+            <Bug size={20} />
+            {showDebugger ? 'Hide' : 'Show'} Debug
+          </Button>
         </SectionHeader>
         
         <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
@@ -493,6 +499,9 @@ const Location: React.FC = () => {
           </div>
         </Section>
       )}
+
+      {/* Debugger */}
+      {showDebugger && <LocationDebugger />}
 
       {/* User Profile Modal */}
       <UserProfile
