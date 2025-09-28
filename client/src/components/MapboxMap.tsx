@@ -46,6 +46,12 @@ const ViewControls = styled.div`
   gap: 0.5rem;
   z-index: 10;
   position: relative;
+  flex-wrap: wrap;
+  align-items: center;
+  
+  @media (max-width: 768px) {
+    gap: 0.25rem;
+  }
 `;
 
 const LocationButton = styled.button`
@@ -253,7 +259,17 @@ const MapboxMap: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewType>('globe');
   const [currentStyle, setCurrentStyle] = useState<MapStyle>('satellite-streets');
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const { currentLocation, isLocationEnabled, enableLocation, nearbyUsers } = useLocation();
+  const { 
+    currentLocation, 
+    isLocationEnabled, 
+    enableLocation, 
+    nearbyUsers,
+    searchRadius,
+    showAllUsers,
+    getNearbyUsers,
+    setSearchRadius,
+    setShowAllUsers
+  } = useLocation();
   const { publicKey } = useWallet();
   
   const latitude = currentLocation?.latitude;
@@ -636,32 +652,42 @@ const MapboxMap: React.FC = () => {
             🌍 Global Map
           </MapTitle>
           <ViewControls>
-            <StyleSelect 
-              value={currentStyle} 
-              onChange={(e) => handleStyleChange(e.target.value as MapStyle)}
-            >
-              <option value="satellite">🛰️ Satellite</option>
-              <option value="streets">🗺️ Streets</option>
-              <option value="outdoors">🏔️ Outdoors</option>
-              <option value="light">☀️ Light</option>
-              <option value="dark">🌙 Dark</option>
-              <option value="satellite-streets">🛰️ Satellite Streets</option>
-            </StyleSelect>
-            <ViewButton 
-              $active={currentView === 'globe'} 
-              onClick={() => handleViewChange('globe')}
-            >
-              🌍 Globe
-            </ViewButton>
-            <ViewButton 
-              $active={currentView === 'flat'} 
-              onClick={() => handleViewChange('flat')}
-            >
-              📐 Flat
-            </ViewButton>
-            <FullscreenButton onClick={handleFullscreenToggle} title="Expand to fullscreen">
-              <Maximize2 size={16} />
-            </FullscreenButton>
+            {/* Map Style and View Controls */}
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <StyleSelect 
+                value={currentStyle} 
+                onChange={(e) => handleStyleChange(e.target.value as MapStyle)}
+                style={{ minWidth: '140px' }}
+              >
+                <option value="satellite">🛰️ Satellite</option>
+                <option value="streets">🗺️ Streets</option>
+                <option value="outdoors">🏔️ Outdoors</option>
+                <option value="light">☀️ Light</option>
+                <option value="dark">🌙 Dark</option>
+                <option value="satellite-streets">🛰️ Satellite Streets</option>
+              </StyleSelect>
+              
+              <div style={{ display: 'flex', gap: '0.25rem' }}>
+                <ViewButton 
+                  $active={currentView === 'globe'} 
+                  onClick={() => handleViewChange('globe')}
+                  style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}
+                >
+                  🌍
+                </ViewButton>
+                <ViewButton 
+                  $active={currentView === 'flat'} 
+                  onClick={() => handleViewChange('flat')}
+                  style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}
+                >
+                  📐
+                </ViewButton>
+              </div>
+              
+              <FullscreenButton onClick={handleFullscreenToggle} title="Expand to fullscreen">
+                <Maximize2 size={16} />
+              </FullscreenButton>
+            </div>
             {!isLocationEnabled && (
               <LocationButton onClick={enableLocation}>
                 📍 Enable Location
@@ -733,6 +759,69 @@ const MapboxMap: React.FC = () => {
                 🧪 Test Location
               </LocationButton>
             )}
+            
+            {/* Location Search Controls */}
+            {isLocationEnabled && (latitude && longitude) && (
+              <div style={{ 
+                display: 'flex', 
+                gap: '0.5rem', 
+                alignItems: 'center', 
+                flexWrap: 'wrap',
+                marginTop: '0.5rem',
+                padding: '0.5rem',
+                background: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: '8px',
+                border: '1px solid rgba(255, 255, 255, 0.1)'
+              }}>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+                    <input
+                      type="checkbox"
+                      id="mapShowAllUsers"
+                      checked={showAllUsers}
+                      onChange={(e) => setShowAllUsers(e.target.checked)}
+                      style={{ marginRight: '0.25rem', transform: 'scale(0.8)' }}
+                    />
+                    <label htmlFor="mapShowAllUsers" style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.8)' }}>
+                      Global
+                    </label>
+                  </div>
+                  
+                  {!showAllUsers && (
+                    <select
+                      value={searchRadius}
+                      onChange={(e) => setSearchRadius(parseInt(e.target.value))}
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        border: '1px solid rgba(255, 255, 255, 0.3)',
+                        borderRadius: '4px',
+                        padding: '0.25rem 0.5rem',
+                        color: 'white',
+                        fontSize: '0.7rem',
+                        minWidth: '80px'
+                      }}
+                    >
+                      <option value={1}>1km</option>
+                      <option value={5}>5km</option>
+                      <option value={10}>10km</option>
+                      <option value={25}>25km</option>
+                      <option value={50}>50km</option>
+                      <option value={100}>100km</option>
+                      <option value={250}>250km</option>
+                      <option value={500}>500km</option>
+                      <option value={1000}>1000km</option>
+                    </select>
+                  )}
+                  
+                  <LocationButton 
+                    onClick={() => getNearbyUsers(searchRadius, showAllUsers)}
+                    style={{ fontSize: '0.7rem', padding: '0.25rem 0.5rem' }}
+                  >
+                    {showAllUsers ? '🌍 All' : `🔍 ${searchRadius}km`}
+                  </LocationButton>
+                </div>
+              </div>
+            )}
           </ViewControls>
         </MapHeader>
         
@@ -762,32 +851,104 @@ const MapboxMap: React.FC = () => {
             🌍 Global Map - Fullscreen
           </FullscreenTitle>
           <FullscreenControls>
-            <StyleSelect 
-              value={currentStyle} 
-              onChange={(e) => handleStyleChange(e.target.value as MapStyle)}
-            >
-              <option value="satellite">🛰️ Satellite</option>
-              <option value="streets">🗺️ Streets</option>
-              <option value="outdoors">🏔️ Outdoors</option>
-              <option value="light">☀️ Light</option>
-              <option value="dark">🌙 Dark</option>
-              <option value="satellite-streets">🛰️ Satellite Streets</option>
-            </StyleSelect>
-            <ViewButton 
-              $active={currentView === 'globe'} 
-              onClick={() => handleViewChange('globe')}
-            >
-              🌍 Globe
-            </ViewButton>
-            <ViewButton 
-              $active={currentView === 'flat'} 
-              onClick={() => handleViewChange('flat')}
-            >
-              📐 Flat
-            </ViewButton>
-            <CloseButton onClick={handleCloseFullscreen} title="Close fullscreen">
-              <Minimize2 size={16} />
-            </CloseButton>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <StyleSelect 
+                value={currentStyle} 
+                onChange={(e) => handleStyleChange(e.target.value as MapStyle)}
+                style={{ minWidth: '140px' }}
+              >
+                <option value="satellite">🛰️ Satellite</option>
+                <option value="streets">🗺️ Streets</option>
+                <option value="outdoors">🏔️ Outdoors</option>
+                <option value="light">☀️ Light</option>
+                <option value="dark">🌙 Dark</option>
+                <option value="satellite-streets">🛰️ Satellite Streets</option>
+              </StyleSelect>
+              
+              <div style={{ display: 'flex', gap: '0.25rem' }}>
+                <ViewButton 
+                  $active={currentView === 'globe'} 
+                  onClick={() => handleViewChange('globe')}
+                  style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}
+                >
+                  🌍
+                </ViewButton>
+                <ViewButton 
+                  $active={currentView === 'flat'} 
+                  onClick={() => handleViewChange('flat')}
+                  style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}
+                >
+                  📐
+                </ViewButton>
+              </div>
+              
+              <CloseButton onClick={handleCloseFullscreen} title="Close fullscreen">
+                <Minimize2 size={16} />
+              </CloseButton>
+            </div>
+            
+            {/* Fullscreen Location Search Controls */}
+            {isLocationEnabled && (latitude && longitude) && (
+              <div style={{ 
+                display: 'flex', 
+                gap: '0.5rem', 
+                alignItems: 'center', 
+                flexWrap: 'wrap',
+                marginTop: '0.5rem',
+                padding: '0.5rem',
+                background: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: '8px',
+                border: '1px solid rgba(255, 255, 255, 0.1)'
+              }}>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+                    <input
+                      type="checkbox"
+                      id="fullscreenShowAllUsers"
+                      checked={showAllUsers}
+                      onChange={(e) => setShowAllUsers(e.target.checked)}
+                      style={{ marginRight: '0.25rem', transform: 'scale(0.8)' }}
+                    />
+                    <label htmlFor="fullscreenShowAllUsers" style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.8)' }}>
+                      Global
+                    </label>
+                  </div>
+                  
+                  {!showAllUsers && (
+                    <select
+                      value={searchRadius}
+                      onChange={(e) => setSearchRadius(parseInt(e.target.value))}
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        border: '1px solid rgba(255, 255, 255, 0.3)',
+                        borderRadius: '4px',
+                        padding: '0.25rem 0.5rem',
+                        color: 'white',
+                        fontSize: '0.7rem',
+                        minWidth: '80px'
+                      }}
+                    >
+                      <option value={1}>1km</option>
+                      <option value={5}>5km</option>
+                      <option value={10}>10km</option>
+                      <option value={25}>25km</option>
+                      <option value={50}>50km</option>
+                      <option value={100}>100km</option>
+                      <option value={250}>250km</option>
+                      <option value={500}>500km</option>
+                      <option value={1000}>1000km</option>
+                    </select>
+                  )}
+                  
+                  <LocationButton 
+                    onClick={() => getNearbyUsers(searchRadius, showAllUsers)}
+                    style={{ fontSize: '0.7rem', padding: '0.25rem 0.5rem' }}
+                  >
+                    {showAllUsers ? '🌍 All' : `🔍 ${searchRadius}km`}
+                  </LocationButton>
+                </div>
+              </div>
+            )}
           </FullscreenControls>
         </FullscreenHeader>
         

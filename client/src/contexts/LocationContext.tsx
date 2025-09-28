@@ -15,13 +15,17 @@ interface LocationContextType {
   isVisible: boolean;
   locationHistory: LocationData[];
   nearbyUsers: any[];
+  searchRadius: number;
+  showAllUsers: boolean;
   
   // Location actions
   enableLocation: () => Promise<void>;
   disableLocation: () => void;
   updateLocation: () => Promise<void>;
   toggleVisibility: (visible: boolean) => Promise<void>;
-  getNearbyUsers: (radius?: number) => Promise<void>;
+  getNearbyUsers: (radius?: number, showAll?: boolean) => Promise<void>;
+  setSearchRadius: (radius: number) => void;
+  setShowAllUsers: (showAll: boolean) => void;
   
   // Loading states
   isLocationLoading: boolean;
@@ -47,6 +51,8 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
   const [isVisible, setIsVisible] = useState(false);
   const [locationHistory, setLocationHistory] = useState<LocationData[]>([]);
   const [nearbyUsers, setNearbyUsers] = useState<any[]>([]);
+  const [searchRadius, setSearchRadius] = useState(10);
+  const [showAllUsers, setShowAllUsers] = useState(false);
   const [isLocationLoading, setIsLocationLoading] = useState(false);
   const hasCalledUpdateOnMount = useRef(false);
 
@@ -272,7 +278,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     }
   };
 
-  const getNearbyUsers = useCallback(async (radius: number = 10) => {
+  const getNearbyUsers = useCallback(async (radius: number = 10, showAll: boolean = false) => {
     const publicKey = localStorage.getItem('wallet_publicKey');
     if (!publicKey) {
       toast.error('No wallet connected');
@@ -282,11 +288,21 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     try {
       setIsLocationLoading(true);
       
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/location/nearby/${publicKey}?radius=${radius}`);
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (showAll) {
+        params.append('showAll', 'true');
+      } else {
+        params.append('radius', radius.toString());
+      }
+      
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/location/nearby/${publicKey}?${params.toString()}`);
       const data = await response.json();
       
       if (response.ok) {
-        setNearbyUsers(data.nearbyUsers);
+        setNearbyUsers(data.nearbyUsers || []);
+        setSearchRadius(radius);
+        setShowAllUsers(showAll);
       } else {
         toast.error('Failed to fetch nearby users');
       }
@@ -317,17 +333,33 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     return () => clearInterval(interval);
   }, [isLocationEnabled, updateLocation]);
 
+  const setSearchRadiusHandler = (radius: number) => {
+    setSearchRadius(radius);
+    setShowAllUsers(false);
+  };
+
+  const setShowAllUsersHandler = (showAll: boolean) => {
+    setShowAllUsers(showAll);
+    if (showAll) {
+      setSearchRadius(0); // 0 means unlimited
+    }
+  };
+
   const value: LocationContextType = {
     currentLocation,
     isLocationEnabled,
     isVisible,
     locationHistory,
     nearbyUsers,
+    searchRadius,
+    showAllUsers,
     enableLocation,
     disableLocation,
     updateLocation,
     toggleVisibility,
     getNearbyUsers,
+    setSearchRadius: setSearchRadiusHandler,
+    setShowAllUsers: setShowAllUsersHandler,
     isLocationLoading
   };
 

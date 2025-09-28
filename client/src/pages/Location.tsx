@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { MapPin, Eye, EyeOff, Users, RefreshCw, Navigation } from 'lucide-react';
+import { MapPin, Eye, EyeOff, Users, RefreshCw, Navigation, User } from 'lucide-react';
 import { useLocation } from '../contexts/LocationContext';
 import { useWallet } from '../contexts/WalletContext';
+import UserProfile from '../components/UserProfile';
 
 const LocationContainer = styled.div`
   max-width: 1000px;
@@ -136,6 +137,14 @@ const NearbyUserItem = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
 `;
 
 const UserInfo = styled.div`
@@ -217,23 +226,27 @@ const Location: React.FC = () => {
     isVisible, 
     locationHistory, 
     nearbyUsers,
+    searchRadius,
+    showAllUsers,
     enableLocation, 
     disableLocation, 
     updateLocation, 
     toggleVisibility, 
     getNearbyUsers,
+    setSearchRadius,
+    setShowAllUsers,
     isLocationLoading 
   } = useLocation();
   
   const { isConnected } = useWallet();
-  
-  const [radius, setRadius] = useState(10);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   useEffect(() => {
     if (isLocationEnabled && isConnected) {
-      getNearbyUsers(radius);
+      getNearbyUsers(searchRadius, showAllUsers);
     }
-  }, [isLocationEnabled, isConnected, radius, getNearbyUsers]);
+  }, [isLocationEnabled, isConnected, searchRadius, showAllUsers, getNearbyUsers]);
 
   const handleToggleVisibility = async () => {
     await toggleVisibility(!isVisible);
@@ -241,8 +254,18 @@ const Location: React.FC = () => {
 
   const handleGetNearbyUsers = async () => {
     if (isLocationEnabled) {
-      await getNearbyUsers(radius);
+      await getNearbyUsers(searchRadius, showAllUsers);
     }
+  };
+
+  const handleUserClick = (user: any) => {
+    setSelectedUser(user);
+    setIsProfileOpen(true);
+  };
+
+  const handleCloseProfile = () => {
+    setIsProfileOpen(false);
+    setSelectedUser(null);
   };
 
   if (!isConnected) {
@@ -366,27 +389,48 @@ const Location: React.FC = () => {
         <Section>
           <SectionHeader>
             <SectionTitle>Nearby Users</SectionTitle>
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-              <select
-                value={radius}
-                onChange={(e) => setRadius(parseInt(e.target.value))}
-                style={{
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  border: '1px solid rgba(255, 255, 255, 0.3)',
-                  borderRadius: '8px',
-                  padding: '0.5rem',
-                  color: 'white'
-                }}
-              >
-                <option value={1}>1 km</option>
-                <option value={5}>5 km</option>
-                <option value={10}>10 km</option>
-                <option value={25}>25 km</option>
-                <option value={50}>50 km</option>
-              </select>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <input
+                  type="checkbox"
+                  id="showAllUsers"
+                  checked={showAllUsers}
+                  onChange={(e) => setShowAllUsers(e.target.checked)}
+                  style={{ marginRight: '0.5rem' }}
+                />
+                <label htmlFor="showAllUsers" style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.8)' }}>
+                  Show All Users (Global)
+                </label>
+              </div>
+              
+              {!showAllUsers && (
+                <select
+                  value={searchRadius}
+                  onChange={(e) => setSearchRadius(parseInt(e.target.value))}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    border: '1px solid rgba(255, 255, 255, 0.3)',
+                    borderRadius: '8px',
+                    padding: '0.5rem',
+                    color: 'white',
+                    minWidth: '120px'
+                  }}
+                >
+                  <option value={1}>1 km</option>
+                  <option value={5}>5 km</option>
+                  <option value={10}>10 km</option>
+                  <option value={25}>25 km</option>
+                  <option value={50}>50 km</option>
+                  <option value={100}>100 km</option>
+                  <option value={250}>250 km</option>
+                  <option value={500}>500 km</option>
+                  <option value={1000}>1000 km</option>
+                </select>
+              )}
+              
               <Button onClick={handleGetNearbyUsers} disabled={isLocationLoading}>
                 <Users size={20} />
-                Refresh
+                {showAllUsers ? 'Show All' : 'Refresh'}
               </Button>
             </div>
           </SectionHeader>
@@ -394,7 +438,7 @@ const Location: React.FC = () => {
           {nearbyUsers.length > 0 ? (
             <NearbyUsersList>
               {nearbyUsers.map((user, index) => (
-                <NearbyUserItem key={index}>
+                <NearbyUserItem key={index} onClick={() => handleUserClick(user)}>
                   <UserInfo>
                     <UserAddress>{user.publicKey}</UserAddress>
                     <UserDistance>{user.distance} km away</UserDistance>
@@ -402,15 +446,21 @@ const Location: React.FC = () => {
                       Last seen: {new Date(user.lastSeen).toLocaleString()}
                     </UserLastSeen>
                   </UserInfo>
-                  <div style={{ color: '#4ade80', fontSize: '0.8rem' }}>
-                    Visible
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div style={{ color: '#4ade80', fontSize: '0.8rem' }}>
+                      Visible
+                    </div>
+                    <User size={16} style={{ color: 'rgba(255, 255, 255, 0.6)' }} />
                   </div>
                 </NearbyUserItem>
               ))}
             </NearbyUsersList>
           ) : (
             <EmptyState>
-              {isVisible ? 'No nearby users found within the selected radius' : 'Enable visibility to see nearby users'}
+              {isVisible ? 
+                (showAllUsers ? 'No users found globally' : `No nearby users found within ${searchRadius} km`) : 
+                'Enable visibility to see nearby users'
+              }
             </EmptyState>
           )}
         </Section>
@@ -443,6 +493,13 @@ const Location: React.FC = () => {
           </div>
         </Section>
       )}
+
+      {/* User Profile Modal */}
+      <UserProfile
+        isOpen={isProfileOpen}
+        onClose={handleCloseProfile}
+        user={selectedUser}
+      />
     </LocationContainer>
   );
 };

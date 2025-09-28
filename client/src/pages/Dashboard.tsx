@@ -6,6 +6,7 @@ import { useLocation } from '../contexts/LocationContext';
 import { useNavigate } from 'react-router-dom';
 import PriceChart from '../components/PriceChart';
 import MapboxMap from '../components/MapboxMap';
+import UserProfile from '../components/UserProfile';
 
 const DashboardContainer = styled.div`
   display: grid;
@@ -127,12 +128,28 @@ const Dashboard: React.FC = () => {
     isVisible, 
     currentLocation, 
     nearbyUsers,
-    getNearbyUsers 
+    searchRadius,
+    showAllUsers,
+    getNearbyUsers,
+    setSearchRadius,
+    setShowAllUsers
   } = useLocation();
   
   const navigate = useNavigate();
   const [serverStatus, setServerStatus] = useState<'online' | 'offline' | 'checking'>('checking');
   const [availableTokens, setAvailableTokens] = useState<any[]>([]);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  const handleUserClick = (user: any) => {
+    setSelectedUser(user);
+    setIsProfileOpen(true);
+  };
+
+  const handleCloseProfile = () => {
+    setIsProfileOpen(false);
+    setSelectedUser(null);
+  };
 
   // Check server status
   const checkServerStatus = async () => {
@@ -316,11 +333,128 @@ const Dashboard: React.FC = () => {
               </StatValue>
             </StatItem>
           )}
+          
+          {/* Enhanced Location Search Controls */}
+          {isLocationEnabled && (
+            <>
+              <StatItem>
+                <StatLabel>Search Mode</StatLabel>
+                <StatValue>{showAllUsers ? 'Global' : `${searchRadius} km`}</StatValue>
+              </StatItem>
+              
+              <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <input
+                    type="checkbox"
+                    id="dashboardShowAllUsers"
+                    checked={showAllUsers}
+                    onChange={(e) => setShowAllUsers(e.target.checked)}
+                    style={{ marginRight: '0.5rem' }}
+                  />
+                  <label htmlFor="dashboardShowAllUsers" style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.8)' }}>
+                    Show All Users (Global)
+                  </label>
+                </div>
+                
+                {!showAllUsers && (
+                  <select
+                    value={searchRadius}
+                    onChange={(e) => setSearchRadius(parseInt(e.target.value))}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      border: '1px solid rgba(255, 255, 255, 0.3)',
+                      borderRadius: '8px',
+                      padding: '0.5rem',
+                      color: 'white',
+                      fontSize: '0.9rem'
+                    }}
+                  >
+                    <option value={1}>1 km</option>
+                    <option value={5}>5 km</option>
+                    <option value={10}>10 km</option>
+                    <option value={25}>25 km</option>
+                    <option value={50}>50 km</option>
+                    <option value={100}>100 km</option>
+                    <option value={250}>250 km</option>
+                    <option value={500}>500 km</option>
+                    <option value={1000}>1000 km</option>
+                  </select>
+                )}
+                
+                <ActionButton 
+                  onClick={() => getNearbyUsers(searchRadius, showAllUsers)}
+                  style={{ marginTop: '0.5rem', fontSize: '0.9rem', padding: '0.5rem 1rem' }}
+                >
+                  {showAllUsers ? 'Show All Users' : `Search ${searchRadius} km`}
+                </ActionButton>
+              </div>
+            </>
+          )}
+          
           <ActionButton onClick={() => navigate('/location')}>
             Manage Location
           </ActionButton>
         </CardContent>
       </Card>
+
+      {/* Nearby Users */}
+      {isLocationEnabled && nearbyUsers.length > 0 && (
+        <Card>
+          <CardHeader>
+            <MapPin size={24} />
+            <CardTitle>Nearby Users ({nearbyUsers.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '300px', overflowY: 'auto' }}>
+              {nearbyUsers.slice(0, 5).map((user, index) => (
+                <div
+                  key={index}
+                  onClick={() => handleUserClick(user)}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '8px',
+                    padding: '0.75rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  <div>
+                    <div style={{ fontFamily: 'monospace', fontSize: '0.9rem', fontWeight: '600' }}>
+                      {user.publicKey.slice(0, 8)}...{user.publicKey.slice(-8)}
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.7)' }}>
+                      {user.distance} km away
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+                    {new Date(user.lastSeen).toLocaleTimeString()}
+                  </div>
+                </div>
+              ))}
+              {nearbyUsers.length > 5 && (
+                <div style={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.8rem', padding: '0.5rem' }}>
+                  +{nearbyUsers.length - 5} more users
+                </div>
+              )}
+            </div>
+            <ActionButton onClick={() => navigate('/location')} style={{ marginTop: '1rem' }}>
+              View All Users
+            </ActionButton>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Recent Transactions */}
       <Card>
@@ -485,6 +619,12 @@ const Dashboard: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* User Profile Modal */}
+      <UserProfile
+        isOpen={isProfileOpen}
+        onClose={handleCloseProfile}
+        user={selectedUser}
+      />
     </DashboardContainer>
   );
 };

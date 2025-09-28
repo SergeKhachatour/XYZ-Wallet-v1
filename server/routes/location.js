@@ -209,17 +209,18 @@ router.get('/visibility/:publicKey', (req, res) => {
 router.get('/nearby/:publicKey', (req, res) => {
   try {
     const { publicKey } = req.params;
-    const { radius = 10 } = req.query; // radius in kilometers
+    const { radius = 10, showAll = false } = req.query; // radius in kilometers, showAll for global search
     
     const userLocations = locationData.get(publicKey) || [];
     const currentLocation = userLocations[userLocations.length - 1];
     
-    if (!currentLocation) {
+    if (!currentLocation && !showAll) {
       return res.json({
         publicKey,
         nearbyUsers: [],
         currentLocation: null,
         radius: parseFloat(radius),
+        showAll: showAll === 'true',
         message: 'No current location found for this user'
       });
     }
@@ -241,32 +242,45 @@ router.get('/nearby/:publicKey', (req, res) => {
       const visibilityData = locationData.get(visibilityKey);
       if (!visibilityData || !visibilityData.isVisible) continue;
       
-      // Calculate distance (simple approximation)
-      const distance = calculateDistance(
-        currentLocation.latitude,
-        currentLocation.longitude,
-        userCurrentLocation.latitude,
-        userCurrentLocation.longitude
-      );
+      let distance = 0;
       
-      if (distance <= parseFloat(radius)) {
-        nearbyUsers.push({
-          publicKey: userPublicKey,
-          latitude: userCurrentLocation.latitude,
-          longitude: userCurrentLocation.longitude,
-          distance: distance.toFixed(2),
-          lastSeen: userCurrentLocation.timestamp
-        });
+      if (showAll === 'true') {
+        // For global search, include all users regardless of distance
+        distance = currentLocation ? calculateDistance(
+          currentLocation.latitude,
+          currentLocation.longitude,
+          userCurrentLocation.latitude,
+          userCurrentLocation.longitude
+        ) : 0;
+      } else {
+        // For radius-based search, calculate distance and filter
+        distance = calculateDistance(
+          currentLocation.latitude,
+          currentLocation.longitude,
+          userCurrentLocation.latitude,
+          userCurrentLocation.longitude
+        );
+        
+        if (distance > parseFloat(radius)) continue;
       }
+      
+      nearbyUsers.push({
+        publicKey: userPublicKey,
+        latitude: userCurrentLocation.latitude,
+        longitude: userCurrentLocation.longitude,
+        distance: distance.toFixed(2),
+        lastSeen: userCurrentLocation.timestamp
+      });
     }
     
     res.json({
       publicKey,
-      currentLocation: {
+      currentLocation: currentLocation ? {
         latitude: currentLocation.latitude,
         longitude: currentLocation.longitude
-      },
-      radius: parseFloat(radius),
+      } : null,
+      radius: showAll === 'true' ? 'global' : parseFloat(radius),
+      showAll: showAll === 'true',
       nearbyUsers: nearbyUsers.sort((a, b) => a.distance - b.distance)
     });
   } catch (error) {
