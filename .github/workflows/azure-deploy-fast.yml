@@ -140,6 +140,10 @@ jobs:
         continue-on-error: true
         env:
           NODE_ENV: production
+          SOROSWAP_API_KEY: ${{ secrets.SOROSWAP_API_KEY }}
+          SOROSWAP_API_URL: https://api.soroswap.finance
+          STELLAR_NETWORK: testnet
+          STELLAR_HORIZON_URL: https://horizon-testnet.stellar.org
 
       - name: Retry deployment if failed
         if: failure()
@@ -150,6 +154,10 @@ jobs:
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
         env:
           NODE_ENV: production
+          SOROSWAP_API_KEY: ${{ secrets.SOROSWAP_API_KEY }}
+          SOROSWAP_API_URL: https://api.soroswap.finance
+          STELLAR_NETWORK: testnet
+          STELLAR_HORIZON_URL: https://horizon-testnet.stellar.org
 
       - name: Verify deployment
         run: |
