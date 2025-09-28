@@ -43,11 +43,12 @@ const DebugLabel = styled.span`
   color: rgba(255, 255, 255, 0.8);
 `;
 
-const DebugValue = styled.span<{ $status?: 'success' | 'error' | 'warning' }>`
+const DebugValue = styled.span<{ $status?: 'success' | 'error' | 'warning' | 'info' }>`
   color: ${props => {
     if (props.$status === 'success') return '#22c55e';
     if (props.$status === 'error') return '#ef4444';
     if (props.$status === 'warning') return '#f59e0b';
+    if (props.$status === 'info') return '#3b82f6';
     return 'white';
   }};
   font-weight: 500;
@@ -84,6 +85,7 @@ const StatusIndicator = styled.div<{ $status: 'success' | 'error' | 'warning' | 
     if (props.$status === 'success') return '#22c55e';
     if (props.$status === 'error') return '#ef4444';
     if (props.$status === 'warning') return '#f59e0b';
+    if (props.$status === 'info') return '#3b82f6';
     return '#6b7280';
   }};
   margin-right: 0.5rem;
