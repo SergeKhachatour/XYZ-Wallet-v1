@@ -7,7 +7,7 @@ const path = require('path');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 8080;
 
 // Middleware
 app.use(helmet({
@@ -122,13 +122,15 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 XYZ-Wallet-v1 Backend running on port ${PORT}`);
   console.log(`🌐 Network: ${process.env.STELLAR_NETWORK || 'testnet'}`);
   console.log(`📡 Horizon: ${process.env.STELLAR_HORIZON_URL || 'https://horizon-testnet.stellar.org'}`);
   console.log(`📁 Current directory: ${__dirname}`);
   console.log(`📁 React build path: ${path.join(__dirname, 'client/build')}`);
   console.log(`📁 React build exists: ${require('fs').existsSync(path.join(__dirname, 'client/build'))}`);
+  console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🌍 Listening on: 0.0.0.0:${PORT}`);
 }).on('error', (err) => {
   console.error('❌ Server startup error:', err);
   process.exit(1);
