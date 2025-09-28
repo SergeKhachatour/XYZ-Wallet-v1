@@ -7,7 +7,7 @@ const path = require('path');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // Middleware
 app.use(helmet({
@@ -85,7 +85,7 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 XYZ Wallet Backend running on port ${PORT}`);
+  console.log(`🚀 XYZ-Wallet-v1 Backend running on port ${PORT}`);
   console.log(`🌐 Network: ${process.env.STELLAR_NETWORK || 'testnet'}`);
   console.log(`📡 Horizon: ${process.env.STELLAR_HORIZON_URL || 'https://horizon-testnet.stellar.org'}`);
 });

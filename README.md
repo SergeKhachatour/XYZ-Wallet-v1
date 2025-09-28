@@ -1,4 +1,4 @@
-# XYZ Stellar Wallet
+# XYZ-Wallet-v1
 
 A comprehensive Stellar wallet application with advanced features including location services, token swapping, and real-time price tracking. Built with React, Node.js, and integrated with Soroswap API for seamless DeFi operations.
 
@@ -74,8 +74,8 @@ A comprehensive Stellar wallet application with advanced features including loca
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/SergeKhachatour/XYZ-wallet.git
-   cd XYZ-Wallet
+   git clone https://github.com/SergeKhachatour/XYZ-Wallet-v1.git
+   cd XYZ-Wallet-v1
    ```
 
 2. **Install all dependencies**
@@ -93,7 +93,7 @@ A comprehensive Stellar wallet application with advanced features including loca
    
    Edit `server/.env`:
    ```env
-   PORT=5000
+   PORT=5001
    STELLAR_NETWORK=testnet
    STELLAR_HORIZON_URL=https://horizon-testnet.stellar.org
    SOROSWAP_API_URL=https://api.soroswap.finance
@@ -111,7 +111,7 @@ A comprehensive Stellar wallet application with advanced features including loca
    ```env
    REACT_APP_STELLAR_NETWORK=testnet
    REACT_APP_STELLAR_HORIZON_URL=https://horizon-testnet.stellar.org
-   REACT_APP_BACKEND_URL=http://localhost:5000
+   REACT_APP_BACKEND_URL=http://localhost:5001
    REACT_APP_MAPBOX_TOKEN=your_mapbox_token
    ```
 
@@ -121,8 +121,8 @@ A comprehensive Stellar wallet application with advanced features including loca
    ```
 
 5. **Access the application**
-   - Frontend: `http://localhost:3000`
-   - Backend API: `http://localhost:5000`
+   - Frontend: `http://localhost:3333`
+   - Backend API: `http://localhost:5001`
 
 ## 🌐 Deployment
 
@@ -158,7 +158,7 @@ This project includes automated deployment to Azure App Service via GitHub Actio
 ### Getting Started
 
 1. **Access the Application**
-   - Open `http://localhost:3000` in your browser
+   - Open `http://localhost:3333` in your browser
    - The app will redirect to the dashboard
 
 2. **Create or Connect a Wallet**
@@ -281,7 +281,7 @@ This project includes automated deployment to Azure App Service via GitHub Actio
    - Ensure Soroswap API is accessible
 
 4. **"Connection refused"**
-   - Ensure backend is running on port 5000
+   - Ensure backend is running on port 5001
    - Check all dependencies are installed
    - Verify environment variables
 
@@ -300,7 +300,7 @@ This project includes automated deployment to Azure App Service via GitHub Actio
 ## 📁 Project Structure
 
 ```
-XYZ-Wallet/
+XYZ-Wallet-v1/
 ├── server/                    # Backend Express server
 │   ├── routes/               # API route handlers
 │   │   ├── wallet.js         # Wallet operations

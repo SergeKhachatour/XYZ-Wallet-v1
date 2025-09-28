@@ -1,5 +1,5 @@
 {
-  "name": "xyz-wallet-frontend",
+  "name": "xyz-wallet-v1-frontend",
   "version": "1.0.0",
   "private": true,
   "dependencies": {
@@ -26,7 +26,7 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "cross-env PORT=3333 react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
@@ -49,5 +49,8 @@
       "last 1 safari version"
     ]
   },
-  "proxy": "http://localhost:5000"
+  "proxy": "http://localhost:5001",
+  "devDependencies": {
+    "cross-env": "^10.0.0"
+  }
 }

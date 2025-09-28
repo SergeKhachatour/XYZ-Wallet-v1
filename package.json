@@ -1,7 +1,7 @@
 {
-  "name": "xyz-stellar-wallet",
+  "name": "xyz-wallet-v1",
   "version": "1.0.0",
-  "description": "Stellar wallet with location services integration using Soroswap API",
+  "description": "XYZ-Wallet-v1 - Stellar wallet with location services integration using Soroswap API",
   "main": "server/index.js",
   "scripts": {
     "dev": "concurrently \"npm run server\" \"npm run client\"",
@@ -12,7 +12,7 @@
     "start": "cd server && npm start"
   },
   "keywords": ["stellar", "wallet", "blockchain", "location", "soroswap"],
-  "author": "XYZ Wallet Team",
+  "author": "XYZ-Wallet-v1 Team",
   "license": "MIT",
   "devDependencies": {
     "concurrently": "^8.2.2"

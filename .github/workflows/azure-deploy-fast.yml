@@ -39,7 +39,7 @@ jobs:
         run: |
           cd client
           # Set environment variables for production build
-          export REACT_APP_BACKEND_URL="https://xyz-wallet-g6btf6ashjbxayfj.westus-01.azurewebsites.net"
+          export REACT_APP_BACKEND_URL="https://xyz-wallet-v1-adh3bjdnguczdmft.westus-01.azurewebsites.net"
           export REACT_APP_STELLAR_NETWORK="testnet"
           export REACT_APP_STELLAR_HORIZON_URL="https://horizon-testnet.stellar.org"
           export REACT_APP_MAPBOX_TOKEN="pk.eyJ1Ijoic2VyZ2UzNjl4MzMiLCJhIjoiY20zZHkzb2xoMDA0eTJxcHU4MTNoYjNlaCJ9.Xl6OxzF9td1IgTTeUp526w"
@@ -145,7 +145,7 @@ jobs:
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
-          app-name: 'XYZ-wallet'
+          app-name: 'xyz-wallet-v1-adh3bjdnguczdmft'
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: deployment.zip
         continue-on-error: true
@@ -154,11 +154,11 @@ jobs:
         if: failure()
         uses: azure/webapps-deploy@v2
         with:
-          app-name: 'XYZ-wallet'
+          app-name: 'xyz-wallet-v1-adh3bjdnguczdmft'
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: deployment.zip
 
       - name: Verify deployment
         run: |
           echo "✅ Fast deployment completed!"
-          echo "🌐 App URL: https://xyz-wallet-g6btf6ashjbxayfj.westus-01.azurewebsites.net"
+          echo "🌐 App URL: https://xyz-wallet-v1-adh3bjdnguczdmft.westus-01.azurewebsites.net"

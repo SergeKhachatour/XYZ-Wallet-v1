@@ -1,4 +1,4 @@
-# Azure Deployment Guide for XYZ Stellar Wallet
+# Azure Deployment Guide for XYZ-Wallet-v1
 
 ## Option 1: Azure App Service (Recommended)
 
@@ -24,13 +24,13 @@
    az login
    
    # Create resource group
-   az group create --name xyz-wallet-rg --location "East US"
+   az group create --name xyz-wallet-v1-rg --location "West US"
    
    # Create App Service plan
-   az appservice plan create --name xyz-wallet-plan --resource-group xyz-wallet-rg --sku B1 --is-linux
+   az appservice plan create --name xyz-wallet-v1-plan --resource-group xyz-wallet-v1-rg --sku B1 --is-linux
    
    # Create web app
-   az webapp create --resource-group xyz-wallet-rg --plan xyz-wallet-plan --name xyz-wallet-app --runtime "NODE|18-lts"
+   az webapp create --resource-group xyz-wallet-v1-rg --plan xyz-wallet-v1-plan --name xyz-wallet-v1-adh3bjdnguczdmft --runtime "NODE|18-lts"
    ```
 
 ### Step 2: Configure Environment Variables
@@ -47,7 +47,7 @@ SOROSWAP_API_URL=https://api.soroswap.finance
 SOROSWAP_API_KEY=your_soroswap_api_key_here
 REACT_APP_STELLAR_NETWORK=testnet
 REACT_APP_STELLAR_HORIZON_URL=https://horizon-testnet.stellar.org
-REACT_APP_BACKEND_URL=https://your-app-name.azurewebsites.net
+REACT_APP_BACKEND_URL=https://xyz-wallet-v1-adh3bjdnguczdmft.westus-01.azurewebsites.net
 REACT_APP_MAPBOX_TOKEN=your_mapbox_token_here
 ```
 
@@ -87,7 +87,7 @@ REACT_APP_MAPBOX_TOKEN=your_mapbox_token_here
        - name: Deploy to Azure
          uses: azure/webapps-deploy@v2
          with:
-           app-name: 'xyz-wallet-app'
+           app-name: 'xyz-wallet-v1-adh3bjdnguczdmft'
            publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
            package: .
    ```
@@ -95,13 +95,13 @@ REACT_APP_MAPBOX_TOKEN=your_mapbox_token_here
 **Option B: Azure CLI**
 ```bash
 # Deploy from local directory
-az webapp deployment source config-zip --resource-group xyz-wallet-rg --name xyz-wallet-app --src deployment.zip
+az webapp deployment source config-zip --resource-group xyz-wallet-v1-rg --name xyz-wallet-v1-adh3bjdnguczdmft --src deployment.zip
 ```
 
 **Option C: Git Deployment**
 ```bash
 # Add Azure remote
-git remote add azure https://xyz-wallet-app.scm.azurewebsites.net:443/xyz-wallet-app.git
+git remote add azure https://xyz-wallet-v1-adh3bjdnguczdmft.scm.azurewebsites.net:443/xyz-wallet-v1-adh3bjdnguczdmft.git
 
 # Deploy
 git push azure main
@@ -150,13 +150,13 @@ CMD ["npm", "start"]
 ### Deploy to Container Instances
 ```bash
 # Build and push to Azure Container Registry
-az acr build --registry your-registry --image xyz-wallet:latest .
+az acr build --registry your-registry --image xyz-wallet-v1:latest .
 
 # Deploy to Container Instances
 az container create \
-  --resource-group xyz-wallet-rg \
-  --name xyz-wallet-container \
-  --image your-registry.azurecr.io/xyz-wallet:latest \
+  --resource-group xyz-wallet-v1-rg \
+  --name xyz-wallet-v1-container \
+  --image your-registry.azurecr.io/xyz-wallet-v1:latest \
   --ports 8080 \
   --environment-variables \
     NODE_ENV=production \
