@@ -71,6 +71,16 @@ jobs:
           npm install --production --silent
           echo "Dependencies installed. Checking if express is available..."
           ls -la node_modules/ | grep express || echo "Express not found in node_modules"
+          
+          # Create node_modules.tar.gz for Azure App Service
+          echo "Creating node_modules.tar.gz for Azure..."
+          tar -czf node_modules.tar.gz node_modules/
+          echo "node_modules.tar.gz created:"
+          ls -la node_modules.tar.gz
+          
+          # Remove the original node_modules directory (Azure will extract from tar.gz)
+          rm -rf node_modules/
+          echo "Removed original node_modules directory"
           cd ..
           
           # Remove unnecessary files to minimize package size
