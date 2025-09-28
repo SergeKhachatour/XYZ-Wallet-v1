@@ -68,7 +68,7 @@ jobs:
           # Pre-install server dependencies to speed up deployment
           echo "Pre-installing server dependencies..."
           cd deploy-package
-          npm ci --production --silent
+          npm install --production --silent
           cd ..
           
           # Remove unnecessary files to minimize package size
@@ -88,18 +88,8 @@ jobs:
           EOF
           chmod +x deploy-package/startup.sh
           
-          # Update package.json for the root with start script
-          cat > deploy-package/package.json << 'EOF'
-          {
-            "name": "xyz-wallet-v1",
-            "version": "1.0.0",
-            "main": "index.js",
-            "scripts": {
-              "start": "node index.js"
-            },
-            "dependencies": {}
-          }
-          EOF
+          # Use the server's package.json as the main package.json
+          echo "Using server package.json as main package.json"
           
           # Create deployment zip with maximum compression
           cd deploy-package
