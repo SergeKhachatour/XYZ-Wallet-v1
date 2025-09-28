@@ -242,23 +242,34 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     try {
       setIsLocationLoading(true);
       
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/location/toggle-visibility`, {
+      const publicKey = localStorage.getItem('wallet_publicKey');
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+      
+      console.log('Toggling visibility:', { publicKey, visible, backendUrl });
+      
+      const response = await fetch(`${backendUrl}/api/location/toggle-visibility`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          publicKey: localStorage.getItem('wallet_publicKey'),
+          publicKey,
           isVisible: visible
         }),
       });
 
+      console.log('Visibility response status:', response.status);
+      
       if (response.ok) {
+        const data = await response.json();
+        console.log('Visibility response data:', data);
         setIsVisible(visible);
         localStorage.setItem('location_visible', visible.toString());
         toast.success(`Visibility ${visible ? 'enabled' : 'disabled'}`);
       } else {
-        toast.error('Failed to update visibility');
+        const errorData = await response.json();
+        console.error('Visibility API error:', errorData);
+        toast.error(`Failed to update visibility: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error toggling visibility:', error);

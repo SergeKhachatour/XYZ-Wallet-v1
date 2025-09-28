@@ -231,6 +231,32 @@ router.post('/debug/clear-rate-limits', (req, res) => {
   }
 });
 
+// Debug endpoint to get all visibility data (development only)
+router.get('/debug/visibility-data', (req, res) => {
+  if (process.env.NODE_ENV !== 'development') {
+    return res.status(403).json({ error: 'Debug endpoint only available in development mode' });
+  }
+  
+  try {
+    const visibilityData = {};
+    for (const [key, value] of locationData.entries()) {
+      if (key.endsWith('_visibility')) {
+        visibilityData[key] = value;
+      }
+    }
+    
+    res.json({
+      success: true,
+      visibilityData,
+      totalEntries: Object.keys(visibilityData).length,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error fetching visibility data:', error);
+    res.status(500).json({ error: 'Failed to fetch visibility data', details: error.message });
+  }
+});
+
 // Get nearby users (for demonstration - in production, use proper geospatial queries)
 router.get('/nearby/:publicKey', (req, res) => {
   try {

@@ -124,6 +124,20 @@ const LocationDebugger: React.FC = () => {
     }
   };
 
+  const checkVisibilityData = async () => {
+    try {
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+      const response = await fetch(`${backendUrl}/api/location/debug/visibility-data`);
+      const result = await response.json();
+      
+      console.log('Visibility data from server:', result);
+      alert(`Visibility data: ${JSON.stringify(result, null, 2)}`);
+    } catch (error) {
+      console.error('Failed to get visibility data:', error);
+      alert('Failed to get visibility data');
+    }
+  };
+
   const runDiagnostics = async () => {
     setIsLoading(true);
     try {
@@ -347,6 +361,10 @@ const LocationDebugger: React.FC = () => {
             <ActionButton onClick={clearRateLimits} style={{ background: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#ef4444' }}>
               <AlertCircle size={16} />
               Clear Rate Limits
+            </ActionButton>
+            <ActionButton onClick={checkVisibilityData} style={{ background: 'rgba(59, 130, 246, 0.2)', border: '1px solid #3b82f6', color: '#3b82f6' }}>
+              <Eye size={16} />
+              Check Visibility Data
             </ActionButton>
           </div>
         </>
