@@ -51,7 +51,7 @@ app.get('/health', (req, res) => {
 
 // Serve static files from the React app build directory (for production)
 if (process.env.NODE_ENV === 'production') {
-  const buildPath = path.join(__dirname, '../client/build');
+  const buildPath = path.join(__dirname, 'client/build');
   
   // Check if build directory exists
   if (require('fs').existsSync(buildPath)) {

@@ -81,41 +81,26 @@ jobs:
           find deploy-package -name "node_modules/.cache" -type d -exec rm -rf {} + 2>/dev/null || true
           echo "Cleanup completed"
           
-          # Create web.config for Azure
-          cat > deploy-package/web.config << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <configuration>
-            <system.webServer>
-              <handlers>
-                <add name="iisnode" path="server/index.js" verb="*" modules="iisnode"/>
-              </handlers>
-              <rewrite>
-                <rules>
-                  <rule name="NodeInspector" patternSyntax="ECMAScript" stopProcessing="true">
-                    <match url="^server/index.js\/debug[\/]?" />
-                  </rule>
-          <rule name="StaticContent">
-            <action type="Rewrite" url="client/build{REQUEST_URI}"/>
-          </rule>
-                  <rule name="DynamicContent">
-                    <conditions>
-                      <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="True"/>
-                    </conditions>
-                    <action type="Rewrite" url="server/index.js"/>
-                  </rule>
-                </rules>
-              </rewrite>
-              <security>
-                <requestFiltering>
-                  <hiddenSegments>
-                    <remove segment="bin"/>
-                  </hiddenSegments>
-                </requestFiltering>
-              </security>
-              <httpErrors existingResponse="PassThrough" />
-              <iisnode watchedFiles="web.config;*.js"/>
-            </system.webServer>
-          </configuration>
+          # Create startup script for Linux App Service
+          cat > deploy-package/startup.sh << 'EOF'
+          #!/bin/bash
+          echo "Starting XYZ-Wallet-v1 Backend..."
+          cd server
+          node index.js
+          EOF
+          chmod +x deploy-package/startup.sh
+          
+          # Create package.json for the root with start script
+          cat > deploy-package/package.json << 'EOF'
+          {
+            "name": "xyz-wallet-v1",
+            "version": "1.0.0",
+            "main": "server/index.js",
+            "scripts": {
+              "start": "cd server && node index.js"
+            },
+            "dependencies": {}
+          }
           EOF
           
           # Create deployment zip with maximum compression
