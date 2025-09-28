@@ -51,14 +51,13 @@ jobs:
       - name: Create deployment package
         run: |
           # Create deployment directory
-          mkdir -p deploy-package/server
           mkdir -p deploy-package/client/build
           
-          # Copy only essential server files (no node_modules)
-          cp server/index.js deploy-package/server/
-          cp server/package.json deploy-package/server/
-          cp server/package-lock.json deploy-package/server/
-          cp -r server/routes deploy-package/server/
+          # Copy server files to root (not in server subdirectory)
+          cp server/index.js deploy-package/
+          cp server/package.json deploy-package/
+          cp server/package-lock.json deploy-package/
+          cp -r server/routes deploy-package/
           cp package.json deploy-package/
           cp package-lock.json deploy-package/
           cp startup.txt deploy-package/
@@ -68,9 +67,9 @@ jobs:
           
           # Pre-install server dependencies to speed up deployment
           echo "Pre-installing server dependencies..."
-          cd deploy-package/server
+          cd deploy-package
           npm ci --production --silent
-          cd ../..
+          cd ..
           
           # Remove unnecessary files to minimize package size
           echo "Cleaning up unnecessary files..."
@@ -85,19 +84,18 @@ jobs:
           cat > deploy-package/startup.sh << 'EOF'
           #!/bin/bash
           echo "Starting XYZ-Wallet-v1 Backend..."
-          cd server
           node index.js
           EOF
           chmod +x deploy-package/startup.sh
           
-          # Create package.json for the root with start script
+          # Update package.json for the root with start script
           cat > deploy-package/package.json << 'EOF'
           {
             "name": "xyz-wallet-v1",
             "version": "1.0.0",
-            "main": "server/index.js",
+            "main": "index.js",
             "scripts": {
-              "start": "cd server && node index.js"
+              "start": "node index.js"
             },
             "dependencies": {}
           }
