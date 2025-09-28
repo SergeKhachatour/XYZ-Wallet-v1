@@ -145,7 +145,7 @@ jobs:
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
-          app-name: 'xyz-wallet-v1-adh3bjdnguczdmft'
+          app-name: 'XYZ-wallet-v1'
           package: deployment.zip
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
         continue-on-error: true
@@ -154,7 +154,7 @@ jobs:
         if: failure()
         uses: azure/webapps-deploy@v2
         with:
-          app-name: 'xyz-wallet-v1-adh3bjdnguczdmft'
+          app-name: 'XYZ-wallet-v1'
           package: deployment.zip
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
 
