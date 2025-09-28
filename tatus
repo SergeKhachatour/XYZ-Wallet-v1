@@ -1,1 +1,4 @@
 [33meae8518[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m Add cross-platform environment variable commands documentation
+[33m9dd782c[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m Add Soroswap API environment variables to Azure deployment
+[33md49b471[m Fix package.json: Use correct start script to run server from server directory
+[33m496027b[m Match working XYZ-Wallet structure: Use server subdirectory and correct paths

@@ -149,16 +149,19 @@ router.post('/quote', async (req, res) => {
     
     // If it's a 403 Forbidden error, provide a helpful message with mock data for demo
     if (error.response?.status === 403) {
+      console.log('Soroswap API returned 403 Forbidden - using mock quote');
+      
       // For demo purposes, return a mock quote when API is not accessible
+      const amountIn = parseInt(req.body.amount);
       const mockQuote = {
         assetIn: req.body.assetIn,
         assetOut: req.body.assetOut,
         amountIn: req.body.amount,
-        amountOut: Math.floor(parseInt(req.body.amount) * 0.95).toString(), // 5% slippage for demo
+        amountOut: Math.floor(amountIn * 0.95).toString(), // 5% slippage for demo
         priceImpactPct: '0.5%',
         platform: 'soroswap',
-        minimumReceived: Math.floor(parseInt(req.body.amount) * 0.95).toString(),
-        fee: Math.floor(parseInt(req.body.amount) * 0.003).toString(), // 0.3% fee
+        minimumReceived: Math.floor(amountIn * 0.95).toString(),
+        fee: Math.floor(amountIn * 0.003).toString(), // 0.3% fee
         route: [
           {
             protocol: 'soroswap',
@@ -166,10 +169,12 @@ router.post('/quote', async (req, res) => {
             assetOut: req.body.assetOut
           }
         ],
-        warning: 'This is a mock quote. Soroswap API is currently not accessible.',
-        demo: true
+        warning: 'This is a mock quote. Soroswap API requires authentication or is not accessible.',
+        demo: true,
+        note: 'To use real quotes, you need to obtain a Soroswap API key and set SOROSWAP_API_KEY environment variable.'
       };
       
+      console.log('Returning mock quote:', JSON.stringify(mockQuote, null, 2));
       res.json(mockQuote);
     } else if (error.response?.status === 429) {
       res.status(429).json({
@@ -558,12 +563,13 @@ router.get('/price', async (req, res) => {
     
     // If API fails, return mock price data for demo
     if (error.response?.status === 403 || error.response?.status === 429) {
+      console.log('Soroswap price API returned', error.response?.status, '- using mock price');
       res.json({
         price: '0.125', // Mock XLM price
         change24h: 0.001,
         changePercent24h: 0.8,
         demo: true,
-        note: 'Demo price data - Soroswap API rate limited or not accessible'
+        note: 'Demo price data - Soroswap API requires authentication or is not accessible'
       });
     } else {
       res.status(500).json({ 
