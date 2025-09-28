@@ -649,7 +649,7 @@ const MapboxMap: React.FC = () => {
       <MapContainer>
         <MapHeader>
           <MapTitle>
-            🌍 Global Map
+            🌍
           </MapTitle>
           <ViewControls>
             {/* Map Style and View Controls */}
