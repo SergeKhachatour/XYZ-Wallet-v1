@@ -69,6 +69,8 @@ jobs:
           echo "Pre-installing server dependencies..."
           cd deploy-package
           npm install --production --silent
+          echo "Dependencies installed. Checking if express is available..."
+          ls -la node_modules/ | grep express || echo "Express not found in node_modules"
           cd ..
           
           # Remove unnecessary files to minimize package size
@@ -113,6 +115,11 @@ jobs:
           
           # Create deployment zip with maximum compression
           cd deploy-package
+          echo "Creating deployment package..."
+          echo "Contents before zipping:"
+          ls -la
+          echo "Node modules contents:"
+          ls -la node_modules/ | head -10
           zip -r -9 ../deployment.zip . -x "*.git*" "*.log" "*.md" "*.txt" "node_modules/.cache/*"
           cd ..
           
