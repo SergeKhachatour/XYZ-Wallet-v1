@@ -66,10 +66,10 @@ app.get('/test', (req, res) => {
 console.log('🔍 Environment check:');
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('Current directory:', __dirname);
-console.log('Looking for React build at:', path.join(__dirname, 'client/build'));
+console.log('Looking for React build at:', path.join(__dirname, '../client/build'));
 
 // Always try to serve React app in production environment
-const buildPath = path.join(__dirname, 'client/build');
+const buildPath = path.join(__dirname, '../client/build');
 console.log('Build path exists:', require('fs').existsSync(buildPath));
 
 if (require('fs').existsSync(buildPath)) {

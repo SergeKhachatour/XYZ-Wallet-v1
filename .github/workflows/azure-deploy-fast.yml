@@ -51,13 +51,14 @@ jobs:
       - name: Create deployment package
         run: |
           # Create deployment directory
+          mkdir -p deploy-package/server
           mkdir -p deploy-package/client/build
           
-          # Copy server files to root (not in server subdirectory)
-          cp server/index.js deploy-package/
-          cp server/package.json deploy-package/
-          cp server/package-lock.json deploy-package/
-          cp -r server/routes deploy-package/
+          # Copy only essential server files (no node_modules)
+          cp server/index.js deploy-package/server/
+          cp server/package.json deploy-package/server/
+          cp server/package-lock.json deploy-package/server/
+          cp -r server/routes deploy-package/server/
           cp package.json deploy-package/
           cp package-lock.json deploy-package/
           cp startup.txt deploy-package/
@@ -65,12 +66,11 @@ jobs:
           # Copy client build
           cp -r client/build/* deploy-package/client/build/
           
-          # Let Azure handle dependency installation
-          echo "Skipping local npm install - Azure will handle dependencies"
-          cd deploy-package
-          echo "Package contents before deployment:"
-          ls -la
-          cd ..
+          # Pre-install server dependencies to speed up deployment
+          echo "Pre-installing server dependencies..."
+          cd deploy-package/server
+          npm ci --production --silent
+          cd ../..
           
           # Remove unnecessary files to minimize package size
           echo "Cleaning up unnecessary files..."
@@ -80,14 +80,6 @@ jobs:
           # Clean up cache and temp files but skip problematic directories
           find deploy-package -name "node_modules/.cache" -type d -exec rm -rf {} + 2>/dev/null || true
           echo "Cleanup completed"
-          
-          # Create startup script for Linux App Service
-          cat > deploy-package/startup.sh << 'EOF'
-          #!/bin/bash
-          echo "Starting XYZ-Wallet-v1 Backend..."
-          node index.js
-          EOF
-          chmod +x deploy-package/startup.sh
           
           # Use the server's package.json as the main package.json
           echo "Using server package.json as main package.json"
