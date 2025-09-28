@@ -880,7 +880,7 @@ const MapboxMap: React.FC = () => {
       <FullscreenOverlay $isOpen={isFullscreen}>
         <FullscreenHeader>
           <FullscreenTitle>
-            🌍 Global Map - Fullscreen
+            🌍 Global Map
           </FullscreenTitle>
           <FullscreenControls>
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
