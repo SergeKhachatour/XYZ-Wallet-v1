@@ -65,27 +65,11 @@ jobs:
           # Copy client build
           cp -r client/build/* deploy-package/client/build/
           
-          # Pre-install server dependencies to speed up deployment
-          echo "Pre-installing server dependencies..."
+          # Let Azure handle dependency installation
+          echo "Skipping local npm install - Azure will handle dependencies"
           cd deploy-package
-          npm install --production --silent
-          echo "Dependencies installed. Checking if express is available..."
-          ls -la node_modules/ | grep express || echo "Express not found in node_modules"
-          
-          # Create node_modules.tar.gz for Azure App Service
-          echo "Creating node_modules.tar.gz for Azure..."
-          tar -czf node_modules.tar.gz node_modules/
-          echo "node_modules.tar.gz created:"
-          ls -la node_modules.tar.gz
-          echo "File size: $(du -h node_modules.tar.gz | cut -f1)"
-          
-          # Verify the tar.gz contains express
-          echo "Verifying tar.gz contents:"
-          tar -tzf node_modules.tar.gz | grep express | head -5
-          
-          # Remove the original node_modules directory (Azure will extract from tar.gz)
-          rm -rf node_modules/
-          echo "Removed original node_modules directory"
+          echo "Package contents before deployment:"
+          ls -la
           cd ..
           
           # Remove unnecessary files to minimize package size
@@ -105,38 +89,15 @@ jobs:
           EOF
           chmod +x deploy-package/startup.sh
           
-          # Update package.json to use correct start script
-          cat > deploy-package/package.json << 'EOF'
-          {
-            "name": "xyz-wallet-v1",
-            "version": "1.0.0",
-            "main": "index.js",
-            "scripts": {
-              "start": "node index.js"
-            },
-            "dependencies": {
-              "express": "^4.18.2",
-              "cors": "^2.8.5",
-              "helmet": "^7.1.0",
-              "dotenv": "^16.3.1",
-              "axios": "^1.6.2",
-              "stellar-sdk": "^11.2.2",
-              "node-fetch": "^3.3.2",
-              "express-rate-limit": "^7.1.5",
-              "morgan": "^1.10.0"
-            }
-          }
-          EOF
+          # Use the server's package.json as the main package.json
+          echo "Using server package.json as main package.json"
+          cp server/package.json deploy-package/package.json
           
           # Create deployment zip with maximum compression
           cd deploy-package
           echo "Creating deployment package..."
           echo "Contents before zipping:"
           ls -la
-          echo "Checking for node_modules.tar.gz:"
-          ls -la node_modules.tar.gz || echo "node_modules.tar.gz not found!"
-          echo "Checking for any node_modules directory:"
-          ls -la node_modules/ || echo "No node_modules directory found"
           zip -r -9 ../deployment.zip . -x "*.git*" "*.log" "*.md" "*.txt" "node_modules/.cache/*"
           cd ..
           
