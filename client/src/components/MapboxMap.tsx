@@ -13,13 +13,18 @@ const MapContainer = styled.div`
   border-radius: 16px;
   padding: 1.5rem;
   color: white;
-  height: 400px;
+  height: 500px;
   position: relative;
   overflow: hidden;
   
   @media (max-width: 768px) {
-    height: 300px;
+    height: 450px;
     padding: 1rem;
+  }
+  
+  @media (max-width: 480px) {
+    height: 400px;
+    padding: 0.75rem;
   }
 `;
 
@@ -225,10 +230,18 @@ const CloseButton = styled.button`
 `;
 
 const MapWrapper = styled.div`
-  height: calc(100% - 60px);
+  height: calc(100% - 80px);
   border-radius: 8px;
   overflow: hidden;
   position: relative;
+  
+  @media (max-width: 768px) {
+    height: calc(100% - 100px);
+  }
+  
+  @media (max-width: 480px) {
+    height: calc(100% - 90px);
+  }
 `;
 
 const LocationInfo = styled.div`
