@@ -142,11 +142,15 @@ jobs:
       - name: Wait for any existing deployments to complete
         run: sleep 10
 
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
           app-name: 'xyz-wallet-v1-adh3bjdnguczdmft'
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: deployment.zip
         continue-on-error: true
 
@@ -155,7 +159,6 @@ jobs:
         uses: azure/webapps-deploy@v2
         with:
           app-name: 'xyz-wallet-v1-adh3bjdnguczdmft'
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: deployment.zip
 
       - name: Verify deployment
