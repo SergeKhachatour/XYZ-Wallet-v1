@@ -9,6 +9,11 @@ import QrScanner from 'qr-scanner';
 const WalletContainer = styled.div`
   max-width: 800px;
   margin: 0 auto;
+  padding: 0 1rem;
+  
+  @media (max-width: 768px) {
+    padding: 0 0.5rem;
+  }
 `;
 
 const Section = styled.div`
@@ -19,6 +24,16 @@ const Section = styled.div`
   padding: 2rem;
   margin-bottom: 2rem;
   color: white;
+  
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
 `;
 
 const SectionHeader = styled.div`
@@ -26,6 +41,12 @@ const SectionHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
 `;
 
 const SectionTitle = styled.h2`
@@ -57,6 +78,18 @@ const Button = styled.button`
     cursor: not-allowed;
     transform: none;
   }
+  
+  @media (max-width: 768px) {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    justify-content: center;
+    flex: 1;
+  }
 `;
 
 const SecondaryButton = styled(Button)`
@@ -65,6 +98,20 @@ const SecondaryButton = styled(Button)`
   
   &:hover {
     background: rgba(255, 255, 255, 0.2);
+  }
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 0.5rem;
   }
 `;
 
@@ -98,6 +145,12 @@ const AddressDisplay = styled.div`
   font-size: 0.9rem;
   word-break: break-all;
   max-width: 100%;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
 `;
 
 const CopyButton = styled.button`
@@ -141,6 +194,16 @@ const QRScannerContainer = styled.div`
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  
+  @media (max-width: 768px) {
+    width: 95%;
+    height: 350px;
+  }
+  
+  @media (max-width: 480px) {
+    width: 98%;
+    height: 300px;
+  }
 `;
 
 const QRScannerHeader = styled.div`
@@ -347,22 +410,47 @@ const TransactionList = styled.div`
 const TransactionItem = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   padding: 1rem;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 1rem;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
 `;
 
 const TransactionInfo = styled.div`
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-width: 0;
 `;
 
-const TransactionHash = styled.span`
+const TransactionHash = styled.a`
   font-family: monospace;
   font-size: 0.9rem;
   color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  word-break: break-all;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  
+  &:hover {
+    color: #4ade80;
+    text-decoration: underline;
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
+    line-height: 1.4;
+  }
 `;
 
 const TransactionDate = styled.span`
@@ -373,6 +461,12 @@ const TransactionDate = styled.span`
 const TransactionStatus = styled.span<{ $successful: boolean }>`
   color: ${props => props.$successful ? '#4ade80' : '#f87171'};
   font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+  
+  @media (max-width: 768px) {
+    align-self: flex-start;
+  }
 `;
 
 const EmptyState = styled.div`
@@ -570,7 +664,7 @@ const Wallet: React.FC = () => {
             <SectionTitle>Connect Your Wallet</SectionTitle>
           </SectionHeader>
           
-          <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+          <ButtonGroup>
             <Button onClick={() => setShowCreateForm(true)}>
               <Plus size={20} />
               Create New Wallet
@@ -579,7 +673,7 @@ const Wallet: React.FC = () => {
               <Upload size={20} />
               Connect Existing Wallet
             </SecondaryButton>
-          </div>
+          </ButtonGroup>
 
           {showCreateForm && (
             <div style={{ marginTop: '2rem' }}>
@@ -606,14 +700,14 @@ const Wallet: React.FC = () => {
                   required
                 />
               </FormGroup>
-              <div style={{ display: 'flex', gap: '1rem' }}>
+              <ButtonGroup>
                 <Button type="submit" disabled={isLoading}>
                   Connect Wallet
                 </Button>
                 <SecondaryButton onClick={() => setShowConnectForm(false)}>
                   Cancel
                 </SecondaryButton>
-              </div>
+              </ButtonGroup>
             </Form>
           )}
         </Section>
@@ -627,7 +721,7 @@ const Wallet: React.FC = () => {
       <Section>
         <SectionHeader>
           <SectionTitle>Wallet Information</SectionTitle>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             <Button onClick={fundAccount} disabled={isLoading} style={{ background: 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)' }}>
               <Plus size={20} />
               Fund Account
@@ -641,16 +735,7 @@ const Wallet: React.FC = () => {
         
         <div style={{ marginBottom: '1rem' }}>
           <Label>Public Key</Label>
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '0.5rem',
-            background: 'rgba(255, 255, 255, 0.1)',
-            padding: '0.75rem',
-            borderRadius: '8px',
-            fontFamily: 'monospace',
-            fontSize: '0.9rem'
-          }}>
+          <AddressDisplay>
             <span style={{ flex: 1, wordBreak: 'break-all' }}>{publicKey}</span>
             <Button 
               onClick={() => copyToClipboard(publicKey || '')}
@@ -658,12 +743,12 @@ const Wallet: React.FC = () => {
             >
               <Download size={16} />
             </Button>
-          </div>
+          </AddressDisplay>
         </div>
         
         {/* QR Code Section */}
         <div style={{ marginTop: '2rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+          <div style={{ marginBottom: '1rem' }}>
             <Button onClick={generateQRCode}>
               <QrCode size={20} />
               Generate QR Code
@@ -699,10 +784,12 @@ const Wallet: React.FC = () => {
       <Section>
         <SectionHeader>
           <SectionTitle>Balances</SectionTitle>
-          <Button onClick={() => setShowSendForm(true)}>
-            <Send size={20} />
-            Send Payment
-          </Button>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <Button onClick={() => setShowSendForm(true)}>
+              <Send size={20} />
+              Send Payment
+            </Button>
+          </div>
         </SectionHeader>
         
         {balances.length > 0 ? (
@@ -774,14 +861,14 @@ const Wallet: React.FC = () => {
               />
             </FormGroup>
             
-            <div style={{ display: 'flex', gap: '1rem' }}>
+            <ButtonGroup>
               <Button type="submit" disabled={isLoading}>
                 Send Payment
               </Button>
               <SecondaryButton onClick={() => setShowSendForm(false)}>
                 Cancel
               </SecondaryButton>
-            </div>
+            </ButtonGroup>
           </Form>
         </Section>
       )}
@@ -790,10 +877,12 @@ const Wallet: React.FC = () => {
       <Section>
         <SectionHeader>
           <SectionTitle>Recent Transactions</SectionTitle>
-          <Button onClick={refreshTransactions} disabled={isLoading}>
-            <RefreshCw size={20} />
-            Refresh
-          </Button>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <Button onClick={refreshTransactions} disabled={isLoading}>
+              <RefreshCw size={20} />
+              Refresh
+            </Button>
+          </div>
         </SectionHeader>
         
         {transactions.length > 0 ? (
@@ -801,7 +890,14 @@ const Wallet: React.FC = () => {
             {transactions.slice(0, 10).map((tx) => (
               <TransactionItem key={tx.id}>
                 <TransactionInfo>
-                  <TransactionHash>{tx.hash}</TransactionHash>
+                  <TransactionHash 
+                    href={`https://stellar.expert/explorer/testnet/tx/${tx.hash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="View on Stellar Expert"
+                  >
+                    {tx.hash}
+                  </TransactionHash>
                   <TransactionDate>
                     {new Date(tx.createdAt).toLocaleString()}
                   </TransactionDate>

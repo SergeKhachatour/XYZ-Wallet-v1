@@ -291,6 +291,7 @@ const MapboxMap: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewType>('globe');
   const [currentStyle, setCurrentStyle] = useState<MapStyle>('satellite-streets');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const { 
     currentLocation, 
     isLocationEnabled, 
@@ -316,15 +317,48 @@ const MapboxMap: React.FC = () => {
     nearbyUsers: nearbyUsers.length
   });
 
-  // Function to update nearby user markers
+  // Function to generate random offset within radius for privacy
+  const generatePrivacyOffset = (radiusMeters: number = 30) => {
+    // Generate random angle and distance within the radius
+    const angle = Math.random() * 2 * Math.PI;
+    const distance = Math.random() * radiusMeters;
+    
+    // Convert meters to approximate degrees (rough conversion)
+    const latOffset = (distance / 111000) * Math.cos(angle);
+    const lngOffset = (distance / (111000 * Math.cos(0))) * Math.sin(angle);
+    
+    return { latOffset, lngOffset };
+  };
+
+  // Function to update nearby user markers with privacy radius
   const updateNearbyMarkers = (mapInstance: mapboxgl.Map, markersRef: React.MutableRefObject<mapboxgl.Marker[]>) => {
     // Clear existing nearby markers
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
+    
+    // Clean up existing privacy radius circles
+    for (let i = 0; i < 20; i++) { // Clean up to 20 potential circles
+      const sourceId = `privacy-radius-${i}`;
+      const layerId = `privacy-radius-layer-${i}`;
+      
+      if (mapInstance.getSource && mapInstance.getSource(sourceId)) {
+        if (mapInstance.getLayer(layerId)) {
+          mapInstance.removeLayer(layerId);
+        }
+        mapInstance.removeSource(sourceId);
+      }
+    }
 
-    // Add markers for nearby users
+    // Add markers for nearby users with privacy offset
     nearbyUsers.forEach((user, index) => {
       if (user.latitude && user.longitude) {
+        // Generate privacy offset (30 meters radius)
+        const { latOffset, lngOffset } = generatePrivacyOffset(30);
+        
+        // Calculate approximate location within radius
+        const approximateLat = user.latitude + latOffset;
+        const approximateLng = user.longitude + lngOffset;
+        
         const el = document.createElement('div');
         el.className = 'nearby-user-marker';
         el.innerHTML = `
@@ -373,10 +407,57 @@ const MapboxMap: React.FC = () => {
         `;
 
         const userMarker = new mapboxgl.Marker(el)
-          .setLngLat([user.longitude, user.latitude])
+          .setLngLat([approximateLng, approximateLat])
           .addTo(mapInstance);
         
         markersRef.current.push(userMarker);
+        
+        // Add privacy radius circle (optional - can be enabled/disabled)
+        // This shows a circle around the approximate location to indicate privacy radius
+        if (mapInstance.getSource && mapInstance.addLayer) {
+          const sourceId = `privacy-radius-${index}`;
+          const layerId = `privacy-radius-layer-${index}`;
+          
+          // Remove existing source and layer if they exist
+          if (mapInstance.getSource(sourceId)) {
+            mapInstance.removeLayer(layerId);
+            mapInstance.removeSource(sourceId);
+          }
+          
+          // Create circle geometry for privacy radius (30 meters)
+          const radiusInDegrees = 30 / 111000; // Convert 30 meters to degrees
+          const circlePoints: [number, number][] = Array.from({ length: 64 }, (_, i) => {
+            const angle = (i / 64) * 2 * Math.PI;
+            const x = approximateLng + radiusInDegrees * Math.cos(angle);
+            const y = approximateLat + radiusInDegrees * Math.sin(angle);
+            return [x, y] as [number, number];
+          });
+          
+          const circle: GeoJSON.Feature<GeoJSON.Polygon> = {
+            type: 'Feature',
+            geometry: {
+              type: 'Polygon',
+              coordinates: [circlePoints]
+            },
+            properties: {}
+          };
+          
+          // Add source and layer for privacy radius
+          mapInstance.addSource(sourceId, {
+            type: 'geojson',
+            data: circle
+          });
+          
+          mapInstance.addLayer({
+            id: layerId,
+            type: 'fill',
+            source: sourceId,
+            paint: {
+              'fill-color': 'rgba(74, 222, 128, 0.1)',
+              'fill-outline-color': 'rgba(74, 222, 128, 0.3)'
+            }
+          });
+        }
       }
     });
   };
@@ -401,14 +482,14 @@ const MapboxMap: React.FC = () => {
       let initialZoom: number;
       
       if (latitude && longitude) {
-        // User has location data - center on their location
+        // User has location data - center on their location but start zoomed out to show globe
         initialCenter = [longitude, latitude];
-        initialZoom = currentView === 'globe' ? 3 : 12;
+        initialZoom = currentView === 'globe' ? 1 : 2;
         console.log('Map initializing with user location:', { latitude, longitude });
       } else {
         // No location data - use default global view
         initialCenter = [0, 0];
-        initialZoom = currentView === 'globe' ? 1 : 2;
+        initialZoom = currentView === 'globe' ? 0.5 : 1;
         console.log('Map initializing with default global view');
       }
 
@@ -433,6 +514,15 @@ const MapboxMap: React.FC = () => {
 
       // Add navigation controls
       map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+      
+      // Track user interaction to prevent auto-centering after user has moved the map
+      map.current.on('moveend', () => {
+        setHasUserInteracted(true);
+      });
+      
+      map.current.on('zoomend', () => {
+        setHasUserInteracted(true);
+      });
 
       // Add user location marker if coordinates are available
       if (latitude && longitude && publicKey) {
@@ -489,7 +579,7 @@ const MapboxMap: React.FC = () => {
         // Smoothly zoom to the marker location
         map.current.easeTo({
           center: [longitude, latitude],
-          zoom: currentView === 'globe' ? 3 : 12,
+          zoom: currentView === 'globe' ? 1 : 2,
           duration: 2000
         });
       }
@@ -508,12 +598,14 @@ const MapboxMap: React.FC = () => {
     if (map.current && latitude && longitude && publicKey && !marker.current) {
       console.log('Location data became available, adding marker:', { latitude, longitude });
       
-      // Center map on user location
-      map.current.easeTo({
-        center: [longitude, latitude],
-        zoom: currentView === 'globe' ? 3 : 12,
-        duration: 2000
-      });
+      // Only center map on user location if user hasn't interacted with the map yet
+      if (!hasUserInteracted) {
+        map.current.easeTo({
+          center: [longitude, latitude],
+          zoom: currentView === 'globe' ? 1 : 2,
+          duration: 2000
+        });
+      }
 
       // Add marker
       const el = document.createElement('div');
@@ -552,7 +644,7 @@ const MapboxMap: React.FC = () => {
         .setLngLat([longitude, latitude])
         .addTo(map.current);
     }
-  }, [latitude, longitude, publicKey, currentView]);
+  }, [latitude, longitude, publicKey, currentView, hasUserInteracted]);
 
   // Handle style changes without recreating the map
   useEffect(() => {
@@ -573,15 +665,15 @@ const MapboxMap: React.FC = () => {
 
   // Update nearby user markers when nearbyUsers changes
   useEffect(() => {
-    if (map.current && nearbyUsers.length > 0) {
+    if (map.current) {
       updateNearbyMarkers(map.current, nearbyMarkers);
     }
     
     // Also update fullscreen map if it exists
-    if (fullscreenMap.current && nearbyUsers.length > 0) {
+    if (fullscreenMap.current) {
       updateNearbyMarkers(fullscreenMap.current, nearbyMarkers);
     }
-  }, [nearbyUsers, updateNearbyMarkers]);
+  }, [nearbyUsers]);
 
   // Initialize fullscreen map when fullscreen is opened
   useEffect(() => {
@@ -600,8 +692,16 @@ const MapboxMap: React.FC = () => {
       let initialZoom: number;
       
       if (latitude && longitude) {
-        initialCenter = [longitude, latitude];
-        initialZoom = currentView === 'globe' ? 3 : 12;
+        // If user has interacted with the main map, use its current view
+        if (hasUserInteracted && map.current) {
+          const currentCenter = map.current.getCenter();
+          const currentZoom = map.current.getZoom();
+          initialCenter = [currentCenter.lng, currentCenter.lat];
+          initialZoom = currentZoom;
+        } else {
+          initialCenter = [longitude, latitude];
+          initialZoom = currentView === 'globe' ? 1.5 : 3;
+        }
       } else {
         initialCenter = [0, 0];
         initialZoom = currentView === 'globe' ? 1 : 2;
@@ -618,6 +718,15 @@ const MapboxMap: React.FC = () => {
 
       // Add navigation controls
       fullscreenMap.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+      
+      // Track user interaction for fullscreen map too
+      fullscreenMap.current.on('moveend', () => {
+        setHasUserInteracted(true);
+      });
+      
+      fullscreenMap.current.on('zoomend', () => {
+        setHasUserInteracted(true);
+      });
       
       // Add nearby user markers to fullscreen map
       if (nearbyUsers.length > 0) {
@@ -691,7 +800,7 @@ const MapboxMap: React.FC = () => {
     setCurrentView(view);
     
     if (map.current) {
-      const newZoom = view === 'globe' ? 1 : 10;
+      const newZoom = view === 'globe' ? 1 : 2;
       const newProjection = view === 'globe' ? 'globe' : 'mercator';
       
       map.current.setProjection(newProjection);
@@ -793,7 +902,7 @@ const MapboxMap: React.FC = () => {
                   // Smoothly animate to test location
                   map.current.easeTo({
                     center: [-74.0060, 40.7128],
-                    zoom: currentView === 'globe' ? 3 : 12,
+                    zoom: currentView === 'globe' ? 1 : 2,
                     duration: 2000
                   });
                   

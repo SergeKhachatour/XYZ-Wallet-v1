@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { Wallet, MapPin, ArrowLeftRight, TrendingUp, Send } from 'lucide-react';
+import { Wallet, MapPin, ArrowLeftRight, TrendingUp, Send, QrCode } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useLocation } from '../contexts/LocationContext';
 import { useNavigate } from 'react-router-dom';
 import PriceChart from '../components/PriceChart';
 import MapboxMap from '../components/MapboxMap';
 import UserProfile from '../components/UserProfile';
+import ReceiveOverlay from '../components/ReceiveOverlay';
+import SendOverlay from '../components/SendOverlay';
 
 const DashboardContainer = styled.div`
   display: grid;
@@ -113,6 +115,60 @@ const EmptyState = styled.div`
   color: rgba(255, 255, 255, 0.8);
 `;
 
+const TopRightIcons = styled.div`
+  position: fixed;
+  top: 2rem;
+  right: 2rem;
+  display: flex;
+  gap: 0.5rem;
+  z-index: 100;
+  
+  @media (max-width: 768px) {
+    top: 1rem;
+    right: 1rem;
+  }
+`;
+
+const IconButton = styled.button`
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: white;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  
+  @media (max-width: 768px) {
+    width: 44px;
+    height: 44px;
+  }
+`;
+
+const ReceiveIcon = styled(IconButton)`
+  &:hover {
+    color: #4ade80;
+    border-color: #4ade80;
+  }
+`;
+
+const SendIcon = styled(IconButton)`
+  &:hover {
+    color: #f59e0b;
+    border-color: #f59e0b;
+  }
+`;
+
 const Dashboard: React.FC = () => {
   const { 
     isConnected, 
@@ -140,6 +196,8 @@ const Dashboard: React.FC = () => {
   const [availableTokens, setAvailableTokens] = useState<any[]>([]);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isReceiveOpen, setIsReceiveOpen] = useState(false);
+  const [isSendOpen, setIsSendOpen] = useState(false);
 
   const handleUserClick = (user: any) => {
     setSelectedUser(user);
@@ -211,9 +269,9 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     if (isConnected && serverStatus === 'online' && isLocationEnabled) {
-      getNearbyUsers();
+      getNearbyUsers(searchRadius, showAllUsers);
     }
-  }, [isConnected, isLocationEnabled, serverStatus, getNearbyUsers]);
+  }, [isConnected, isLocationEnabled, serverStatus, getNearbyUsers, searchRadius, showAllUsers]);
 
   if (!isConnected) {
     return (
@@ -237,7 +295,20 @@ const Dashboard: React.FC = () => {
   }, 0);
 
   return (
-    <DashboardContainer>
+    <>
+      {/* Top Right Icons */}
+      {isConnected && (
+        <TopRightIcons>
+          <ReceiveIcon onClick={() => setIsReceiveOpen(true)} title="Receive XLM">
+            <QrCode size={20} />
+          </ReceiveIcon>
+          <SendIcon onClick={() => setIsSendOpen(true)} title="Send Payment">
+            <Send size={20} />
+          </SendIcon>
+        </TopRightIcons>
+      )}
+
+      <DashboardContainer>
       {/* Server Status */}
       {serverStatus !== 'online' && (
         <Card style={{ 
@@ -398,84 +469,95 @@ const Dashboard: React.FC = () => {
       </Card>
 
       {/* Nearby Users */}
-      {isLocationEnabled && nearbyUsers.length > 0 && (
+      {isLocationEnabled && (
         <Card>
           <CardHeader>
             <MapPin size={24} />
             <CardTitle>Nearby Users ({nearbyUsers.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '300px', overflowY: 'auto' }}>
-              {nearbyUsers.slice(0, 5).map((user, index) => (
-                <div
-                  key={index}
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: '8px',
-                    padding: '0.75rem',
-                    transition: 'all 0.2s ease',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    flexWrap: 'wrap',
-                    gap: '0.5rem'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }}
-                >
-                  <div style={{ flex: 1, minWidth: '200px' }}>
-                    <div style={{ fontFamily: 'monospace', fontSize: '0.9rem', fontWeight: '600', wordBreak: 'break-all' }}>
-                      {user.publicKey.slice(0, 8)}...{user.publicKey.slice(-8)}
+            {nearbyUsers.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '300px', overflowY: 'auto' }}>
+                {nearbyUsers.slice(0, 5).map((user, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '8px',
+                      padding: '0.75rem',
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      flexWrap: 'wrap',
+                      gap: '0.5rem',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => handleUserClick(user)}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: '200px' }}>
+                      <div style={{ fontFamily: 'monospace', fontSize: '0.9rem', fontWeight: '600', wordBreak: 'break-all' }}>
+                        {user.publicKey.slice(0, 8)}...{user.publicKey.slice(-8)}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.7)' }}>
+                        {user.distance} km away
+                      </div>
                     </div>
-                    <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.7)' }}>
-                      {user.distance} km away
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleUserClick(user);
+                        }}
+                        style={{
+                          background: 'rgba(74, 222, 128, 0.2)',
+                          border: '1px solid #4ade80',
+                          borderRadius: '6px',
+                          padding: '0.25rem 0.5rem',
+                          color: '#4ade80',
+                          fontSize: '0.8rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'rgba(74, 222, 128, 0.3)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'rgba(74, 222, 128, 0.2)';
+                        }}
+                      >
+                        <Send size={12} />
+                        Send
+                      </button>
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+                        {new Date(user.lastSeen).toLocaleTimeString()}
+                      </div>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    <button
-                      onClick={() => handleUserClick(user)}
-                      style={{
-                        background: 'rgba(74, 222, 128, 0.2)',
-                        border: '1px solid #4ade80',
-                        borderRadius: '6px',
-                        padding: '0.25rem 0.5rem',
-                        color: '#4ade80',
-                        fontSize: '0.8rem',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.25rem',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(74, 222, 128, 0.3)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'rgba(74, 222, 128, 0.2)';
-                      }}
-                    >
-                      <Send size={12} />
-                      Send
-                    </button>
-                    <div style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.6)' }}>
-                      {new Date(user.lastSeen).toLocaleTimeString()}
-                    </div>
+                ))}
+                {nearbyUsers.length > 5 && (
+                  <div style={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.8rem', padding: '0.5rem' }}>
+                    +{nearbyUsers.length - 5} more users
                   </div>
-                </div>
-              ))}
-              {nearbyUsers.length > 5 && (
-                <div style={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.8rem', padding: '0.5rem' }}>
-                  +{nearbyUsers.length - 5} more users
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.6)', padding: '2rem' }}>
+                {showAllUsers ? 'No users found globally' : `No users found within ${searchRadius} km`}
+              </div>
+            )}
             <ActionButton onClick={() => navigate('/location')} style={{ marginTop: '1rem' }}>
               View All Users
             </ActionButton>
@@ -652,7 +734,20 @@ const Dashboard: React.FC = () => {
         onClose={handleCloseProfile}
         user={selectedUser}
       />
-    </DashboardContainer>
+      </DashboardContainer>
+
+      {/* Receive Overlay */}
+      <ReceiveOverlay
+        isOpen={isReceiveOpen}
+        onClose={() => setIsReceiveOpen(false)}
+      />
+
+      {/* Send Overlay */}
+      <SendOverlay
+        isOpen={isSendOpen}
+        onClose={() => setIsSendOpen(false)}
+      />
+    </>
   );
 };
 
