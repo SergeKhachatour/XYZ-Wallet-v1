@@ -341,6 +341,20 @@ const MapboxMap: React.FC = () => {
             word-break: break-all;
             position: relative;
           ">
+            <div style="
+              position: absolute;
+              top: -8px;
+              left: -8px;
+              width: 20px;
+              height: 20px;
+              background-image: url('/stellar-location.png');
+              background-size: contain;
+              background-repeat: no-repeat;
+              background-position: center;
+              border-radius: 50%;
+              border: 2px solid white;
+              z-index: 10;
+            "></div>
             <div style="font-size: 0.6rem; margin-bottom: 0.2rem; opacity: 0.8;">Nearby User</div>
             <div>${user.publicKey.slice(0, 6)}...${user.publicKey.slice(-6)}</div>
             <div style="font-size: 0.6rem; margin-top: 0.2rem; opacity: 0.8;">${user.distance}km away</div>
@@ -438,6 +452,20 @@ const MapboxMap: React.FC = () => {
             word-break: break-all;
             position: relative;
           ">
+            <div style="
+              position: absolute;
+              top: -10px;
+              left: -10px;
+              width: 24px;
+              height: 24px;
+              background-image: url('/stellar-location.png');
+              background-size: contain;
+              background-repeat: no-repeat;
+              background-position: center;
+              border-radius: 50%;
+              border: 2px solid white;
+              z-index: 10;
+            "></div>
             <div style="font-size: 0.7rem; margin-bottom: 0.25rem; opacity: 0.8;">Your Location</div>
             <div>${publicKey.slice(0, 8)}...${publicKey.slice(-8)}</div>
             <div style="
@@ -614,6 +642,20 @@ const MapboxMap: React.FC = () => {
             word-break: break-all;
             position: relative;
           ">
+            <div style="
+              position: absolute;
+              top: -10px;
+              left: -10px;
+              width: 24px;
+              height: 24px;
+              background-image: url('/stellar-location.png');
+              background-size: contain;
+              background-repeat: no-repeat;
+              background-position: center;
+              border-radius: 50%;
+              border: 2px solid white;
+              z-index: 10;
+            "></div>
             <div style="font-size: 0.7rem; margin-bottom: 0.25rem; opacity: 0.8;">Your Location</div>
             <div>${publicKey.slice(0, 8)}...${publicKey.slice(-8)}</div>
             <div style="

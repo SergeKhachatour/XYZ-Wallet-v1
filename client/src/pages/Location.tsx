@@ -455,7 +455,7 @@ const Location: React.FC = () => {
               {nearbyUsers.map((user, index) => (
                 <NearbyUserItem key={index} onClick={() => handleUserClick(user)}>
                   <UserInfo>
-                    <UserAddress>{user.publicKey}</UserAddress>
+                    <UserAddress>{user.publicKey.slice(0, 8)}...{user.publicKey.slice(-8)}</UserAddress>
                     <UserDistance>{user.distance} km away</UserDistance>
                     <UserLastSeen>
                       Last seen: {new Date(user.lastSeen).toLocaleString()}

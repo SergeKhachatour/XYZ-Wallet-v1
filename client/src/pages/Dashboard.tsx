@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { Wallet, MapPin, ArrowLeftRight, TrendingUp } from 'lucide-react';
+import { Wallet, MapPin, ArrowLeftRight, TrendingUp, Send } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useLocation } from '../contexts/LocationContext';
 import { useNavigate } from 'react-router-dom';
@@ -409,17 +409,17 @@ const Dashboard: React.FC = () => {
               {nearbyUsers.slice(0, 5).map((user, index) => (
                 <div
                   key={index}
-                  onClick={() => handleUserClick(user)}
                   style={{
                     background: 'rgba(255, 255, 255, 0.05)',
                     border: '1px solid rgba(255, 255, 255, 0.1)',
                     borderRadius: '8px',
                     padding: '0.75rem',
-                    cursor: 'pointer',
                     transition: 'all 0.2s ease',
                     display: 'flex',
                     justifyContent: 'space-between',
-                    alignItems: 'center'
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: '0.5rem'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
@@ -430,16 +430,43 @@ const Dashboard: React.FC = () => {
                     e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
-                  <div>
-                    <div style={{ fontFamily: 'monospace', fontSize: '0.9rem', fontWeight: '600' }}>
+                  <div style={{ flex: 1, minWidth: '200px' }}>
+                    <div style={{ fontFamily: 'monospace', fontSize: '0.9rem', fontWeight: '600', wordBreak: 'break-all' }}>
                       {user.publicKey.slice(0, 8)}...{user.publicKey.slice(-8)}
                     </div>
                     <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.7)' }}>
                       {user.distance} km away
                     </div>
                   </div>
-                  <div style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.6)' }}>
-                    {new Date(user.lastSeen).toLocaleTimeString()}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <button
+                      onClick={() => handleUserClick(user)}
+                      style={{
+                        background: 'rgba(74, 222, 128, 0.2)',
+                        border: '1px solid #4ade80',
+                        borderRadius: '6px',
+                        padding: '0.25rem 0.5rem',
+                        color: '#4ade80',
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.25rem',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(74, 222, 128, 0.3)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'rgba(74, 222, 128, 0.2)';
+                      }}
+                    >
+                      <Send size={12} />
+                      Send
+                    </button>
+                    <div style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+                      {new Date(user.lastSeen).toLocaleTimeString()}
+                    </div>
                   </div>
                 </div>
               ))}
