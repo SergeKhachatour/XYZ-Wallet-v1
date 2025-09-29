@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { MapPin, Eye, EyeOff, Users, RefreshCw, Navigation, User, Bug } from 'lucide-react';
+import { MapPin, Eye, EyeOff, Users, RefreshCw, Navigation, User, Bug, Send } from 'lucide-react';
 import { useLocation } from '../contexts/LocationContext';
 import { useWallet } from '../contexts/WalletContext';
 import UserProfile from '../components/UserProfile';
@@ -140,11 +140,19 @@ const NearbyUserItem = styled.div`
   align-items: center;
   cursor: pointer;
   transition: all 0.2s ease;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   
   &:hover {
     background: rgba(255, 255, 255, 0.1);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
   }
 `;
 
@@ -421,6 +429,7 @@ const Location: React.FC = () => {
                     color: 'white',
                     minWidth: '120px'
                   }}
+                  className="location-select"
                 >
                   <option value={1}>1 km</option>
                   <option value={5}>5 km</option>
@@ -453,6 +462,34 @@ const Location: React.FC = () => {
                     </UserLastSeen>
                   </UserInfo>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleUserClick(user);
+                      }}
+                      style={{
+                        background: 'rgba(74, 222, 128, 0.2)',
+                        border: '1px solid #4ade80',
+                        borderRadius: '6px',
+                        padding: '0.25rem 0.5rem',
+                        color: '#4ade80',
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.25rem',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(74, 222, 128, 0.3)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'rgba(74, 222, 128, 0.2)';
+                      }}
+                    >
+                      <Send size={12} />
+                      Send
+                    </button>
                     <div style={{ color: '#4ade80', fontSize: '0.8rem' }}>
                       Visible
                     </div>

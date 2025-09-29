@@ -51,8 +51,14 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
   const [isVisible, setIsVisible] = useState(false);
   const [locationHistory, setLocationHistory] = useState<LocationData[]>([]);
   const [nearbyUsers, setNearbyUsers] = useState<any[]>([]);
-  const [searchRadius, setSearchRadius] = useState(10);
-  const [showAllUsers, setShowAllUsers] = useState(false);
+  const [searchRadius, setSearchRadius] = useState(() => {
+    const saved = localStorage.getItem('location_searchRadius');
+    return saved ? parseInt(saved) : 10;
+  });
+  const [showAllUsers, setShowAllUsers] = useState(() => {
+    const saved = localStorage.getItem('location_showAllUsers');
+    return saved === 'true';
+  });
   const [isLocationLoading, setIsLocationLoading] = useState(false);
   const hasCalledUpdateOnMount = useRef(false);
 
@@ -349,12 +355,16 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
   const setSearchRadiusHandler = (radius: number) => {
     setSearchRadius(radius);
     setShowAllUsers(false);
+    localStorage.setItem('location_searchRadius', radius.toString());
+    localStorage.setItem('location_showAllUsers', 'false');
   };
 
   const setShowAllUsersHandler = (showAll: boolean) => {
     setShowAllUsers(showAll);
+    localStorage.setItem('location_showAllUsers', showAll.toString());
     if (showAll) {
-      setSearchRadius(0); // 0 means unlimited
+      setSearchRadius(10); // Reset to default when global is on
+      localStorage.setItem('location_searchRadius', '10');
     }
   };
 
