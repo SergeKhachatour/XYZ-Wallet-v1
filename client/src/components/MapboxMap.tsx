@@ -351,10 +351,18 @@ const MapboxMap: React.FC = () => {
     for (let i = 0; i < 20; i++) { // Clean up to 20 potential circles
       const sourceId = `privacy-radius-${i}`;
       const layerId = `privacy-radius-layer-${i}`;
+      const lineLayerId = `${layerId}-line`;
+      const pulseLayerId = `${layerId}-pulse`;
       
       if (mapInstance.getSource && mapInstance.getSource(sourceId)) {
         if (mapInstance.getLayer(layerId)) {
           mapInstance.removeLayer(layerId);
+        }
+        if (mapInstance.getLayer(lineLayerId)) {
+          mapInstance.removeLayer(lineLayerId);
+        }
+        if (mapInstance.getLayer(pulseLayerId)) {
+          mapInstance.removeLayer(pulseLayerId);
         }
         mapInstance.removeSource(sourceId);
       }
@@ -435,6 +443,14 @@ const MapboxMap: React.FC = () => {
             if (mapInstance.getLayer(layerId)) {
               mapInstance.removeLayer(layerId);
             }
+            const lineLayerId = `${layerId}-line`;
+            const pulseLayerId = `${layerId}-pulse`;
+            if (mapInstance.getLayer(lineLayerId)) {
+              mapInstance.removeLayer(lineLayerId);
+            }
+            if (mapInstance.getLayer(pulseLayerId)) {
+              mapInstance.removeLayer(pulseLayerId);
+            }
             mapInstance.removeSource(sourceId);
           }
           
@@ -463,13 +479,41 @@ const MapboxMap: React.FC = () => {
               data: circle
             });
             
+            // Add fill layer for the circle background
             mapInstance.addLayer({
               id: layerId,
               type: 'fill',
               source: sourceId,
               paint: {
-                'fill-color': 'rgba(74, 222, 128, 0.3)',
-                'fill-outline-color': 'rgba(74, 222, 128, 0.8)'
+                'fill-color': 'rgba(255, 0, 0, 0.15)',
+                'fill-outline-color': 'rgba(255, 0, 0, 0.5)'
+              }
+            });
+            
+            // Add line layer for the circle outline with pulsating effect
+            const lineLayerId = `${layerId}-line`;
+            mapInstance.addLayer({
+              id: lineLayerId,
+              type: 'line',
+              source: sourceId,
+              paint: {
+                'line-color': '#ff0000',
+                'line-width': 4,
+                'line-opacity': 0.8
+              }
+            });
+            
+            // Add a second pulsating line layer for animation effect
+            const pulseLayerId = `${layerId}-pulse`;
+            mapInstance.addLayer({
+              id: pulseLayerId,
+              type: 'line',
+              source: sourceId,
+              paint: {
+                'line-color': '#ff4444',
+                'line-width': 2,
+                'line-opacity': 0.6,
+                'line-dasharray': [2, 2]
               }
             });
             
