@@ -19,12 +19,12 @@ const MapContainer = styled.div`
   overflow: hidden;
   
   @media (max-width: 768px) {
-    height: 450px;
+    height: 540px;
     padding: 1rem;
   }
   
   @media (max-width: 480px) {
-    height: 400px;
+    height: 500px;
     padding: 0.75rem;
   }
 `;
@@ -1465,14 +1465,46 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
           
           {latitude && longitude && (
             <LocationInfo>
-              <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
-                📍 Your Location
-              </div>
-              <div style={{ fontSize: '0.7rem', opacity: 0.8, marginTop: '0.25rem' }}>
-                {latitude?.toFixed(4)}, {longitude?.toFixed(4)}
-              </div>
-              <div style={{ fontSize: '0.7rem', opacity: 0.6, marginTop: '0.25rem' }}>
-                Last updated: {currentLocation?.timestamp ? new Date(currentLocation.timestamp).toLocaleTimeString() : 'Unknown'}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
+                    📍 Your Location
+                  </div>
+                  <div style={{ fontSize: '0.7rem', opacity: 0.8, marginTop: '0.25rem' }}>
+                    {latitude?.toFixed(4)}, {longitude?.toFixed(4)}
+                  </div>
+                  <div style={{ fontSize: '0.7rem', opacity: 0.6, marginTop: '0.25rem' }}>
+                    Last updated: {currentLocation?.timestamp ? new Date(currentLocation.timestamp).toLocaleTimeString() : 'Unknown'}
+                  </div>
+                </div>
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  marginLeft: '1rem',
+                  minWidth: '80px'
+                }}>
+                  <div style={{ 
+                    color: 'white', 
+                    fontSize: '0.6rem', 
+                    fontWeight: '500', 
+                    marginBottom: '0.1rem', 
+                    opacity: 0.8 
+                  }}>
+                    Powered By
+                  </div>
+                  <img 
+                    src="/StellarLogo.png" 
+                    alt="Stellar" 
+                    style={{ 
+                      width: '60px', 
+                      height: '24px', 
+                      objectFit: 'contain', 
+                      objectPosition: 'center' 
+                    }} 
+                  />
+                </div>
               </div>
             </LocationInfo>
           )}
@@ -1592,14 +1624,46 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
           
           {latitude && longitude && (
             <LocationInfo>
-              <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
-                📍 Your Location
-              </div>
-              <div style={{ fontSize: '0.7rem', opacity: 0.8, marginTop: '0.25rem' }}>
-                {latitude?.toFixed(4)}, {longitude?.toFixed(4)}
-              </div>
-              <div style={{ fontSize: '0.7rem', opacity: 0.6, marginTop: '0.25rem' }}>
-                Last updated: {currentLocation?.timestamp ? new Date(currentLocation.timestamp).toLocaleTimeString() : 'Unknown'}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
+                    📍 Your Location
+                  </div>
+                  <div style={{ fontSize: '0.7rem', opacity: 0.8, marginTop: '0.25rem' }}>
+                    {latitude?.toFixed(4)}, {longitude?.toFixed(4)}
+                  </div>
+                  <div style={{ fontSize: '0.7rem', opacity: 0.6, marginTop: '0.25rem' }}>
+                    Last updated: {currentLocation?.timestamp ? new Date(currentLocation.timestamp).toLocaleTimeString() : 'Unknown'}
+                  </div>
+                </div>
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  marginLeft: '1rem',
+                  minWidth: '80px'
+                }}>
+                  <div style={{ 
+                    color: 'white', 
+                    fontSize: '0.6rem', 
+                    fontWeight: '500', 
+                    marginBottom: '0.1rem', 
+                    opacity: 0.8 
+                  }}>
+                    Powered By
+                  </div>
+                  <img 
+                    src="/StellarLogo.png" 
+                    alt="Stellar" 
+                    style={{ 
+                      width: '60px', 
+                      height: '24px', 
+                      objectFit: 'contain', 
+                      objectPosition: 'center' 
+                    }} 
+                  />
+                </div>
               </div>
             </LocationInfo>
           )}
