@@ -19,12 +19,12 @@ const MapContainer = styled.div`
   overflow: hidden;
   
   @media (max-width: 768px) {
-    height: 540px;
+    height: 580px;
     padding: 1rem;
   }
   
   @media (max-width: 480px) {
-    height: 500px;
+    height: 540px;
     padding: 0.75rem;
   }
 `;
