@@ -987,11 +987,166 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
         zoom: newZoom,
         duration: 1000
       });
+      
+      // Update markers after view change for both maps
+      console.log('View changed, updating markers and user marker on both maps');
+      
+      // Update main map markers and user marker after transition completes
+      setTimeout(() => {
+        if (map.current) {
+          // Update nearby user markers
+          if (nearbyUsers.length > 0) {
+            updateNearbyMarkers(map.current, nearbyMarkers);
+          }
+          
+          // Update user marker (remove old and add new)
+          if (marker.current) {
+            marker.current.remove();
+            marker.current = null;
+          }
+          
+          if (latitude && longitude && publicKey) {
+            const el = document.createElement('div');
+            el.className = 'wallet-marker';
+            el.innerHTML = `
+              <div style="
+                background: linear-gradient(45deg, #00d4ff, #0099cc);
+                color: white;
+                padding: 0.5rem;
+                border-radius: 8px;
+                font-size: 0.8rem;
+                font-weight: 600;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+                border: 2px solid white;
+                max-width: 150px;
+                word-break: break-all;
+                position: relative;
+              ">
+                <div style="
+                  position: absolute;
+                  top: calc(100% - 12px);
+                  left: 50%;
+                  transform: translateX(-50%);
+                  width: 48px;
+                  height: 48px;
+                  background-image: url('/stellar-location.png');
+                  background-size: contain;
+                  background-repeat: no-repeat;
+                  background-position: center;
+                  border-radius: 50%;
+                  z-index: 10;
+                "></div>
+                <div style="font-size: 0.7rem; margin-bottom: 0.2rem; opacity: 0.8;">Your Location</div>
+                <div>${publicKey.slice(0, 6)}...${publicKey.slice(-6)}</div>
+                <div style="
+                  position: absolute;
+                  bottom: -6px;
+                  left: 50%;
+                  transform: translateX(-50%);
+                  width: 0;
+                  height: 0;
+                  border-left: 6px solid transparent;
+                  border-right: 6px solid transparent;
+                  border-top: 6px solid white;
+                "></div>
+              </div>
+            `;
+            
+            marker.current = new mapboxgl.Marker(el)
+              .setLngLat([longitude, latitude])
+              .addTo(map.current);
+          }
+        }
+        
+        // Update fullscreen map markers if it exists
+        if (fullscreenMap.current) {
+          if (nearbyUsers.length > 0) {
+            updateNearbyMarkers(fullscreenMap.current!, nearbyMarkers);
+          }
+          
+          // Update fullscreen user marker
+          if (fullscreenMarker.current) {
+            fullscreenMarker.current.remove();
+            fullscreenMarker.current = null;
+          }
+          
+          if (latitude && longitude && publicKey) {
+            const el = document.createElement('div');
+            el.className = 'wallet-marker';
+            el.innerHTML = `
+              <div style="
+                background: linear-gradient(45deg, #00d4ff, #0099cc);
+                color: white;
+                padding: 0.5rem;
+                border-radius: 8px;
+                font-size: 0.8rem;
+                font-weight: 600;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+                border: 2px solid white;
+                max-width: 150px;
+                word-break: break-all;
+                position: relative;
+              ">
+                <div style="
+                  position: absolute;
+                  top: calc(100% - 12px);
+                  left: 50%;
+                  transform: translateX(-50%);
+                  width: 48px;
+                  height: 48px;
+                  background-image: url('/stellar-location.png');
+                  background-size: contain;
+                  background-repeat: no-repeat;
+                  background-position: center;
+                  border-radius: 50%;
+                  z-index: 10;
+                "></div>
+                <div style="font-size: 0.7rem; margin-bottom: 0.2rem; opacity: 0.8;">Your Location</div>
+                <div>${publicKey.slice(0, 6)}...${publicKey.slice(-6)}</div>
+                <div style="
+                  position: absolute;
+                  bottom: -6px;
+                  left: 50%;
+                  transform: translateX(-50%);
+                  width: 0;
+                  height: 0;
+                  border-left: 6px solid transparent;
+                  border-right: 6px solid transparent;
+                  border-top: 6px solid white;
+                "></div>
+              </div>
+            `;
+            
+            fullscreenMarker.current = new mapboxgl.Marker(el)
+              .setLngLat([longitude, latitude])
+              .addTo(fullscreenMap.current);
+          }
+        }
+      }, 1200); // Delay to ensure transition is complete
     }
   };
 
   const handleStyleChange = (style: MapStyle) => {
     setCurrentStyle(style);
+    
+    // Update markers after style change for both maps
+    if (nearbyUsers.length > 0) {
+      console.log('Style changed, updating markers on both maps');
+      
+      // Update main map markers
+      if (map.current) {
+        setTimeout(() => {
+          updateNearbyMarkers(map.current!, nearbyMarkers);
+        }, 500); // Delay to ensure style change is complete
+      }
+      
+      // Update fullscreen map markers if it exists
+      if (fullscreenMap.current) {
+        setTimeout(() => {
+          updateNearbyMarkers(fullscreenMap.current!, nearbyMarkers);
+        }, 500); // Delay to ensure style change is complete
+      }
+    }
   };
 
   const handleFullscreenToggle = () => {
