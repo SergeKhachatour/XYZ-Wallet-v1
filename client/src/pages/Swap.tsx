@@ -121,7 +121,7 @@ const InputGroup = styled.div`
   gap: 1rem;
   align-items: end;
   
-  @media (max-width: 768px) {
+  @media (max-width: 480px) {
     flex-direction: column;
     gap: 0.75rem;
     align-items: stretch;
@@ -165,7 +165,8 @@ const Select = styled.select`
   padding: 0.75rem;
   color: white;
   font-size: 1rem;
-  min-width: 120px;
+  min-width: 140px;
+  width: 140px;
   
   &:focus {
     outline: none;
@@ -179,13 +180,15 @@ const Select = styled.select`
   }
   
   @media (max-width: 768px) {
-    min-width: 100px;
+    min-width: 120px;
+    width: 120px;
     font-size: 0.9rem;
     padding: 0.6rem;
   }
   
   @media (max-width: 480px) {
-    min-width: 80px;
+    min-width: 100%;
+    width: 100%;
     font-size: 0.85rem;
     padding: 0.5rem;
   }
