@@ -1014,6 +1014,14 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
     setIsFullscreen(false);
     setIsFullscreenMapInitialized(false);
     onFullscreenChange?.(false);
+    
+    // Update markers on main map when returning from fullscreen
+    if (map.current && nearbyUsers.length > 0) {
+      console.log('Closing fullscreen, updating main map markers');
+      setTimeout(() => {
+        updateNearbyMarkers(map.current!, nearbyMarkers);
+      }, 200); // Short delay to ensure main map is ready
+    }
   };
 
   // Handle ESC key to close fullscreen
@@ -1021,6 +1029,16 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && isFullscreen) {
         setIsFullscreen(false);
+        setIsFullscreenMapInitialized(false);
+        onFullscreenChange?.(false);
+        
+        // Update markers on main map when closing with ESC
+        if (map.current && nearbyUsers.length > 0) {
+          console.log('ESC key closing fullscreen, updating main map markers');
+          setTimeout(() => {
+            updateNearbyMarkers(map.current!, nearbyMarkers);
+          }, 200); // Short delay to ensure main map is ready
+        }
       }
     };
 
@@ -1028,7 +1046,17 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
       document.addEventListener('keydown', handleKeyDown);
       return () => document.removeEventListener('keydown', handleKeyDown);
     }
-  }, [isFullscreen]);
+  }, [isFullscreen, nearbyUsers]);
+
+  // Update main map markers when fullscreen is closed
+  useEffect(() => {
+    if (!isFullscreen && map.current && nearbyUsers.length > 0) {
+      console.log('Fullscreen closed, updating main map markers');
+      setTimeout(() => {
+        updateNearbyMarkers(map.current!, nearbyMarkers);
+      }, 300); // Slightly longer delay to ensure fullscreen cleanup is complete
+    }
+  }, [isFullscreen, nearbyUsers]);
 
   return (
     <>
