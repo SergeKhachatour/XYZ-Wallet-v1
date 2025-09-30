@@ -346,6 +346,13 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
       return;
     }
     
+    // Additional check to ensure map is fully ready
+    if (!mapInstance.getSource || !mapInstance.addLayer) {
+      console.log('Map not fully ready, retrying in 100ms...');
+      setTimeout(() => updateNearbyMarkers(mapInstance, markersRef), 100);
+      return;
+    }
+    
     console.log('Map is ready, updating nearby markers...');
     // Clear existing nearby markers
     markersRef.current.forEach(marker => marker.remove());
@@ -412,7 +419,6 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
               background-repeat: no-repeat;
               background-position: center;
               border-radius: 50%;
-              border: 2px solid white;
               z-index: 10;
             "></div>
             <div style="font-size: 0.6rem; margin-bottom: 0.2rem; opacity: 0.8;">Nearby User</div>
@@ -611,7 +617,6 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
               background-repeat: no-repeat;
               background-position: center;
               border-radius: 50%;
-              border: 2px solid white;
               z-index: 10;
             "></div>
             <div style="font-size: 0.7rem; margin-bottom: 0.25rem; opacity: 0.8;">Your Location</div>
@@ -723,12 +728,15 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
 
   // Update nearby user markers when nearbyUsers changes
   useEffect(() => {
+    console.log('Updating nearby markers, nearbyUsers count:', nearbyUsers.length);
     if (map.current) {
+      console.log('Updating main map markers');
       updateNearbyMarkers(map.current, nearbyMarkers);
     }
     
     // Also update fullscreen map if it exists
     if (fullscreenMap.current) {
+      console.log('Updating fullscreen map markers');
       updateNearbyMarkers(fullscreenMap.current, nearbyMarkers);
     }
   }, [nearbyUsers]);
@@ -821,7 +829,6 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
               background-repeat: no-repeat;
               background-position: center;
               border-radius: 50%;
-              border: 2px solid white;
               z-index: 10;
             "></div>
             <div style="font-size: 0.7rem; margin-bottom: 0.25rem; opacity: 0.8;">Your Location</div>
