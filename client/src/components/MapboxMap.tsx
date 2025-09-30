@@ -753,13 +753,13 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
     };
   }, [currentView]); // Only reinitialize on view changes, not style changes
 
-  // Handle style changes without reinitializing the map
+  // Handle main map style changes without reinitializing the map
   useEffect(() => {
-    if (map.current && map.current.isStyleLoaded()) {
-      console.log('Changing map style to:', currentStyle);
+    if (map.current && map.current.isStyleLoaded() && !isFullscreen) {
+      console.log('Changing main map style to:', currentStyle);
       map.current.setStyle(mapStyles[currentStyle]);
     }
-  }, [currentStyle]);
+  }, [currentStyle, isFullscreen]);
 
   // Update map when location data becomes available
   useEffect(() => {
@@ -1014,7 +1014,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
 
   // Handle fullscreen style changes without reinitializing the map
   useEffect(() => {
-    if (fullscreenMap.current && fullscreenMap.current.isStyleLoaded()) {
+    if (fullscreenMap.current && fullscreenMap.current.isStyleLoaded() && isFullscreen) {
       console.log('Changing fullscreen map style to:', currentStyle);
       fullscreenMap.current.setStyle(mapStyles[currentStyle]);
     }
@@ -1206,7 +1206,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
     if (newFullscreenState) {
       setTimeout(() => {
         if (fullscreenMap.current) {
-          console.log('Syncing style to fullscreen map and updating markers');
+          console.log('Opening fullscreen - syncing style and updating markers');
           
           // Sync style from main map to fullscreen
           if (fullscreenMap.current.isStyleLoaded()) {
@@ -1263,7 +1263,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
   // Update main map markers and sync style when fullscreen is closed
   useEffect(() => {
     if (!isFullscreen && map.current) {
-      console.log('Fullscreen closed, syncing style and updating main map markers');
+      console.log('Fullscreen closed - syncing style and updating main map markers');
       
       // Sync style from fullscreen to main map
       if (map.current.isStyleLoaded()) {
