@@ -172,6 +172,12 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     setIsLocationEnabled(savedLocationEnabled);
     setIsVisible(savedVisibility);
     
+    // Sync visibility state with backend if location is enabled
+    if (savedLocationEnabled && savedVisibility) {
+      console.log('Syncing visibility state with backend on app load...');
+      syncVisibilityWithBackend(savedVisibility);
+    }
+    
     if (savedLocationEnabled) {
       console.log('Location is enabled, will call updateLocation after state update...');
       // We'll call updateLocation in a separate useEffect that depends on isLocationEnabled
@@ -242,6 +248,39 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     localStorage.removeItem('location_visible');
     
     toast.success('Location services disabled');
+  };
+
+  const syncVisibilityWithBackend = async (visible: boolean) => {
+    try {
+      const publicKey = localStorage.getItem('wallet_publicKey');
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+      
+      console.log('Syncing visibility with backend:', { publicKey, visible, backendUrl });
+      
+      const response = await fetch(`${backendUrl}/api/location/toggle-visibility`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          publicKey,
+          isVisible: visible
+        }),
+      });
+
+      console.log('Sync visibility response status:', response.status);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Sync visibility response data:', data);
+        console.log('Visibility state synced with backend successfully');
+      } else {
+        console.warn('Failed to sync visibility with backend, but continuing...');
+      }
+    } catch (error) {
+      console.error('Error syncing visibility with backend:', error);
+      // Don't show error toast for sync, just log it
+    }
   };
 
   const toggleVisibility = async (visible: boolean) => {

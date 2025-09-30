@@ -631,8 +631,15 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
 
       // Add user location marker if coordinates are available
       if (latitude && longitude && publicKey) {
-        const el = document.createElement('div');
-        el.className = 'wallet-marker';
+        // Wait for style to load before adding marker
+        const addUserMarker = () => {
+          if (!map.current || !map.current.isStyleLoaded()) {
+            setTimeout(addUserMarker, 100);
+            return;
+          }
+          
+          const el = document.createElement('div');
+          el.className = 'wallet-marker';
         el.innerHTML = `
           <div style="
             background: linear-gradient(45deg, #00d4ff, #0099cc);
@@ -687,6 +694,9 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
           zoom: currentView === 'globe' ? 1 : 2,
           duration: 2000
         });
+        };
+        
+        addUserMarker();
       }
       
       // Mark map as initialized
@@ -700,7 +710,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
         setIsMapInitialized(false);
       }
     };
-  }, [latitude, longitude, publicKey, currentView, currentStyle]);
+  }, [currentView, currentStyle]); // Remove location dependencies to prevent reinitialization
 
   // Update map when location data becomes available
   useEffect(() => {
