@@ -307,6 +307,35 @@ const Dashboard: React.FC = () => {
         <ActionButton onClick={() => navigate('/wallet')}>
           Go to Wallet
         </ActionButton>
+        
+        {/* Stellar Branding */}
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          marginTop: '4rem'
+        }}>
+          <div style={{ 
+            color: 'white', 
+            fontSize: '1.2rem', 
+            fontWeight: '500', 
+            marginBottom: '0.75rem', 
+            opacity: 0.8 
+          }}>
+            Powered By
+          </div>
+          <img 
+            src="/StellarLogo.png" 
+            alt="Stellar" 
+            style={{ 
+              width: '180px', 
+              height: '72px', 
+              objectFit: 'contain', 
+              objectPosition: 'center' 
+            }} 
+          />
+        </div>
       </EmptyState>
     );
   }
