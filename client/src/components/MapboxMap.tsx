@@ -301,7 +301,6 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
   const [isFullscreenMapInitialized, setIsFullscreenMapInitialized] = useState(false);
   const [selectedMarkerUser, setSelectedMarkerUser] = useState<any>(null);
   const [isMarkerProfileOpen, setIsMarkerProfileOpen] = useState(false);
-  const [isUpdatingMarkers, setIsUpdatingMarkers] = useState(false);
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fullscreenUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { 
@@ -349,12 +348,8 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
     }
     
     timeoutRef.current = setTimeout(() => {
-      if (!isUpdatingMarkers) {
-        setIsUpdatingMarkers(true);
-        updateNearbyMarkers(mapInstance, markersRef);
-        setTimeout(() => setIsUpdatingMarkers(false), 2000); // Reset after 2 seconds
-      }
-    }, 1000); // 1 second debounce to reduce updates
+      updateNearbyMarkers(mapInstance, markersRef);
+    }, 200); // Reduced to 200ms for faster updates
   };
 
   // Function to update nearby user markers with privacy radius
@@ -713,6 +708,14 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
       
       // Mark map as initialized
       setIsMapInitialized(true);
+      
+      // Immediately update markers if nearby users are available
+      if (nearbyUsers.length > 0) {
+        console.log('Map initialized, immediately updating markers');
+        setTimeout(() => {
+          updateNearbyMarkers(map.current!, nearbyMarkers);
+        }, 100); // Short delay to ensure map is ready
+      }
     }
 
     return () => {
@@ -807,6 +810,24 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
       console.log('Updating fullscreen map markers');
       debouncedUpdateNearbyMarkers(fullscreenMap.current, nearbyMarkers, fullscreenUpdateTimeoutRef);
     }
+  }, [nearbyUsers]);
+
+  // Force update markers when component becomes visible (user navigates back)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && nearbyUsers.length > 0) {
+        console.log('Page became visible, force updating markers');
+        if (map.current) {
+          setTimeout(() => updateNearbyMarkers(map.current!, nearbyMarkers), 100);
+        }
+        if (fullscreenMap.current) {
+          setTimeout(() => updateNearbyMarkers(fullscreenMap.current!, nearbyMarkers), 100);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [nearbyUsers]);
 
   // Cleanup timeouts on unmount
@@ -934,6 +955,14 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
       
       // Mark fullscreen map as initialized
       setIsFullscreenMapInitialized(true);
+      
+      // Immediately update markers if nearby users are available
+      if (nearbyUsers.length > 0) {
+        console.log('Fullscreen map initialized, immediately updating markers');
+        setTimeout(() => {
+          updateNearbyMarkers(fullscreenMap.current!, nearbyMarkers);
+        }, 100); // Short delay to ensure map is ready
+      }
     }
 
     return () => {
@@ -969,6 +998,16 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
     const newFullscreenState = !isFullscreen;
     setIsFullscreen(newFullscreenState);
     onFullscreenChange?.(newFullscreenState);
+    
+    // If opening fullscreen, immediately update markers after a short delay
+    if (newFullscreenState) {
+      setTimeout(() => {
+        if (fullscreenMap.current && nearbyUsers.length > 0) {
+          console.log('Immediately updating fullscreen markers on open');
+          updateNearbyMarkers(fullscreenMap.current, nearbyMarkers);
+        }
+      }, 500); // Short delay to ensure map is ready
+    }
   };
 
   const handleCloseFullscreen = () => {
