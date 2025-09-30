@@ -347,7 +347,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       updateLocation();
       // Also fetch nearby users automatically
       getNearbyUsers(searchRadius, showAllUsers);
-    }, 30000); // 30 seconds - more frequent updates for better user discovery
+    }, 120000); // 2 minutes - reduced frequency to prevent map freezing
 
     return () => clearInterval(interval);
   }, [isLocationEnabled, updateLocation, getNearbyUsers, searchRadius, showAllUsers]);

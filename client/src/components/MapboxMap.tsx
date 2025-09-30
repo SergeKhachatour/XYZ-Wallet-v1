@@ -296,6 +296,8 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
   const [currentStyle, setCurrentStyle] = useState<MapStyle>('satellite-streets');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
+  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const fullscreenUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { 
     currentLocation, 
     isLocationEnabled, 
@@ -334,22 +336,36 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
     return { latOffset, lngOffset };
   };
 
+  // Debounced update function to prevent excessive updates
+  const debouncedUpdateNearbyMarkers = (mapInstance: mapboxgl.Map, markersRef: React.MutableRefObject<mapboxgl.Marker[]>, timeoutRef: React.MutableRefObject<NodeJS.Timeout | null>) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
+    timeoutRef.current = setTimeout(() => {
+      updateNearbyMarkers(mapInstance, markersRef);
+    }, 300); // 300ms debounce
+  };
+
   // Function to update nearby user markers with privacy radius
   const updateNearbyMarkers = (mapInstance: mapboxgl.Map, markersRef: React.MutableRefObject<mapboxgl.Marker[]>) => {
     // Check if map is loaded and ready
     if (!mapInstance.isStyleLoaded()) {
       console.log('Map style not loaded yet, waiting...');
-      mapInstance.on('styledata', () => {
+      // Only add listener once to prevent multiple listeners
+      const handleStyleLoad = () => {
         console.log('Map style loaded, updating markers...');
         updateNearbyMarkers(mapInstance, markersRef);
-      });
+        mapInstance.off('styledata', handleStyleLoad);
+      };
+      mapInstance.on('styledata', handleStyleLoad);
       return;
     }
     
     // Additional check to ensure map is fully ready
     if (!mapInstance.getSource || !mapInstance.addLayer) {
-      console.log('Map not fully ready, retrying in 100ms...');
-      setTimeout(() => updateNearbyMarkers(mapInstance, markersRef), 100);
+      console.log('Map not fully ready, retrying in 500ms...');
+      setTimeout(() => updateNearbyMarkers(mapInstance, markersRef), 500);
       return;
     }
     
@@ -458,8 +474,8 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
           
           // Create circle geometry for privacy radius (100 meters for better visibility)
           const radiusInDegrees = 100 / 111000; // Convert 100 meters to degrees
-          const circlePoints: [number, number][] = Array.from({ length: 32 }, (_, i) => {
-            const angle = (i / 32) * 2 * Math.PI;
+          const circlePoints: [number, number][] = Array.from({ length: 16 }, (_, i) => {
+            const angle = (i / 16) * 2 * Math.PI;
             const x = approximateLng + radiusInDegrees * Math.cos(angle);
             const y = approximateLat + radiusInDegrees * Math.sin(angle);
             return [x, y] as [number, number];
@@ -710,15 +726,27 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
     console.log('Updating nearby markers, nearbyUsers count:', nearbyUsers.length);
     if (map.current) {
       console.log('Updating main map markers');
-      updateNearbyMarkers(map.current, nearbyMarkers);
+      debouncedUpdateNearbyMarkers(map.current, nearbyMarkers, updateTimeoutRef);
     }
     
     // Also update fullscreen map if it exists
     if (fullscreenMap.current) {
       console.log('Updating fullscreen map markers');
-      updateNearbyMarkers(fullscreenMap.current, nearbyMarkers);
+      debouncedUpdateNearbyMarkers(fullscreenMap.current, nearbyMarkers, fullscreenUpdateTimeoutRef);
     }
   }, [nearbyUsers]);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+      if (fullscreenUpdateTimeoutRef.current) {
+        clearTimeout(fullscreenUpdateTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Initialize fullscreen map when fullscreen is opened
   useEffect(() => {
