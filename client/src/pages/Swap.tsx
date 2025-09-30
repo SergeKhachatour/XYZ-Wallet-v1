@@ -8,6 +8,12 @@ import toast from 'react-hot-toast';
 const SwapContainer = styled.div`
   max-width: 600px;
   margin: 0 auto;
+  padding: 0 1rem;
+  
+  @media (max-width: 768px) {
+    padding: 0 0.5rem;
+    max-width: 100%;
+  }
 `;
 
 const Section = styled.div`
@@ -18,6 +24,17 @@ const Section = styled.div`
   padding: 2rem;
   margin-bottom: 2rem;
   color: white;
+  
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-radius: 12px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
 `;
 
 const SectionHeader = styled.div`
@@ -25,12 +42,26 @@ const SectionHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
 `;
 
 const SectionTitle = styled.h2`
   font-size: 1.5rem;
   font-weight: 600;
   margin: 0;
+  
+  @media (max-width: 768px) {
+    font-size: 1.25rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1.1rem;
+  }
 `;
 
 const Button = styled.button`
@@ -56,6 +87,16 @@ const Button = styled.button`
     cursor: not-allowed;
     transform: none;
   }
+  
+  @media (max-width: 768px) {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
 `;
 
 const SwapForm = styled.form`
@@ -79,6 +120,12 @@ const InputGroup = styled.div`
   display: flex;
   gap: 1rem;
   align-items: end;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: stretch;
+  }
 `;
 
 const Input = styled.input`
@@ -98,6 +145,16 @@ const Input = styled.input`
     outline: none;
     border-color: #4a4a4a;
     box-shadow: 0 0 0 2px rgba(74, 74, 74, 0.3);
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 0.9rem;
+    padding: 0.6rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.85rem;
+    padding: 0.5rem;
   }
 `;
 
@@ -119,6 +176,18 @@ const Select = styled.select`
   option {
     background: #1a1a1a;
     color: white;
+  }
+  
+  @media (max-width: 768px) {
+    min-width: 100px;
+    font-size: 0.9rem;
+    padding: 0.6rem;
+  }
+  
+  @media (max-width: 480px) {
+    min-width: 80px;
+    font-size: 0.85rem;
+    padding: 0.5rem;
   }
 `;
 
@@ -148,6 +217,18 @@ const SwapButton = styled.button`
     cursor: not-allowed;
     transform: none;
   }
+  
+  @media (max-width: 768px) {
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
+    margin-top: 0.75rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.7rem 1.2rem;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+  }
 `;
 
 const QuoteInfo = styled.div`
@@ -155,6 +236,16 @@ const QuoteInfo = styled.div`
   border-radius: 8px;
   padding: 1rem;
   margin-top: 1rem;
+  
+  @media (max-width: 768px) {
+    padding: 0.8rem;
+    margin-top: 0.75rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.6rem;
+    margin-top: 0.5rem;
+  }
 `;
 
 const QuoteRow = styled.div`
@@ -167,21 +258,52 @@ const QuoteRow = styled.div`
   &:last-child {
     border-bottom: none;
   }
+  
+  @media (max-width: 768px) {
+    padding: 0.4rem 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
 `;
 
 const QuoteLabel = styled.span`
   color: rgba(255, 255, 255, 0.8);
+  
+  @media (max-width: 768px) {
+    font-size: 0.9rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.85rem;
+  }
 `;
 
 const QuoteValue = styled.span`
   font-weight: 600;
   font-family: monospace;
+  
+  @media (max-width: 768px) {
+    font-size: 0.9rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.85rem;
+  }
 `;
 
 const EmptyState = styled.div`
   text-align: center;
   padding: 3rem;
   color: rgba(255, 255, 255, 0.6);
+  
+  @media (max-width: 768px) {
+    padding: 2rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 1.5rem;
+  }
 `;
 
 interface Token {

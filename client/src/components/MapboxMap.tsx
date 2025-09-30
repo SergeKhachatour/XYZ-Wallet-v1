@@ -362,14 +362,10 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
     for (let i = 0; i < 20; i++) { // Clean up to 20 potential circles
       const sourceId = `privacy-radius-${i}`;
       const layerId = `privacy-radius-layer-${i}`;
-      const lineLayerId = `${layerId}-line`;
       
       if (mapInstance.getSource && mapInstance.getSource(sourceId)) {
         if (mapInstance.getLayer(layerId)) {
           mapInstance.removeLayer(layerId);
-        }
-        if (mapInstance.getLayer(lineLayerId)) {
-          mapInstance.removeLayer(lineLayerId);
         }
         mapInstance.removeSource(sourceId);
       }
@@ -457,17 +453,13 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
             if (mapInstance.getLayer(layerId)) {
               mapInstance.removeLayer(layerId);
             }
-            const lineLayerId = `${layerId}-line`;
-            if (mapInstance.getLayer(lineLayerId)) {
-              mapInstance.removeLayer(lineLayerId);
-            }
             mapInstance.removeSource(sourceId);
           }
           
           // Create circle geometry for privacy radius (100 meters for better visibility)
           const radiusInDegrees = 100 / 111000; // Convert 100 meters to degrees
-          const circlePoints: [number, number][] = Array.from({ length: 64 }, (_, i) => {
-            const angle = (i / 64) * 2 * Math.PI;
+          const circlePoints: [number, number][] = Array.from({ length: 32 }, (_, i) => {
+            const angle = (i / 32) * 2 * Math.PI;
             const x = approximateLng + radiusInDegrees * Math.cos(angle);
             const y = approximateLat + radiusInDegrees * Math.sin(angle);
             return [x, y] as [number, number];
@@ -489,26 +481,14 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
               data: circle
             });
             
-            // Add fill layer for the circle background
+            // Add only a simple line layer for the circle outline (no fill to reduce complexity)
             mapInstance.addLayer({
               id: layerId,
-              type: 'fill',
-              source: sourceId,
-              paint: {
-                'fill-color': 'rgba(255, 0, 0, 0.15)',
-                'fill-outline-color': 'rgba(255, 0, 0, 0.5)'
-              }
-            });
-            
-            // Add line layer for the circle outline
-            const lineLayerId = `${layerId}-line`;
-            mapInstance.addLayer({
-              id: lineLayerId,
               type: 'line',
               source: sourceId,
               paint: {
                 'line-color': '#ff0000',
-                'line-width': 4,
+                'line-width': 3,
                 'line-opacity': 0.8
               }
             });
@@ -516,7 +496,6 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
             console.log(`Privacy radius circle added for user ${index} at approximate location:`, { approximateLat, approximateLng });
             console.log(`Map instance has source ${sourceId}:`, !!mapInstance.getSource(sourceId));
             console.log(`Map instance has layer ${layerId}:`, !!mapInstance.getLayer(layerId));
-            console.log(`Map instance has line layer ${lineLayerId}:`, !!mapInstance.getLayer(lineLayerId));
           } catch (error) {
             console.error(`Error adding privacy radius circle for user ${index}:`, error);
           }
