@@ -332,6 +332,17 @@ const MapboxMap: React.FC = () => {
 
   // Function to update nearby user markers with privacy radius
   const updateNearbyMarkers = (mapInstance: mapboxgl.Map, markersRef: React.MutableRefObject<mapboxgl.Marker[]>) => {
+    // Check if map is loaded and ready
+    if (!mapInstance.isStyleLoaded()) {
+      console.log('Map style not loaded yet, waiting...');
+      mapInstance.on('styledata', () => {
+        console.log('Map style loaded, updating markers...');
+        updateNearbyMarkers(mapInstance, markersRef);
+      });
+      return;
+    }
+    
+    console.log('Map is ready, updating nearby markers...');
     // Clear existing nearby markers
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
@@ -414,18 +425,21 @@ const MapboxMap: React.FC = () => {
         
         // Add privacy radius circle (optional - can be enabled/disabled)
         // This shows a circle around the approximate location to indicate privacy radius
+        console.log(`Adding privacy radius circle for user ${index} at approximate location:`, { approximateLat, approximateLng });
         if (mapInstance.getSource && mapInstance.addLayer) {
           const sourceId = `privacy-radius-${index}`;
           const layerId = `privacy-radius-layer-${index}`;
           
           // Remove existing source and layer if they exist
           if (mapInstance.getSource(sourceId)) {
-            mapInstance.removeLayer(layerId);
+            if (mapInstance.getLayer(layerId)) {
+              mapInstance.removeLayer(layerId);
+            }
             mapInstance.removeSource(sourceId);
           }
           
-          // Create circle geometry for privacy radius (30 meters)
-          const radiusInDegrees = 30 / 111000; // Convert 30 meters to degrees
+          // Create circle geometry for privacy radius (100 meters for better visibility)
+          const radiusInDegrees = 100 / 111000; // Convert 100 meters to degrees
           const circlePoints: [number, number][] = Array.from({ length: 64 }, (_, i) => {
             const angle = (i / 64) * 2 * Math.PI;
             const x = approximateLng + radiusInDegrees * Math.cos(angle);
@@ -442,21 +456,27 @@ const MapboxMap: React.FC = () => {
             properties: {}
           };
           
-          // Add source and layer for privacy radius
-          mapInstance.addSource(sourceId, {
-            type: 'geojson',
-            data: circle
-          });
-          
-          mapInstance.addLayer({
-            id: layerId,
-            type: 'fill',
-            source: sourceId,
-            paint: {
-              'fill-color': 'rgba(74, 222, 128, 0.1)',
-              'fill-outline-color': 'rgba(74, 222, 128, 0.3)'
-            }
-          });
+          try {
+            // Add source and layer for privacy radius
+            mapInstance.addSource(sourceId, {
+              type: 'geojson',
+              data: circle
+            });
+            
+            mapInstance.addLayer({
+              id: layerId,
+              type: 'fill',
+              source: sourceId,
+              paint: {
+                'fill-color': 'rgba(74, 222, 128, 0.3)',
+                'fill-outline-color': 'rgba(74, 222, 128, 0.8)'
+              }
+            });
+            
+            console.log(`Privacy radius circle added for user ${index} at approximate location:`, { approximateLat, approximateLng });
+          } catch (error) {
+            console.error(`Error adding privacy radius circle for user ${index}:`, error);
+          }
         }
       }
     });

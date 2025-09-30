@@ -125,7 +125,14 @@ const TopRightIcons = styled.div`
   
   @media (max-width: 768px) {
     top: 1rem;
-    right: 1rem;
+    right: 5rem; /* Move further left to avoid hamburger menu */
+    z-index: 9998; /* High z-index but below hamburger menu */
+    pointer-events: auto; /* Ensure clickable */
+  }
+  
+  @media (max-width: 480px) {
+    right: 4.5rem; /* Adjust for smaller screens */
+    gap: 0.25rem; /* Reduce gap on very small screens */
   }
 `;
 
@@ -142,6 +149,8 @@ const IconButton = styled.button`
   cursor: pointer;
   color: white;
   transition: all 0.2s ease;
+  position: relative;
+  z-index: 1;
   
   &:hover {
     background: rgba(255, 255, 255, 0.2);
@@ -149,9 +158,22 @@ const IconButton = styled.button`
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
   
+  &:active {
+    transform: scale(0.95);
+  }
+  
   @media (max-width: 768px) {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: none;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+  
+  @media (max-width: 480px) {
+    width: 36px;
+    height: 36px;
   }
 `;
 
