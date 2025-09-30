@@ -280,7 +280,11 @@ const mapStyles: Record<MapStyle, string> = {
   'satellite-streets': 'mapbox://styles/mapbox/satellite-streets-v12'
 };
 
-const MapboxMap: React.FC = () => {
+interface MapboxMapProps {
+  onFullscreenChange?: (isFullscreen: boolean) => void;
+}
+
+const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const fullscreenMapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -398,10 +402,11 @@ const MapboxMap: React.FC = () => {
           ">
             <div style="
               position: absolute;
-              top: -8px;
-              left: -8px;
-              width: 20px;
-              height: 20px;
+              top: calc(100% - 12px);
+              left: 50%;
+              transform: translateX(-50%);
+              width: 48px;
+              height: 48px;
               background-image: url('/stellar-location.png');
               background-size: contain;
               background-repeat: no-repeat;
@@ -436,6 +441,7 @@ const MapboxMap: React.FC = () => {
         // Add privacy radius circle (optional - can be enabled/disabled)
         // This shows a circle around the approximate location to indicate privacy radius
         console.log(`Adding privacy radius circle for user ${index} at approximate location:`, { approximateLat, approximateLng });
+        console.log(`Map instance type:`, mapInstance === map.current ? 'main' : 'fullscreen');
         if (mapInstance.getSource && mapInstance.addLayer) {
           const sourceId = `privacy-radius-${index}`;
           const layerId = `privacy-radius-layer-${index}`;
@@ -502,6 +508,9 @@ const MapboxMap: React.FC = () => {
             });
             
             console.log(`Privacy radius circle added for user ${index} at approximate location:`, { approximateLat, approximateLng });
+            console.log(`Map instance has source ${sourceId}:`, !!mapInstance.getSource(sourceId));
+            console.log(`Map instance has layer ${layerId}:`, !!mapInstance.getLayer(layerId));
+            console.log(`Map instance has line layer ${lineLayerId}:`, !!mapInstance.getLayer(lineLayerId));
           } catch (error) {
             console.error(`Error adding privacy radius circle for user ${index}:`, error);
           }
@@ -592,10 +601,11 @@ const MapboxMap: React.FC = () => {
           ">
             <div style="
               position: absolute;
-              top: -10px;
-              left: -10px;
-              width: 24px;
-              height: 24px;
+              top: calc(100% - 12px);
+              left: 50%;
+              transform: translateX(-50%);
+              width: 48px;
+              height: 48px;
               background-image: url('/stellar-location.png');
               background-size: contain;
               background-repeat: no-repeat;
@@ -801,10 +811,11 @@ const MapboxMap: React.FC = () => {
           ">
             <div style="
               position: absolute;
-              top: -10px;
-              left: -10px;
-              width: 24px;
-              height: 24px;
+              top: calc(100% - 12px);
+              left: 50%;
+              transform: translateX(-50%);
+              width: 48px;
+              height: 48px;
               background-image: url('/stellar-location.png');
               background-size: contain;
               background-repeat: no-repeat;
@@ -864,11 +875,14 @@ const MapboxMap: React.FC = () => {
   };
 
   const handleFullscreenToggle = () => {
-    setIsFullscreen(!isFullscreen);
+    const newFullscreenState = !isFullscreen;
+    setIsFullscreen(newFullscreenState);
+    onFullscreenChange?.(newFullscreenState);
   };
 
   const handleCloseFullscreen = () => {
     setIsFullscreen(false);
+    onFullscreenChange?.(false);
   };
 
   // Handle ESC key to close fullscreen

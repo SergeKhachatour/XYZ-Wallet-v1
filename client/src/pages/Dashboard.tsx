@@ -116,7 +116,7 @@ const EmptyState = styled.div`
   color: rgba(255, 255, 255, 0.8);
 `;
 
-const TopRightIcons = styled.div`
+const TopRightIcons = styled.div<{ $hideOnMobile?: boolean }>`
   position: fixed;
   top: 2rem;
   right: 2rem;
@@ -129,6 +129,7 @@ const TopRightIcons = styled.div`
     right: 5rem; /* Move further left to avoid hamburger menu */
     z-index: 9998; /* High z-index but below hamburger menu */
     pointer-events: auto; /* Ensure clickable */
+    display: ${props => props.$hideOnMobile ? 'none' : 'flex'};
   }
   
   @media (max-width: 480px) {
@@ -221,6 +222,7 @@ const Dashboard: React.FC = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isReceiveOpen, setIsReceiveOpen] = useState(false);
   const [isSendOpen, setIsSendOpen] = useState(false);
+  const [isMapFullscreen, setIsMapFullscreen] = useState(false);
 
   const handleUserClick = (user: any) => {
     setSelectedUser(user);
@@ -321,7 +323,7 @@ const Dashboard: React.FC = () => {
     <>
       {/* Top Right Icons */}
       {isConnected && (
-        <TopRightIcons>
+        <TopRightIcons $hideOnMobile={isMapFullscreen}>
           <ReceiveIcon onClick={() => setIsReceiveOpen(true)} title="Receive XLM">
             <QrCode size={20} />
           </ReceiveIcon>
@@ -373,7 +375,7 @@ const Dashboard: React.FC = () => {
 
       {/* Global Map */}
       <MapGridItem>
-        <MapboxMap />
+        <MapboxMap onFullscreenChange={setIsMapFullscreen} />
       </MapGridItem>
 
       {/* Wallet Overview */}
