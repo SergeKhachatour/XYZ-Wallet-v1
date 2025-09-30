@@ -4,7 +4,8 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import styled from 'styled-components';
 import { useLocation } from '../contexts/LocationContext';
 import { useWallet } from '../contexts/WalletContext';
-import { Maximize2, Minimize2 } from 'lucide-react';
+import { Maximize2, Minimize2, User } from 'lucide-react';
+import MarkerProfileOverlay from './MarkerProfileOverlay';
 
 const MapContainer = styled.div`
   background: rgba(255, 255, 255, 0.1);
@@ -296,6 +297,10 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
   const [currentStyle, setCurrentStyle] = useState<MapStyle>('satellite-streets');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
+  const [isMapInitialized, setIsMapInitialized] = useState(false);
+  const [isFullscreenMapInitialized, setIsFullscreenMapInitialized] = useState(false);
+  const [selectedMarkerUser, setSelectedMarkerUser] = useState<any>(null);
+  const [isMarkerProfileOpen, setIsMarkerProfileOpen] = useState(false);
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fullscreenUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { 
@@ -359,6 +364,12 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
         mapInstance.off('styledata', handleStyleLoad);
       };
       mapInstance.on('styledata', handleStyleLoad);
+      return;
+    }
+    
+    // Additional check to ensure map is not being destroyed
+    if (!mapInstance || mapInstance.getContainer() === null) {
+      console.log('Map instance is being destroyed, skipping marker update');
       return;
     }
     
@@ -436,6 +447,32 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
             <div style="font-size: 0.6rem; margin-bottom: 0.2rem; opacity: 0.8;">Nearby User</div>
             <div>${user.publicKey.slice(0, 6)}...${user.publicKey.slice(-6)}</div>
             <div style="font-size: 0.6rem; margin-top: 0.2rem; opacity: 0.8;">${user.distance}km away</div>
+            <button 
+              class="profile-button" 
+              data-user-index="${index}"
+              style="
+                position: absolute;
+                top: -8px;
+                right: -8px;
+                width: 24px;
+                height: 24px;
+                background: rgba(0, 0, 0, 0.8);
+                border: 2px solid white;
+                border-radius: 50%;
+                color: white;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 12px;
+                z-index: 20;
+                transition: all 0.2s ease;
+              "
+              onmouseover="this.style.background='rgba(74, 222, 128, 0.9)'"
+              onmouseout="this.style.background='rgba(0, 0, 0, 0.8)'"
+            >
+              👤
+            </button>
             <div style="
               position: absolute;
               bottom: -6px;
@@ -453,6 +490,16 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
         const userMarker = new mapboxgl.Marker(el)
           .setLngLat([approximateLng, approximateLat])
           .addTo(mapInstance);
+        
+        // Add click event listener for profile button
+        const profileButton = el.querySelector('.profile-button') as HTMLButtonElement;
+        if (profileButton) {
+          profileButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            setSelectedMarkerUser(user);
+            setIsMarkerProfileOpen(true);
+          });
+        }
         
         markersRef.current.push(userMarker);
         
@@ -534,7 +581,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
 
     mapboxgl.accessToken = mapboxToken;
 
-    if (mapContainer.current && !map.current) {
+    if (mapContainer.current && !map.current && !isMapInitialized) {
       // Determine initial center and zoom based on location data
       let initialCenter: [number, number];
       let initialZoom: number;
@@ -641,12 +688,16 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
           duration: 2000
         });
       }
+      
+      // Mark map as initialized
+      setIsMapInitialized(true);
     }
 
     return () => {
       if (map.current) {
         map.current.remove();
         map.current = null;
+        setIsMapInitialized(false);
       }
     };
   }, [latitude, longitude, publicKey, currentView, currentStyle]);
@@ -750,7 +801,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
 
   // Initialize fullscreen map when fullscreen is opened
   useEffect(() => {
-    if (isFullscreen && fullscreenMapContainer.current && !fullscreenMap.current) {
+    if (isFullscreen && fullscreenMapContainer.current && !fullscreenMap.current && !isFullscreenMapInitialized) {
       const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1Ijoic2VyZ2UzNjl4MzMiLCJhIjoiY20zZHkzb2xoMDA0eTJxcHU4MTNoYjNlaCJ9.Xl6OxzF9td1IgTTeUp526w';
       
       if (!mapboxToken) {
@@ -858,6 +909,9 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
           .setLngLat([longitude, latitude])
           .addTo(fullscreenMap.current);
       }
+      
+      // Mark fullscreen map as initialized
+      setIsFullscreenMapInitialized(true);
     }
 
     return () => {
@@ -865,6 +919,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
         fullscreenMap.current.remove();
         fullscreenMap.current = null;
         fullscreenMarker.current = null;
+        setIsFullscreenMapInitialized(false);
       }
     };
   }, [isFullscreen, latitude, longitude, publicKey, currentView, currentStyle]);
@@ -896,6 +951,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
 
   const handleCloseFullscreen = () => {
     setIsFullscreen(false);
+    setIsFullscreenMapInitialized(false);
     onFullscreenChange?.(false);
   };
 
@@ -1239,6 +1295,18 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
           )}
         </FullscreenMapWrapper>
       </FullscreenOverlay>
+      
+      {/* Marker Profile Overlay */}
+      {selectedMarkerUser && (
+        <MarkerProfileOverlay
+          isOpen={isMarkerProfileOpen}
+          onClose={() => {
+            setIsMarkerProfileOpen(false);
+            setSelectedMarkerUser(null);
+          }}
+          user={selectedMarkerUser}
+        />
+      )}
     </>
   );
 };
