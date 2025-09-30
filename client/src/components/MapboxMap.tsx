@@ -352,7 +352,6 @@ const MapboxMap: React.FC = () => {
       const sourceId = `privacy-radius-${i}`;
       const layerId = `privacy-radius-layer-${i}`;
       const lineLayerId = `${layerId}-line`;
-      const pulseLayerId = `${layerId}-pulse`;
       
       if (mapInstance.getSource && mapInstance.getSource(sourceId)) {
         if (mapInstance.getLayer(layerId)) {
@@ -360,9 +359,6 @@ const MapboxMap: React.FC = () => {
         }
         if (mapInstance.getLayer(lineLayerId)) {
           mapInstance.removeLayer(lineLayerId);
-        }
-        if (mapInstance.getLayer(pulseLayerId)) {
-          mapInstance.removeLayer(pulseLayerId);
         }
         mapInstance.removeSource(sourceId);
       }
@@ -444,12 +440,8 @@ const MapboxMap: React.FC = () => {
               mapInstance.removeLayer(layerId);
             }
             const lineLayerId = `${layerId}-line`;
-            const pulseLayerId = `${layerId}-pulse`;
             if (mapInstance.getLayer(lineLayerId)) {
               mapInstance.removeLayer(lineLayerId);
-            }
-            if (mapInstance.getLayer(pulseLayerId)) {
-              mapInstance.removeLayer(pulseLayerId);
             }
             mapInstance.removeSource(sourceId);
           }
@@ -490,7 +482,7 @@ const MapboxMap: React.FC = () => {
               }
             });
             
-            // Add line layer for the circle outline with pulsating effect
+            // Add line layer for the circle outline
             const lineLayerId = `${layerId}-line`;
             mapInstance.addLayer({
               id: lineLayerId,
@@ -500,20 +492,6 @@ const MapboxMap: React.FC = () => {
                 'line-color': '#ff0000',
                 'line-width': 4,
                 'line-opacity': 0.8
-              }
-            });
-            
-            // Add a second pulsating line layer for animation effect
-            const pulseLayerId = `${layerId}-pulse`;
-            mapInstance.addLayer({
-              id: pulseLayerId,
-              type: 'line',
-              source: sourceId,
-              paint: {
-                'line-color': '#ff4444',
-                'line-width': 2,
-                'line-opacity': 0.6,
-                'line-dasharray': [2, 2]
               }
             });
             

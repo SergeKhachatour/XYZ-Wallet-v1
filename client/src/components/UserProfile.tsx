@@ -456,12 +456,6 @@ const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose, user }) => {
               <InfoValue>{user.distance} km away</InfoValue>
             </InfoItem>
             <InfoItem>
-              <InfoLabel>Coordinates</InfoLabel>
-              <InfoValue>
-                {user.latitude.toFixed(4)}, {user.longitude.toFixed(4)}
-              </InfoValue>
-            </InfoItem>
-            <InfoItem>
               <InfoLabel>Last Active</InfoLabel>
               <InfoValue>
                 {new Date(user.lastSeen).toLocaleString()}
