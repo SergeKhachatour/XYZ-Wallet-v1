@@ -750,7 +750,15 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
         setIsMapInitialized(false);
       }
     };
-  }, [currentView, currentStyle]); // Remove location dependencies to prevent reinitialization
+  }, [currentView]); // Only reinitialize on view changes, not style changes
+
+  // Handle style changes without reinitializing the map
+  useEffect(() => {
+    if (map.current && map.current.isStyleLoaded()) {
+      console.log('Changing map style to:', currentStyle);
+      map.current.setStyle(mapStyles[currentStyle]);
+    }
+  }, [currentStyle]);
 
   // Update map when location data becomes available
   useEffect(() => {
@@ -998,7 +1006,15 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
         setIsFullscreenMapInitialized(false);
       }
     };
-  }, [isFullscreen, currentView, currentStyle]); // Remove location dependencies to prevent reinitialization
+  }, [isFullscreen, currentView]); // Only reinitialize on fullscreen/view changes, not style changes
+
+  // Handle fullscreen style changes without reinitializing the map
+  useEffect(() => {
+    if (fullscreenMap.current && fullscreenMap.current.isStyleLoaded()) {
+      console.log('Changing fullscreen map style to:', currentStyle);
+      fullscreenMap.current.setStyle(mapStyles[currentStyle]);
+    }
+  }, [currentStyle, isFullscreen]);
 
   const handleViewChange = (view: ViewType) => {
     setCurrentView(view);
@@ -1158,22 +1174,22 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
     if (nearbyUsers.length > 0) {
       console.log('Style changed, updating markers on both maps');
       
-      // Update main map markers
+      // Update main map markers after style change
       if (map.current) {
         setTimeout(() => {
-          waitForMapReady(map.current!, () => {
-            updateNearbyMarkers(map.current!, nearbyMarkers);
-          });
-        }, 500); // Delay to ensure style change is complete
+          if (map.current && map.current.isStyleLoaded()) {
+            updateNearbyMarkers(map.current, nearbyMarkers);
+          }
+        }, 1000); // Longer delay to ensure style change is complete
       }
       
       // Update fullscreen map markers if it exists
       if (fullscreenMap.current) {
         setTimeout(() => {
-          waitForMapReady(fullscreenMap.current!, () => {
-            updateNearbyMarkers(fullscreenMap.current!, nearbyMarkers);
-          });
-        }, 500); // Delay to ensure style change is complete
+          if (fullscreenMap.current && fullscreenMap.current.isStyleLoaded()) {
+            updateNearbyMarkers(fullscreenMap.current, nearbyMarkers);
+          }
+        }, 1000); // Longer delay to ensure style change is complete
       }
     }
   };
