@@ -183,6 +183,29 @@ const DisconnectButton = styled.button`
   }
 `;
 
+const StellarLogo = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2rem;
+`;
+
+const PoweredByText = styled.div`
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 500;
+  margin-bottom: 0.1rem;
+  opacity: 0.8;
+`;
+
+const StellarIcon = styled.img`
+  width: 100px;
+  height: 40px;
+  object-fit: contain;
+  object-position: center;
+`;
+
 const Header: React.FC = () => {
   const location = useLocation();
   const { publicKey, isConnected, disconnectAccount } = useWallet();
@@ -233,18 +256,6 @@ const Header: React.FC = () => {
             <X size={24} />
           </CloseButton>
           
-          {/* Debug info - remove this later */}
-          {isMobileMenuOpen && (
-            <div style={{ 
-              color: 'white', 
-              fontSize: '0.8rem', 
-              marginBottom: '1rem',
-              textAlign: 'center'
-            }}>
-              Menu Items: {navItems.length}
-            </div>
-          )}
-          
           {navItems.map(({ path, label, icon: Icon }, index) => (
             <NavLink
               key={path}
@@ -261,6 +272,14 @@ const Header: React.FC = () => {
               {label}
             </NavLink>
           ))}
+          
+          {/* Stellar Logo in Mobile Menu */}
+          {isMobileMenuOpen && (
+            <StellarLogo style={{ order: 999 }}>
+              <PoweredByText>Powered By</PoweredByText>
+              <StellarIcon src="/StellarLogo.png" alt="Stellar" />
+            </StellarLogo>
+          )}
         </Nav>
         
         <WalletInfo>

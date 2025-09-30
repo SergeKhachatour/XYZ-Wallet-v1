@@ -10,6 +10,7 @@ import UserProfile from '../components/UserProfile';
 import ReceiveOverlay from '../components/ReceiveOverlay';
 import SendOverlay from '../components/SendOverlay';
 
+
 const DashboardContainer = styled.div`
   display: grid;
   grid-template-columns: 1fr;
@@ -329,6 +330,7 @@ const Dashboard: React.FC = () => {
           </SendIcon>
         </TopRightIcons>
       )}
+
 
       <DashboardContainer>
       {/* Server Status */}
