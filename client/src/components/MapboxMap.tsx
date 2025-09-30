@@ -301,6 +301,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
   const [isFullscreenMapInitialized, setIsFullscreenMapInitialized] = useState(false);
   const [selectedMarkerUser, setSelectedMarkerUser] = useState<any>(null);
   const [isMarkerProfileOpen, setIsMarkerProfileOpen] = useState(false);
+  const [isUpdatingMarkers, setIsUpdatingMarkers] = useState(false);
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fullscreenUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { 
@@ -348,8 +349,12 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
     }
     
     timeoutRef.current = setTimeout(() => {
-      updateNearbyMarkers(mapInstance, markersRef);
-    }, 300); // 300ms debounce
+      if (!isUpdatingMarkers) {
+        setIsUpdatingMarkers(true);
+        updateNearbyMarkers(mapInstance, markersRef);
+        setTimeout(() => setIsUpdatingMarkers(false), 2000); // Reset after 2 seconds
+      }
+    }, 1000); // 1 second debounce to reduce updates
   };
 
   // Function to update nearby user markers with privacy radius
@@ -468,8 +473,6 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
                 z-index: 20;
                 transition: all 0.2s ease;
               "
-              onmouseover="this.style.background='rgba(74, 222, 128, 0.9)'"
-              onmouseout="this.style.background='rgba(0, 0, 0, 0.8)'"
             >
               👤
             </button>
@@ -498,6 +501,15 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
             e.stopPropagation();
             setSelectedMarkerUser(user);
             setIsMarkerProfileOpen(true);
+          });
+          
+          // Add hover effects
+          profileButton.addEventListener('mouseenter', () => {
+            profileButton.style.background = 'rgba(74, 222, 128, 0.9)';
+          });
+          
+          profileButton.addEventListener('mouseleave', () => {
+            profileButton.style.background = 'rgba(0, 0, 0, 0.8)';
           });
         }
         
@@ -932,7 +944,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
         setIsFullscreenMapInitialized(false);
       }
     };
-  }, [isFullscreen, latitude, longitude, publicKey, currentView, currentStyle]);
+  }, [isFullscreen, currentView, currentStyle]); // Remove location dependencies to prevent reinitialization
 
   const handleViewChange = (view: ViewType) => {
     setCurrentView(view);
