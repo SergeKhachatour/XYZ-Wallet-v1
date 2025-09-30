@@ -303,6 +303,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
   const [isMarkerProfileOpen, setIsMarkerProfileOpen] = useState(false);
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fullscreenUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const styleChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { 
     currentLocation, 
     isLocationEnabled, 
@@ -872,6 +873,9 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
       if (fullscreenUpdateTimeoutRef.current) {
         clearTimeout(fullscreenUpdateTimeoutRef.current);
       }
+      if (styleChangeTimeoutRef.current) {
+        clearTimeout(styleChangeTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -1170,28 +1174,27 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
   const handleStyleChange = (style: MapStyle) => {
     setCurrentStyle(style);
     
-    // Update markers after style change for both maps
-    if (nearbyUsers.length > 0) {
-      console.log('Style changed, updating markers on both maps');
-      
-      // Update main map markers after style change
-      if (map.current) {
-        setTimeout(() => {
-          if (map.current && map.current.isStyleLoaded()) {
-            updateNearbyMarkers(map.current, nearbyMarkers);
-          }
-        }, 1000); // Longer delay to ensure style change is complete
-      }
-      
-      // Update fullscreen map markers if it exists
-      if (fullscreenMap.current) {
-        setTimeout(() => {
-          if (fullscreenMap.current && fullscreenMap.current.isStyleLoaded()) {
-            updateNearbyMarkers(fullscreenMap.current, nearbyMarkers);
-          }
-        }, 1000); // Longer delay to ensure style change is complete
-      }
+    // Clear any existing timeout
+    if (styleChangeTimeoutRef.current) {
+      clearTimeout(styleChangeTimeoutRef.current);
     }
+    
+    // Debounce marker updates to prevent multiple triggers
+    styleChangeTimeoutRef.current = setTimeout(() => {
+      if (nearbyUsers.length > 0) {
+        console.log('Style changed, updating markers on both maps');
+        
+        // Update main map markers after style change
+        if (map.current && map.current.isStyleLoaded()) {
+          updateNearbyMarkers(map.current, nearbyMarkers);
+        }
+        
+        // Update fullscreen map markers if it exists
+        if (fullscreenMap.current && fullscreenMap.current.isStyleLoaded()) {
+          updateNearbyMarkers(fullscreenMap.current, nearbyMarkers);
+        }
+      }
+    }, 500); // Debounce delay
   };
 
   const handleFullscreenToggle = () => {
@@ -1199,12 +1202,21 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
     setIsFullscreen(newFullscreenState);
     onFullscreenChange?.(newFullscreenState);
     
-    // If opening fullscreen, immediately update markers after a short delay
+    // If opening fullscreen, sync style and update markers
     if (newFullscreenState) {
       setTimeout(() => {
-        if (fullscreenMap.current && nearbyUsers.length > 0) {
-          console.log('Immediately updating fullscreen markers on open');
-          updateNearbyMarkers(fullscreenMap.current, nearbyMarkers);
+        if (fullscreenMap.current) {
+          console.log('Syncing style to fullscreen map and updating markers');
+          
+          // Sync style from main map to fullscreen
+          if (fullscreenMap.current.isStyleLoaded()) {
+            fullscreenMap.current.setStyle(mapStyles[currentStyle]);
+          }
+          
+          // Update markers
+          if (nearbyUsers.length > 0) {
+            updateNearbyMarkers(fullscreenMap.current, nearbyMarkers);
+          }
         }
       }, 500); // Short delay to ensure map is ready
     }
@@ -1248,15 +1260,24 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
     }
   }, [isFullscreen, nearbyUsers]);
 
-  // Update main map markers when fullscreen is closed
+  // Update main map markers and sync style when fullscreen is closed
   useEffect(() => {
-    if (!isFullscreen && map.current && nearbyUsers.length > 0) {
-      console.log('Fullscreen closed, updating main map markers');
-      setTimeout(() => {
-        updateNearbyMarkers(map.current!, nearbyMarkers);
-      }, 300); // Slightly longer delay to ensure fullscreen cleanup is complete
+    if (!isFullscreen && map.current) {
+      console.log('Fullscreen closed, syncing style and updating main map markers');
+      
+      // Sync style from fullscreen to main map
+      if (map.current.isStyleLoaded()) {
+        map.current.setStyle(mapStyles[currentStyle]);
+      }
+      
+      // Update markers
+      if (nearbyUsers.length > 0) {
+        setTimeout(() => {
+          updateNearbyMarkers(map.current!, nearbyMarkers);
+        }, 500); // Delay to ensure style sync is complete
+      }
     }
-  }, [isFullscreen, nearbyUsers]);
+  }, [isFullscreen, nearbyUsers, currentStyle]);
 
   return (
     <>
