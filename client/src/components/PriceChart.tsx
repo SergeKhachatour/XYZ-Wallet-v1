@@ -183,7 +183,7 @@ const PriceChart: React.FC = () => {
           XLM Price
         </ChartTitle>
         <PriceInfo>
-          <CurrentPrice>${priceData.price.toFixed(4)}</CurrentPrice>
+          <CurrentPrice>${priceData.price.toFixed(7)}</CurrentPrice>
           <PriceChange $positive={isPositive}>
             {isPositive ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
             {Math.abs(priceData.changePercent24h).toFixed(2)}% (24h)
@@ -201,7 +201,7 @@ const PriceChart: React.FC = () => {
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text'
           }}>
-            ${priceData.price.toFixed(4)}
+            ${priceData.price.toFixed(7)}
           </div>
           <div style={{ 
             fontSize: '1rem', 
