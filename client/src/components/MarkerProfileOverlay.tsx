@@ -1,8 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import styled from 'styled-components';
 import { X, QrCode, Send, User } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import toast from 'react-hot-toast';
+import QRCodeLib from 'qrcode';
 
 interface MarkerProfileOverlayProps {
   isOpen: boolean;
@@ -199,6 +200,9 @@ const MarkerProfileOverlay: React.FC<MarkerProfileOverlayProps> = ({ isOpen, onC
   const [memo, setMemo] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState('');
+  const [isQRGenerated, setIsQRGenerated] = useState(false);
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null);
 
   const handleSendPayment = useCallback(async () => {
     if (!amount || parseFloat(amount) <= 0) {
@@ -231,17 +235,31 @@ const MarkerProfileOverlay: React.FC<MarkerProfileOverlayProps> = ({ isOpen, onC
     toast.success('Public key copied to clipboard');
   };
 
-  const handleQRCode = () => {
-    // Generate QR code for the user's public key
-    const qrData = {
-      type: 'stellar_address',
-      address: user.publicKey,
-      memo: memo || undefined
-    };
-    
-    // For now, just copy the public key
-    navigator.clipboard.writeText(user.publicKey);
-    toast.success('Public key copied to clipboard');
+  const handleQRCode = async () => {
+    try {
+      if (!isQRGenerated) {
+        // Generate QR code for the user's public key
+        const qrDataUrl = await QRCodeLib.toDataURL(user.publicKey, {
+          width: 200,
+          margin: 2,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+          }
+        });
+        
+        setQrCodeDataUrl(qrDataUrl);
+        setIsQRGenerated(true);
+        toast.success('QR code generated');
+      } else {
+        // Copy public key to clipboard
+        navigator.clipboard.writeText(user.publicKey);
+        toast.success('Public key copied to clipboard');
+      }
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      toast.error('Failed to generate QR code');
+    }
   };
 
   if (!isOpen) return null;
@@ -266,15 +284,15 @@ const MarkerProfileOverlay: React.FC<MarkerProfileOverlayProps> = ({ isOpen, onC
         <UserInfo>
           <InfoRow>
             <InfoLabel>Status</InfoLabel>
-            <InfoValue>{user.status}</InfoValue>
+            <InfoValue>{user.status || 'Unknown'}</InfoValue>
           </InfoRow>
           <InfoRow>
             <InfoLabel>Distance</InfoLabel>
-            <InfoValue>{user.distance}</InfoValue>
+            <InfoValue>{user.distance || 'Unknown'}</InfoValue>
           </InfoRow>
           <InfoRow>
             <InfoLabel>Last Seen</InfoLabel>
-            <InfoValue>{user.lastSeen}</InfoValue>
+            <InfoValue>{user.lastSeen || 'Unknown'}</InfoValue>
           </InfoRow>
         </UserInfo>
 
@@ -288,13 +306,37 @@ const MarkerProfileOverlay: React.FC<MarkerProfileOverlayProps> = ({ isOpen, onC
         <ActionButtons>
           <ActionButton onClick={handleQRCode}>
             <QrCode size={18} />
-            QR Code
+            {isQRGenerated ? 'Copy Key' : 'QR Code'}
           </ActionButton>
           <ActionButton onClick={() => setIsPaymentOpen(!isPaymentOpen)}>
             <Send size={18} />
             Send Payment
           </ActionButton>
         </ActionButtons>
+
+        {isQRGenerated && qrCodeDataUrl && (
+          <div style={{ 
+            marginTop: '1rem', 
+            textAlign: 'center',
+            background: 'rgba(255, 255, 255, 0.05)',
+            borderRadius: '8px',
+            padding: '1rem'
+          }}>
+            <div style={{ marginBottom: '0.5rem', fontSize: '0.9rem', color: 'white' }}>
+              QR Code for {user.publicKey.slice(0, 8)}...{user.publicKey.slice(-8)}
+            </div>
+            <img 
+              src={qrCodeDataUrl} 
+              alt="QR Code" 
+              style={{ 
+                maxWidth: '200px', 
+                height: 'auto',
+                border: '2px solid rgba(255, 255, 255, 0.2)',
+                borderRadius: '8px'
+              }} 
+            />
+          </div>
+        )}
 
         {isPaymentOpen && (
           <div style={{ marginTop: '1rem' }}>
