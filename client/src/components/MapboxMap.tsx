@@ -367,12 +367,18 @@ const MapboxMap: React.FC = () => {
     // Add markers for nearby users with privacy offset
     nearbyUsers.forEach((user, index) => {
       if (user.latitude && user.longitude) {
-        // Generate privacy offset (30 meters radius)
-        const { latOffset, lngOffset } = generatePrivacyOffset(30);
+        // Generate privacy offset (100 meters radius for better privacy)
+        const { latOffset, lngOffset } = generatePrivacyOffset(100);
         
         // Calculate approximate location within radius
         const approximateLat = user.latitude + latOffset;
         const approximateLng = user.longitude + lngOffset;
+        
+        console.log(`Privacy offset for user ${index}:`, {
+          original: { lat: user.latitude, lng: user.longitude },
+          offset: { latOffset, lngOffset },
+          approximate: { lat: approximateLat, lng: approximateLng }
+        });
         
         const el = document.createElement('div');
         el.className = 'nearby-user-marker';
