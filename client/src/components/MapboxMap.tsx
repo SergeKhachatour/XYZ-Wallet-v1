@@ -352,8 +352,33 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
     }, 200); // Reduced to 200ms for faster updates
   };
 
+  // Function to wait for map to be ready
+  const waitForMapReady = (mapInstance: mapboxgl.Map, callback: () => void, maxRetries: number = 10) => {
+    let retries = 0;
+    const checkMap = () => {
+      if (!mapInstance || !mapInstance.isStyleLoaded) {
+        if (retries < maxRetries) {
+          retries++;
+          console.log(`Map not ready, retrying... (${retries}/${maxRetries})`);
+          setTimeout(checkMap, 200);
+        } else {
+          console.log('Map not ready after max retries, skipping marker update');
+        }
+        return;
+      }
+      callback();
+    };
+    checkMap();
+  };
+
   // Function to update nearby user markers with privacy radius
   const updateNearbyMarkers = (mapInstance: mapboxgl.Map, markersRef: React.MutableRefObject<mapboxgl.Marker[]>) => {
+    // Check if map instance is valid
+    if (!mapInstance || !mapInstance.isStyleLoaded) {
+      console.log('Map instance is null or not ready, skipping marker update');
+      return;
+    }
+    
     // Check if map is loaded and ready
     if (!mapInstance.isStyleLoaded()) {
       console.log('Map style not loaded yet, waiting...');
@@ -993,7 +1018,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
       
       // Update main map markers and user marker after transition completes
       setTimeout(() => {
-        if (map.current) {
+        if (map.current && map.current.isStyleLoaded()) {
           // Update nearby user markers
           if (nearbyUsers.length > 0) {
             updateNearbyMarkers(map.current, nearbyMarkers);
@@ -1059,9 +1084,9 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
         }
         
         // Update fullscreen map markers if it exists
-        if (fullscreenMap.current) {
+        if (fullscreenMap.current && fullscreenMap.current.isStyleLoaded()) {
           if (nearbyUsers.length > 0) {
-            updateNearbyMarkers(fullscreenMap.current!, nearbyMarkers);
+            updateNearbyMarkers(fullscreenMap.current, nearbyMarkers);
           }
           
           // Update fullscreen user marker
@@ -1136,14 +1161,18 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
       // Update main map markers
       if (map.current) {
         setTimeout(() => {
-          updateNearbyMarkers(map.current!, nearbyMarkers);
+          waitForMapReady(map.current!, () => {
+            updateNearbyMarkers(map.current!, nearbyMarkers);
+          });
         }, 500); // Delay to ensure style change is complete
       }
       
       // Update fullscreen map markers if it exists
       if (fullscreenMap.current) {
         setTimeout(() => {
-          updateNearbyMarkers(fullscreenMap.current!, nearbyMarkers);
+          waitForMapReady(fullscreenMap.current!, () => {
+            updateNearbyMarkers(fullscreenMap.current!, nearbyMarkers);
+          });
         }, 500); // Delay to ensure style change is complete
       }
     }
