@@ -6,39 +6,51 @@ A comprehensive Stellar wallet application with advanced features including loca
 
 ### 🔐 Wallet Management
 - **Create/Import Wallets**: Generate new Stellar accounts or import existing ones
-- **Multi-Asset Support**: Manage XLM and various Stellar tokens
+- **Multi-Asset Support**: Manage XLM and various Stellar tokens (USDC, XRP, etc.)
 - **Real-time Balances**: Live balance updates with automatic refresh
 - **Transaction History**: Complete transaction tracking with detailed information
 - **Account Funding**: Easy testnet account funding with Friendbot integration
 - **Wallet Backup**: Secure wallet export and recovery options
+- **QR Code Support**: Generate and scan QR codes for addresses
+- **Send/Receive**: Full payment functionality with memo support
 
 ### 💱 Token Swapping
 - **Soroswap Integration**: Advanced DEX aggregation for optimal swap routes
-- **Real-time Quotes**: Live price quotes with slippage protection (now with full API access!)
+- **Real-time Quotes**: Live price quotes with slippage protection
 - **Multi-Token Support**: Swap between various Stellar tokens
 - **Price Impact Analysis**: Detailed swap information and fees
 - **Transaction Building**: Automated transaction construction and signing
-- **API Authentication**: Secure API key integration for production deployments
+- **Demo Mode**: Safe testing environment for swap functionality
+- **Available Tokens**: Dynamic token discovery from Soroswap API
 
 ### 📍 Location Services
-- **Geolocation Tracking**: Optional location-based features
-- **Nearby Users**: Discover other wallet users in your area
+- **Interactive Maps**: Full-featured Mapbox integration with multiple view modes
+- **Geolocation Tracking**: Optional location-based features with privacy controls
+- **Nearby Users Discovery**: Find other wallet users in your area with customizable radius
 - **Privacy Controls**: Toggle location visibility and tracking
 - **Location History**: Track and manage location data
-- **Radius Configuration**: Customizable search radius for nearby users
+- **Radius Configuration**: Customizable search radius (1km to 1000km) or global search
+- **Real-time Updates**: Automatic nearby users updates every 10 seconds
+- **Map Styles**: Multiple map styles (satellite, streets, outdoors, light, dark)
+- **Fullscreen Maps**: Expandable map view with full functionality
+- **User Profiles**: View and interact with nearby users
+- **Privacy Radius**: Approximate location display for user privacy
 
 ### 📊 Real-time Data
 - **Live Price Charts**: Interactive price charts for XLM and other tokens
 - **Market Data**: Real-time token prices and market information
 - **Server Status**: Backend health monitoring and status indicators
 - **Network Information**: Stellar network status and configuration
+- **Available Tokens**: Live token discovery from DEX protocols
 
 ### 🎨 Modern UI/UX
 - **Responsive Design**: Mobile-first design with desktop optimization
-- **Glassmorphism**: Beautiful glass-like UI elements
+- **Glassmorphism**: Beautiful glass-like UI elements with backdrop blur
 - **Dark Theme**: Elegant dark theme with customizable colors
 - **Smooth Animations**: Fluid transitions and micro-interactions
 - **Accessibility**: WCAG compliant with keyboard navigation support
+- **Mobile Optimization**: Enhanced mobile experience with larger map cards
+- **Stellar Branding**: Consistent Stellar branding throughout the app
 
 ## 🛠 Technology Stack
 
@@ -49,6 +61,7 @@ A comprehensive Stellar wallet application with advanced features including loca
 - **Axios** for HTTP requests
 - **CORS** and **Helmet** for security
 - **Morgan** for request logging
+- **Rate Limiting** for API protection
 
 ### Frontend
 - **React 18** with TypeScript
@@ -57,12 +70,15 @@ A comprehensive Stellar wallet application with advanced features including loca
 - **React Hot Toast** for notifications
 - **Mapbox GL JS** for interactive maps
 - **Stellar SDK** for wallet operations
+- **QR Scanner** for address scanning
+- **QR Code Generator** for address sharing
 
 ### Development Tools
 - **Concurrently** for parallel development
 - **Nodemon** for backend hot reloading
 - **TypeScript** for type safety
 - **ESLint** for code quality
+- **Cross-env** for environment variables
 
 ## 🚀 Quick Start
 
@@ -72,6 +88,8 @@ A comprehensive Stellar wallet application with advanced features including loca
 - ✅ **Soroswap API integration** with authentication
 - ✅ **Real-time quotes** and token swapping
 - ✅ **Location services** and wallet management
+- ✅ **Interactive maps** with fullscreen support
+- ✅ **Mobile optimized** with enhanced UX
 
 ### Prerequisites
 - Node.js (v18 or higher)
@@ -183,28 +201,45 @@ This project includes automated deployment to Azure App Service via GitHub Actio
 - **Server Status**: Monitor backend connectivity
 - **Wallet Overview**: Quick access to wallet functions
 - **Price Charts**: Live XLM price tracking
+- **Interactive Map**: Global map with location services
 - **Recent Activity**: Latest transactions and updates
+- **Nearby Users**: Discover and interact with nearby users
+- **Token Balances**: View all your token holdings
+- **Available Tokens**: See tokens available for swapping
 
 ### Wallet Management
 
-- **Balance View**: See all token balances
-- **Send Payments**: Transfer tokens to other addresses
-- **Transaction History**: Complete transaction log
-- **Account Settings**: Manage wallet preferences
+- **Balance View**: See all token balances with real-time updates
+- **Send Payments**: Transfer tokens to other addresses with QR code support
+- **Receive Payments**: Generate QR codes for receiving payments
+- **Transaction History**: Complete transaction log with status tracking
+- **Account Settings**: Manage wallet preferences and security
 
 ### Token Swapping
 
-1. **Select Tokens**: Choose source and destination tokens
+1. **Select Tokens**: Choose source and destination tokens from available options
 2. **Enter Amount**: Specify the amount to swap
-3. **Review Quote**: Check price impact and fees
+3. **Review Quote**: Check price impact, fees, and slippage
 4. **Execute Swap**: Confirm and sign the transaction
+5. **Demo Mode**: Test swaps safely without real transactions
 
 ### Location Services
 
 1. **Enable Location**: Grant browser location permissions
-2. **Toggle Visibility**: Control who can see your location
-3. **Find Nearby Users**: Discover other wallet users
-4. **Privacy Settings**: Manage location data and history
+2. **Interactive Maps**: Explore with multiple map styles and views
+3. **Find Nearby Users**: Discover other wallet users with customizable search
+4. **Privacy Controls**: Manage location visibility and data
+5. **User Profiles**: View and interact with nearby users
+6. **Real-time Updates**: Automatic updates every 10 seconds
+
+### Map Features
+
+- **Multiple Views**: Globe and flat map projections
+- **Map Styles**: Satellite, streets, outdoors, light, dark themes
+- **Fullscreen Mode**: Expandable map view
+- **User Markers**: See your location and nearby users
+- **Privacy Protection**: Approximate location display
+- **Mobile Optimized**: Enhanced mobile experience
 
 ## 🔌 API Documentation
 
@@ -232,9 +267,9 @@ This project includes automated deployment to Azure App Service via GitHub Actio
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/soroswap/tokens` | GET | Get available tokens |
+| `/api/soroswap/protocols` | GET | Get available protocols |
 | `/api/soroswap/quote` | POST | Get swap quote |
 | `/api/soroswap/build` | POST | Build swap transaction |
-| `/api/soroswap/price` | GET | Get token price |
 
 ### Health Check
 
@@ -247,27 +282,33 @@ This project includes automated deployment to Azure App Service via GitHub Actio
 - **Secret Key Protection**: Keys are stored locally and never transmitted
 - **HTTPS Enforcement**: Secure connections in production
 - **CORS Configuration**: Proper cross-origin resource sharing
-- **Rate Limiting**: API request throttling
+- **Rate Limiting**: API request throttling (1000 requests per minute)
 - **Input Validation**: Comprehensive data validation
 - **Error Handling**: Secure error messages without sensitive data
+- **Privacy Controls**: Location data protection with approximate positioning
 
 ## 🎨 UI Components
 
 ### Pages
-- **Dashboard**: Main overview and navigation
-- **Wallet**: Wallet management and transactions
-- **Swap**: Token swapping interface
+- **Dashboard**: Main overview with cards, map, and navigation
+- **Wallet**: Wallet management, transactions, and QR codes
+- **Swap**: Token swapping interface with quotes
 - **Location**: Location services and nearby users
-- **Settings**: Application configuration
+- **Settings**: Application configuration and about
 
 ### Components
-- **Header**: Navigation and wallet info
-- **PriceChart**: Interactive price charts
-- **MapboxMap**: Interactive maps for location features
+- **Header**: Navigation with mobile menu and Stellar branding
+- **PriceChart**: Interactive price charts for XLM
+- **MapboxMap**: Interactive maps with fullscreen support
+- **UserProfile**: Nearby user profiles and interactions
+- **SendOverlay**: Send payment interface with QR scanning
+- **ReceiveOverlay**: Receive payment interface with QR generation
+- **MarkerProfileOverlay**: Map marker user profiles
+- **LocationDebugger**: Location services debugging
 
 ### Contexts
 - **WalletContext**: Global wallet state management
-- **LocationContext**: Location services state
+- **LocationContext**: Location services state with 10-second updates
 
 ## 🐛 Troubleshooting
 
@@ -293,6 +334,11 @@ This project includes automated deployment to Azure App Service via GitHub Actio
    - Check all dependencies are installed
    - Verify environment variables
 
+5. **"Map not loading"**
+   - Check Mapbox token is valid
+   - Verify internet connection
+   - Check browser console for errors
+
 ### Development Issues
 
 1. **Build failures**
@@ -304,6 +350,11 @@ This project includes automated deployment to Azure App Service via GitHub Actio
    - Restart the development server
    - Check file watching permissions
    - Clear browser cache
+
+3. **Mobile map issues**
+   - Check responsive design settings
+   - Verify mobile viewport configuration
+   - Test on actual mobile devices
 
 ## 📁 Project Structure
 
@@ -321,7 +372,11 @@ XYZ-Wallet-v1/
 │   │   ├── components/       # Reusable components
 │   │   │   ├── Header.tsx    # Navigation header
 │   │   │   ├── PriceChart.tsx # Price charts
-│   │   │   └── MapboxMap.tsx # Interactive maps
+│   │   │   ├── MapboxMap.tsx # Interactive maps
+│   │   │   ├── SendOverlay.tsx # Send payments
+│   │   │   ├── ReceiveOverlay.tsx # Receive payments
+│   │   │   ├── UserProfile.tsx # User profiles
+│   │   │   └── MarkerProfileOverlay.tsx # Map user profiles
 │   │   ├── contexts/         # React contexts
 │   │   │   ├── WalletContext.tsx    # Wallet state
 │   │   │   └── LocationContext.tsx  # Location state
@@ -330,7 +385,7 @@ XYZ-Wallet-v1/
 │   │   │   ├── Wallet.tsx           # Wallet management
 │   │   │   ├── Swap.tsx             # Token swapping
 │   │   │   ├── Location.tsx         # Location services
-│   │   │   └── Settings.tsx         # App settings
+│   │   │   └── Settings.tsx          # App settings
 │   │   ├── App.tsx           # Main app component
 │   │   └── index.tsx         # App entry point
 │   └── package.json          # Frontend dependencies
