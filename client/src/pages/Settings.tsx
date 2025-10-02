@@ -151,7 +151,9 @@ const Settings: React.FC = () => {
     isLocationEnabled, 
     isVisible, 
     locationHistory,
-    disableLocation 
+    privacyEnabled,
+    disableLocation,
+    setPrivacyEnabled
   } = useLocation();
 
   const [showSecretKey, setShowSecretKey] = useState(false);
@@ -332,7 +334,77 @@ const Settings: React.FC = () => {
             <InfoLabel>Location History</InfoLabel>
             <InfoValue>{locationHistory.length} entries</InfoValue>
           </InfoRow>
+          <InfoRow>
+            <InfoLabel>Privacy Protection</InfoLabel>
+            <InfoValue style={{ color: privacyEnabled ? '#4ade80' : '#f87171' }}>
+              {privacyEnabled ? 'Enabled (Approximate Location)' : 'Disabled (Precise Location)'}
+            </InfoValue>
+          </InfoRow>
         </InfoCard>
+        
+        {/* Privacy Toggle */}
+        <div style={{ marginTop: '1rem' }}>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between',
+            padding: '1rem',
+            background: 'rgba(255, 255, 255, 0.05)',
+            borderRadius: '8px',
+            border: '1px solid rgba(255, 255, 255, 0.1)'
+          }}>
+            <div>
+              <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
+                Location Privacy
+              </div>
+              <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.7)' }}>
+                {privacyEnabled 
+                  ? 'Your location is shown approximately (within 100m radius) for privacy protection'
+                  : 'Your exact location is shared with other users'
+                }
+              </div>
+            </div>
+            <label style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              cursor: 'pointer',
+              position: 'relative'
+            }}>
+              <input
+                type="checkbox"
+                checked={privacyEnabled}
+                onChange={(e) => setPrivacyEnabled(e.target.checked)}
+                style={{ 
+                  opacity: 0,
+                  position: 'absolute',
+                  width: 0,
+                  height: 0
+                }}
+              />
+              <div style={{
+                width: '48px',
+                height: '24px',
+                background: privacyEnabled ? '#4ade80' : '#6b7280',
+                borderRadius: '12px',
+                position: 'relative',
+                transition: 'all 0.2s ease',
+                cursor: 'pointer'
+              }}>
+                <div style={{
+                  width: '20px',
+                  height: '20px',
+                  background: 'white',
+                  borderRadius: '50%',
+                  position: 'absolute',
+                  top: '2px',
+                  left: privacyEnabled ? '26px' : '2px',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
+                }} />
+              </div>
+            </label>
+          </div>
+        </div>
       </Section>
 
       {/* Application Settings */}

@@ -281,6 +281,16 @@ const mapStyles: Record<MapStyle, string> = {
   'satellite-streets': 'mapbox://styles/mapbox/satellite-streets-v12'
 };
 
+// 3D Navigation styles for zoomed-in view
+const map3DStyles: Record<MapStyle, string> = {
+  'satellite': 'mapbox://styles/mapbox/satellite-v9',
+  'streets': 'mapbox://styles/mapbox/streets-v12',
+  'outdoors': 'mapbox://styles/mapbox/outdoors-v12',
+  'light': 'mapbox://styles/mapbox/light-v11',
+  'dark': 'mapbox://styles/mapbox/dark-v11',
+  'satellite-streets': 'mapbox://styles/mapbox/satellite-streets-v12'
+};
+
 interface MapboxMapProps {
   onFullscreenChange?: (isFullscreen: boolean) => void;
 }
@@ -301,6 +311,8 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
   const [isFullscreenMapInitialized, setIsFullscreenMapInitialized] = useState(false);
   const [selectedMarkerUser, setSelectedMarkerUser] = useState<any>(null);
   const [isMarkerProfileOpen, setIsMarkerProfileOpen] = useState(false);
+  const [is3DEnabled, setIs3DEnabled] = useState(false);
+  const [isFullscreen3DEnabled, setIsFullscreen3DEnabled] = useState(false);
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fullscreenUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const styleChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -311,6 +323,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
     nearbyUsers,
     searchRadius,
     showAllUsers,
+    privacyEnabled,
     getNearbyUsers,
     setSearchRadius,
     setShowAllUsers
@@ -329,8 +342,113 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
     nearbyUsers: nearbyUsers.length
   });
 
+  // Function to handle zoom-based style switching and 3D navigation
+  const handleZoomBasedStyle = (mapInstance: mapboxgl.Map, isFullscreenMap: boolean = false) => {
+    if (!mapInstance || !mapInstance.isStyleLoaded()) return;
+    
+    const zoom = mapInstance.getZoom();
+    const shouldUse3D = zoom >= 12; // Switch to 3D navigation at zoom level 12 and above
+    
+    // Use separate state for fullscreen map
+    const current3DState = isFullscreenMap ? isFullscreen3DEnabled : is3DEnabled;
+    
+    if (shouldUse3D && !current3DState) {
+      console.log(`Switching to 3D navigation mode on ${isFullscreenMap ? 'fullscreen' : 'main'} map`);
+      
+      try {
+        // Check if DEM source exists and is loaded
+        const demSource = mapInstance.getSource('mapbox-dem');
+        if (demSource && demSource.type === 'raster-dem') {
+          mapInstance.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
+        }
+        
+        // Add 3D buildings layer if not already present
+        if (!mapInstance.getLayer('3d-buildings')) {
+          mapInstance.addLayer({
+            'id': '3d-buildings',
+            'source': 'composite',
+            'source-layer': 'building',
+            'filter': ['==', 'extrude', 'true'],
+            'type': 'fill-extrusion',
+            'minzoom': 15,
+            'paint': {
+              'fill-extrusion-color': '#aaa',
+              'fill-extrusion-height': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                15,
+                0,
+                15.05,
+                ['get', 'height']
+              ],
+              'fill-extrusion-base': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                15,
+                0,
+                15.05,
+                ['get', 'min_height']
+              ],
+              'fill-extrusion-opacity': 0.6
+            }
+          });
+        }
+        
+        // Add pitch and bearing for 3D navigation (but keep map interactive)
+        mapInstance.easeTo({
+          pitch: 45,
+          bearing: 0,
+          duration: 1000
+        });
+        
+        // Update 3D state
+        if (isFullscreenMap) {
+          setIsFullscreen3DEnabled(true);
+        } else {
+          setIs3DEnabled(true);
+        }
+      } catch (error) {
+        console.warn('Error enabling 3D mode:', error);
+      }
+      
+    } else if (!shouldUse3D && current3DState) {
+      console.log(`Switching back to 2D view on ${isFullscreenMap ? 'fullscreen' : 'main'} map`);
+      
+      try {
+        // Remove 3D terrain safely
+        const currentTerrain = mapInstance.getTerrain();
+        if (currentTerrain) {
+          mapInstance.setTerrain(null);
+        }
+        
+        // Reset pitch and bearing
+        mapInstance.easeTo({
+          pitch: 0,
+          bearing: 0,
+          duration: 1000
+        });
+        
+        // Update 3D state
+        if (isFullscreenMap) {
+          setIsFullscreen3DEnabled(false);
+        } else {
+          setIs3DEnabled(false);
+        }
+      } catch (error) {
+        console.warn('Error disabling 3D mode:', error);
+      }
+    }
+  };
+
   // Function to generate random offset within radius for privacy
   const generatePrivacyOffset = (radiusMeters: number = 30) => {
+    // If privacy is disabled, return no offset (precise location)
+    if (!privacyEnabled) {
+      return { latOffset: 0, lngOffset: 0 };
+    }
+    
     // Generate random angle and distance within the radius
     const angle = Math.random() * 2 * Math.PI;
     const distance = Math.random() * radiusMeters;
@@ -653,6 +771,36 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
       // Add navigation controls
       map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
       
+      // Add DEM source for 3D terrain
+      map.current.on('load', () => {
+        if (!map.current) return;
+        
+        try {
+          // Add DEM source for 3D terrain
+          map.current.addSource('mapbox-dem', {
+            'type': 'raster-dem',
+            'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
+            'tileSize': 512,
+            'maxzoom': 14
+          });
+          console.log('DEM source added to main map');
+        } catch (error) {
+          console.warn('Error adding DEM source to main map:', error);
+        }
+      });
+
+      // Add zoom event listener for 3D navigation
+      map.current.on('zoom', () => {
+        if (map.current) {
+          // Add small delay to ensure DEM source is loaded
+          setTimeout(() => {
+            if (map.current) {
+              handleZoomBasedStyle(map.current, false);
+            }
+          }, 100);
+        }
+      });
+      
       // Track user interaction to prevent auto-centering after user has moved the map
       map.current.on('moveend', () => {
         setHasUserInteracted(true);
@@ -761,56 +909,15 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
     }
   }, [currentStyle, isFullscreen]);
 
-  // Update map when location data becomes available
+  // Center map on user location when first available (only once)
   useEffect(() => {
-    if (map.current && latitude && longitude && publicKey && !marker.current) {
-      console.log('Location data became available, adding marker:', { latitude, longitude });
-      
-      // Only center map on user location if user hasn't interacted with the map yet
-      if (!hasUserInteracted) {
-        map.current.easeTo({
-          center: [longitude, latitude],
-          zoom: currentView === 'globe' ? 1 : 2,
-          duration: 2000
-        });
-      }
-
-      // Add marker
-      const el = document.createElement('div');
-      el.className = 'wallet-marker';
-      el.innerHTML = `
-        <div style="
-          background: linear-gradient(45deg, #00d4ff, #0099cc);
-          color: white;
-          padding: 0.5rem;
-          border-radius: 8px;
-          font-size: 0.8rem;
-          font-weight: 600;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-          border: 2px solid white;
-          max-width: 200px;
-          word-break: break-all;
-          position: relative;
-        ">
-          <div style="font-size: 0.7rem; margin-bottom: 0.25rem; opacity: 0.8;">Your Location</div>
-          <div>${publicKey.slice(0, 8)}...${publicKey.slice(-8)}</div>
-          <div style="
-            position: absolute;
-            bottom: -8px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 8px solid transparent;
-            border-right: 8px solid transparent;
-            border-top: 8px solid white;
-          "></div>
-        </div>
-      `;
-
-      marker.current = new mapboxgl.Marker(el)
-        .setLngLat([longitude, latitude])
-        .addTo(map.current);
+    if (map.current && latitude && longitude && publicKey && !hasUserInteracted) {
+      console.log('Centering map on user location:', { latitude, longitude });
+      map.current.easeTo({
+        center: [longitude, latitude],
+        zoom: currentView === 'globe' ? 1 : 2,
+        duration: 2000
+      });
     }
   }, [latitude, longitude, publicKey, currentView, hasUserInteracted]);
 
@@ -831,6 +938,54 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
     }
   }, [currentStyle]);
 
+  // Function to update user's own marker
+  const updateUserMarker = (mapInstance: mapboxgl.Map, markerRef: React.MutableRefObject<mapboxgl.Marker | null>, isFullscreen: boolean = false) => {
+    if (!mapInstance || !latitude || !longitude || !publicKey) return;
+    
+    // Remove existing marker
+    if (markerRef.current) {
+      markerRef.current.remove();
+      markerRef.current = null;
+    }
+    
+    // Create new marker with current location
+    const el = document.createElement('div');
+    el.className = 'wallet-marker';
+    el.innerHTML = `
+      <div style="
+        background: linear-gradient(45deg, #00d4ff, #0099cc);
+        color: white;
+        padding: 0.5rem;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        border: 2px solid white;
+        max-width: 200px;
+        word-break: break-all;
+        position: relative;
+      ">
+        <div style="font-size: 0.7rem; margin-bottom: 0.25rem; opacity: 0.8;">Your Location</div>
+        <div>${publicKey.slice(0, 8)}...${publicKey.slice(-8)}</div>
+        <div style="
+          position: absolute;
+          bottom: -8px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 0;
+          height: 0;
+          border-left: 8px solid transparent;
+          border-right: 8px solid transparent;
+          border-top: 8px solid white;
+        "></div>
+      </div>
+    `;
+
+    markerRef.current = new mapboxgl.Marker(el)
+      .setLngLat([longitude, latitude])
+      .addTo(mapInstance);
+  };
+
   // Update nearby user markers when nearbyUsers changes
   useEffect(() => {
     console.log('Updating nearby markers, nearbyUsers count:', nearbyUsers.length);
@@ -845,6 +1000,19 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
       debouncedUpdateNearbyMarkers(fullscreenMap.current, nearbyMarkers, fullscreenUpdateTimeoutRef);
     }
   }, [nearbyUsers]);
+
+  // Update user's own marker when location changes
+  useEffect(() => {
+    if (map.current && latitude && longitude && publicKey) {
+      console.log('Updating user marker on main map:', { latitude, longitude });
+      updateUserMarker(map.current, marker, false);
+    }
+    
+    if (fullscreenMap.current && latitude && longitude && publicKey) {
+      console.log('Updating user marker on fullscreen map:', { latitude, longitude });
+      updateUserMarker(fullscreenMap.current, fullscreenMarker, true);
+    }
+  }, [latitude, longitude, publicKey]);
 
   // Force update markers when component becomes visible (user navigates back)
   useEffect(() => {
@@ -922,6 +1090,36 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
 
       // Add navigation controls
       fullscreenMap.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+      
+      // Add DEM source for 3D terrain
+      fullscreenMap.current.on('load', () => {
+        if (!fullscreenMap.current) return;
+        
+        try {
+          // Add DEM source for 3D terrain
+          fullscreenMap.current.addSource('mapbox-dem', {
+            'type': 'raster-dem',
+            'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
+            'tileSize': 512,
+            'maxzoom': 14
+          });
+          console.log('DEM source added to fullscreen map');
+        } catch (error) {
+          console.warn('Error adding DEM source to fullscreen map:', error);
+        }
+      });
+
+      // Add zoom event listener for 3D navigation
+      fullscreenMap.current.on('zoom', () => {
+        if (fullscreenMap.current) {
+          // Add small delay to ensure DEM source is loaded
+          setTimeout(() => {
+            if (fullscreenMap.current) {
+              handleZoomBasedStyle(fullscreenMap.current, true);
+            }
+          }, 100);
+        }
+      });
       
       // Track user interaction for fullscreen map too
       fullscreenMap.current.on('moveend', () => {

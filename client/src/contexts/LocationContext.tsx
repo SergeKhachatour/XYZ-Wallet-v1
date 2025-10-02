@@ -17,6 +17,7 @@ interface LocationContextType {
   nearbyUsers: any[];
   searchRadius: number;
   showAllUsers: boolean;
+  privacyEnabled: boolean;
   
   // Location actions
   enableLocation: () => Promise<void>;
@@ -26,6 +27,7 @@ interface LocationContextType {
   getNearbyUsers: (radius?: number, showAll?: boolean) => Promise<void>;
   setSearchRadius: (radius: number) => void;
   setShowAllUsers: (showAll: boolean) => void;
+  setPrivacyEnabled: (enabled: boolean) => void;
   
   // Loading states
   isLocationLoading: boolean;
@@ -59,11 +61,33 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     const saved = localStorage.getItem('location_showAllUsers');
     return saved === 'true';
   });
+  const [privacyEnabled, setPrivacyEnabled] = useState(() => {
+    const saved = localStorage.getItem('location_privacyEnabled');
+    return saved === 'true' || saved === null; // Default to true (privacy on by default)
+  });
   const [isLocationLoading, setIsLocationLoading] = useState(false);
   const hasCalledUpdateOnMount = useRef(false);
 
   const submitLocationToBackend = useCallback(async (locationData: LocationData) => {
     try {
+      // Apply privacy offset if privacy is enabled
+      let latitude = locationData.latitude;
+      let longitude = locationData.longitude;
+      
+      if (privacyEnabled) {
+        // Generate random offset within 100 meters for privacy
+        const radiusMeters = 100;
+        const angle = Math.random() * 2 * Math.PI;
+        const distance = Math.random() * radiusMeters;
+        
+        // Convert meters to approximate degrees
+        const latOffset = (distance / 111000) * Math.cos(angle);
+        const lngOffset = (distance / (111000 * Math.cos(latitude * Math.PI / 180))) * Math.sin(angle);
+        
+        latitude += latOffset;
+        longitude += lngOffset;
+      }
+      
       const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/location/submit`, {
         method: 'POST',
         headers: {
@@ -71,8 +95,8 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
         },
         body: JSON.stringify({
           publicKey: localStorage.getItem('wallet_publicKey'),
-          latitude: locationData.latitude,
-          longitude: locationData.longitude,
+          latitude: latitude,
+          longitude: longitude,
           timestamp: locationData.timestamp,
           ipAddress: locationData.ipAddress
         }),
@@ -94,7 +118,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
         localStorage.setItem('cachedLocations', JSON.stringify(cachedLocations));
       }
     }
-  }, []);
+  }, [privacyEnabled]);
 
   const updateLocation = useCallback(async () => {
     console.log('updateLocation called - isLocationEnabled:', isLocationEnabled, 'navigator.geolocation:', !!navigator.geolocation);
@@ -407,6 +431,11 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     }
   };
 
+  const setPrivacyEnabledHandler = (enabled: boolean) => {
+    setPrivacyEnabled(enabled);
+    localStorage.setItem('location_privacyEnabled', enabled.toString());
+  };
+
   const value: LocationContextType = {
     currentLocation,
     isLocationEnabled,
@@ -415,6 +444,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     nearbyUsers,
     searchRadius,
     showAllUsers,
+    privacyEnabled,
     enableLocation,
     disableLocation,
     updateLocation,
@@ -422,6 +452,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     getNearbyUsers,
     setSearchRadius: setSearchRadiusHandler,
     setShowAllUsers: setShowAllUsersHandler,
+    setPrivacyEnabled: setPrivacyEnabledHandler,
     isLocationLoading
   };
 
