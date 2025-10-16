@@ -2197,6 +2197,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
               // Set the NFT to zoom to and open fullscreen map
               setNftToZoomTo(selectedNFT);
               setIsFullscreen(true);
+              onFullscreenChange?.(true);
               setSelectedNFT(null);
               setIsNFTCollectionOpen(false);
             }
