@@ -55,25 +55,26 @@ jobs:
       - name: Create deployment package
         run: |
           # Create deployment directory
-          mkdir -p deploy-package
+          mkdir -p deploy-package/server
+          mkdir -p deploy-package/client/build
           
-          # Copy server files to root of deployment package
-          cp server/index.js deploy-package/
-          cp server/package.json deploy-package/
-          cp server/package-lock.json deploy-package/
-          cp -r server/routes deploy-package/
+          # Copy only essential server files (no node_modules)
+          cp server/index.js deploy-package/server/
+          cp server/package.json deploy-package/server/
+          cp server/package-lock.json deploy-package/server/
+          cp -r server/routes deploy-package/server/
           cp package.json deploy-package/
           cp package-lock.json deploy-package/
           cp startup.txt deploy-package/
           
-          # Copy client build to root of deployment package
-          cp -r client/build deploy-package/
+          # Copy client build
+          cp -r client/build/* deploy-package/client/build/
           
           # Pre-install server dependencies to speed up deployment
           echo "Pre-installing server dependencies..."
-          cd deploy-package
+          cd deploy-package/server
           npm ci --production --silent
-          cd ..
+          cd ../..
           
           # Remove unnecessary files to minimize package size
           echo "Cleaning up unnecessary files..."
@@ -89,9 +90,9 @@ jobs:
           {
             "name": "xyz-wallet-v1",
             "version": "1.0.0",
-            "main": "index.js",
+            "main": "server/index.js",
             "scripts": {
-              "start": "node index.js"
+              "start": "cd server && node index.js"
             },
             "dependencies": {
               "express": "^4.18.2",
