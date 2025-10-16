@@ -48,8 +48,8 @@ app.get('/health', (req, res) => {
     network: process.env.STELLAR_NETWORK || 'testnet',
     nodeEnv: process.env.NODE_ENV,
     currentDir: __dirname,
-    buildPath: path.join(__dirname, 'client/build'),
-    buildExists: require('fs').existsSync(path.join(__dirname, 'client/build'))
+    buildPath: path.join(__dirname, 'build'),
+    buildExists: require('fs').existsSync(path.join(__dirname, 'build'))
   });
 });
 
@@ -66,10 +66,10 @@ app.get('/test', (req, res) => {
 console.log('🔍 Environment check:');
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('Current directory:', __dirname);
-console.log('Looking for React build at:', path.join(__dirname, '../client/build'));
+console.log('Looking for React build at:', path.join(__dirname, './build'));
 
 // Always try to serve React app in production environment
-const buildPath = path.join(__dirname, '../client/build');
+const buildPath = path.join(__dirname, './build');
 console.log('Build path exists:', require('fs').existsSync(buildPath));
 
 if (require('fs').existsSync(buildPath)) {
@@ -127,8 +127,8 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`🌐 Network: ${process.env.STELLAR_NETWORK || 'testnet'}`);
   console.log(`📡 Horizon: ${process.env.STELLAR_HORIZON_URL || 'https://horizon-testnet.stellar.org'}`);
   console.log(`📁 Current directory: ${__dirname}`);
-  console.log(`📁 React build path: ${path.join(__dirname, 'client/build')}`);
-  console.log(`📁 React build exists: ${require('fs').existsSync(path.join(__dirname, 'client/build'))}`);
+  console.log(`📁 React build path: ${path.join(__dirname, 'build')}`);
+  console.log(`📁 React build exists: ${require('fs').existsSync(path.join(__dirname, 'build'))}`);
   console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌍 Listening on: 0.0.0.0:${PORT}`);
 }).on('error', (err) => {
