@@ -636,15 +636,17 @@ const Dashboard: React.FC = () => {
                 <ActionButton 
                   onClick={refreshNFTs}
                   style={{ 
-                    padding: '0.5rem 1rem', 
-                    fontSize: '0.9rem',
+                    padding: '0.3rem 0.6rem', 
+                    fontSize: '0.75rem',
                     margin: 0,
                     background: 'rgba(74, 222, 128, 0.2)',
                     border: '1px solid #4ade80',
-                    color: '#4ade80'
+                    color: '#4ade80',
+                    minWidth: 'auto',
+                    height: 'auto'
                   }}
                 >
-                  🔄 Refresh
+                  🔄
                 </ActionButton>
               </div>
             </CardHeader>
