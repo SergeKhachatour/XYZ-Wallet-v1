@@ -9,7 +9,7 @@ export class GeoLinkIntegration {
     this.dataConsumerKey = dataConsumerKey;
     
     // Environment-based base URL configuration
-    this.baseUrl = process.env.REACT_APP_GEOLINK_BASE_URL || 'http://localhost:4000';
+    this.baseUrl = process.env.REACT_APP_GEOLINK_BASE_URL || 'https://geolink-buavavc6gse5c9fw.westus-01.azurewebsites.net';
   }
 
   // Send user location to GeoLink (as wallet provider)
