@@ -625,6 +625,14 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     }
   }, [showAllUsers]); // Only trigger when Global setting changes
 
+  // Trigger NFT fetch on initial load if Global is already enabled
+  useEffect(() => {
+    if (geoLinkStatus === 'connected' && currentLocation && geoLink && showAllUsers) {
+      console.log('🔄 Initial load with Global enabled, fetching NFTs...');
+      updateNearbyNFTs();
+    }
+  }, [geoLinkStatus, currentLocation, geoLink]); // Trigger when GeoLink becomes ready
+
   const setSearchRadiusHandler = (radius: number) => {
     setSearchRadius(radius);
     setShowAllUsers(false);
