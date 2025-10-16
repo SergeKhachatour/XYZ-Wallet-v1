@@ -153,6 +153,15 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       return;
     }
 
+    // Debounce location updates to prevent rate limiting
+    const now = Date.now();
+    const lastUpdate = localStorage.getItem('lastLocationUpdate');
+    if (lastUpdate && (now - parseInt(lastUpdate)) < 5000) { // 5 second debounce
+      console.log('⏳ Debouncing location update (too recent)');
+      return;
+    }
+    localStorage.setItem('lastLocationUpdate', now.toString());
+
     try {
       setIsLocationLoading(true);
       console.log('Requesting geolocation...');
