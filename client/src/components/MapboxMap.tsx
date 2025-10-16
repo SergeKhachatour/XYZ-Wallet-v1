@@ -22,12 +22,12 @@ const MapContainer = styled.div`
                       box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
   
   @media (max-width: 768px) {
-    height: 580px;
+    height: 700px;
     padding: 1rem;
   }
   
   @media (max-width: 480px) {
-    height: 540px;
+    height: 650px;
     padding: 0.75rem;
   }
 `;
