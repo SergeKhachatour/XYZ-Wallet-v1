@@ -14,7 +14,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      connectSrc: ["'self'", "https://api.mapbox.com", "https://*.mapbox.com", "https://horizon-testnet.stellar.org", "https://horizon.stellar.org", "https://soroswap.com", "https://*.soroswap.com"],
+      connectSrc: ["'self'", "https://api.mapbox.com", "https://*.mapbox.com", "https://horizon-testnet.stellar.org", "https://horizon.stellar.org", "https://soroswap.com", "https://*.soroswap.com", "https://geolink-buavavc6gse5c9fw.westus-01.azurewebsites.net"],
       scriptSrc: ["'self'", "'unsafe-inline'", "https://api.mapbox.com"],
       workerSrc: ["'self'", "blob:"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://api.mapbox.com"],
