@@ -262,7 +262,7 @@ const LocationInfo = styled.div`
   z-index: 10;
   
   @media (max-width: 768px) {
-    bottom: 2rem;
+    bottom: 4rem;
     left: 0.5rem;
     right: 0.5rem;
     max-width: none;
