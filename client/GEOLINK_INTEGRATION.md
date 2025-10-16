@@ -93,8 +93,8 @@ Add these environment variables in Azure Portal:
 
 ```
 REACT_APP_GEOLINK_BASE_URL=https://geolink-buavavc6gse5c9fw.westus-01.azurewebsites.net
-REACT_APP_GEOLINK_WALLET_PROVIDER_KEY=ca56b11b4d40523995c101c06a929087e7e55f2811b8e698ddf5a0a7c8177d29
-REACT_APP_GEOLINK_DATA_CONSUMER_KEY=8d6aaf5ce265afed4debbf97252ac4a5beb0853c63573d555617865a413af050
+REACT_APP_GEOLINK_WALLET_PROVIDER_KEY=your_azure_wallet_provider_key
+REACT_APP_GEOLINK_DATA_CONSUMER_KEY=your_azure_data_consumer_key
 ```
 
 ### Local Development
