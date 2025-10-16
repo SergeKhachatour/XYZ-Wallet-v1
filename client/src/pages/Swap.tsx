@@ -19,11 +19,13 @@ const SwapContainer = styled.div`
 const Section = styled.div`
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: none;
   border-radius: 16px;
   padding: 2rem;
   margin-bottom: 2rem;
   color: white;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+  width: 100%;
   
   @media (max-width: 768px) {
     padding: 1.5rem;
@@ -65,9 +67,9 @@ const SectionTitle = styled.h2`
 `;
 
 const Button = styled.button`
-  background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
   border: none;
-  color: white;
+  color: #000000;
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
   cursor: pointer;
@@ -76,10 +78,13 @@ const Button = styled.button`
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  width: 100%;
+  font-size: 0.9rem;
   
   &:hover {
+    background: linear-gradient(135deg, #FFA500 0%, #FF8C00 100%);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 8px 24px rgba(255, 215, 0, 0.4);
   }
   
   &:disabled {
@@ -89,7 +94,12 @@ const Button = styled.button`
   }
   
   @media (max-width: 768px) {
-    padding: 0.6rem 1.2rem;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+  }
+  
+  @media (min-width: 768px) {
+    width: auto;
     font-size: 0.9rem;
   }
   

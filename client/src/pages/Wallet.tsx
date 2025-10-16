@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import { Plus, Send, Download, Upload, RefreshCw, QrCode, Copy, Camera, X } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
+import { useLocation } from '../contexts/LocationContext';
 import toast from 'react-hot-toast';
 import QRCode from 'qrcode';
 import QrScanner from 'qr-scanner';
@@ -19,15 +20,18 @@ const WalletContainer = styled.div`
 const Section = styled.div`
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: none;
   border-radius: 16px;
   padding: 2rem;
   margin-bottom: 2rem;
   color: white;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+  width: 100%;
   
   @media (max-width: 768px) {
     padding: 1.5rem;
     margin-bottom: 1.5rem;
+    border-radius: 12px;
   }
   
   @media (max-width: 480px) {
@@ -56,9 +60,9 @@ const SectionTitle = styled.h2`
 `;
 
 const Button = styled.button`
-  background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
   border: none;
-  color: white;
+  color: #000000;
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
   cursor: pointer;
@@ -67,10 +71,13 @@ const Button = styled.button`
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  width: 100%;
+  font-size: 0.9rem;
   
   &:hover {
+    background: linear-gradient(135deg, #FFA500 0%, #FF8C00 100%);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 8px 24px rgba(255, 215, 0, 0.4);
   }
   
   &:disabled {
@@ -80,7 +87,12 @@ const Button = styled.button`
   }
   
   @media (max-width: 768px) {
-    padding: 0.6rem 1.2rem;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+  }
+  
+  @media (min-width: 768px) {
+    width: auto;
     font-size: 0.9rem;
   }
   
@@ -475,6 +487,46 @@ const EmptyState = styled.div`
   color: rgba(255, 255, 255, 0.6);
 `;
 
+const NFTCard = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 1rem;
+`;
+
+const NFTImage = styled.img`
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  object-fit: cover;
+`;
+
+const NFTInfo = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+`;
+
+const NFTName = styled.div`
+  font-weight: 600;
+  font-size: 1.1rem;
+`;
+
+const NFTCollection = styled.div`
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.9rem;
+`;
+
+const NFTDistance = styled.div`
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.8rem;
+`;
+
 const Wallet: React.FC = () => {
   const { 
     isConnected, 
@@ -489,6 +541,8 @@ const Wallet: React.FC = () => {
     refreshTransactions,
     isLoading 
   } = useWallet();
+
+  const { userNFTs, refreshUserNFTs } = useLocation();
 
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showConnectForm, setShowConnectForm] = useState(false);
@@ -648,6 +702,13 @@ const Wallet: React.FC = () => {
       stopQRScanner();
     };
   }, []);
+
+  // Refresh user NFTs when component mounts
+  useEffect(() => {
+    if (isConnected) {
+      refreshUserNFTs();
+    }
+  }, [isConnected, refreshUserNFTs]);
 
   // Handle scanner cleanup when modal closes
   useEffect(() => {
@@ -911,6 +972,44 @@ const Wallet: React.FC = () => {
         ) : (
           <EmptyState>
             No transactions found.
+          </EmptyState>
+        )}
+      </Section>
+
+      {/* NFT Collection */}
+      <Section>
+        <SectionHeader>
+          <SectionTitle>My NFT Collection</SectionTitle>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <Button onClick={refreshUserNFTs} disabled={isLoading}>
+              <RefreshCw size={20} />
+              Refresh
+            </Button>
+          </div>
+        </SectionHeader>
+        
+        {userNFTs.length > 0 ? (
+          <div>
+            {userNFTs.map((nft, index) => (
+              <NFTCard key={nft.id || index}>
+                <NFTImage 
+                  src={nft.image_url} 
+                  alt={nft.name}
+                  onError={(e) => {
+                    e.currentTarget.src = '/stellar-location.png';
+                  }}
+                />
+                <NFTInfo>
+                  <NFTName>{nft.name}</NFTName>
+                  <NFTCollection>{nft.collection?.name || 'Unknown Collection'}</NFTCollection>
+                  <NFTDistance>Collected at {nft.distance}m from location</NFTDistance>
+                </NFTInfo>
+              </NFTCard>
+            ))}
+          </div>
+        ) : (
+          <EmptyState>
+            No NFTs collected yet. Explore the map to discover and collect nearby NFTs!
           </EmptyState>
         )}
       </Section>

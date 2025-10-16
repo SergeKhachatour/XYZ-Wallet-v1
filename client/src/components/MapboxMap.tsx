@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import styled from 'styled-components';
@@ -6,17 +6,20 @@ import { useLocation } from '../contexts/LocationContext';
 import { useWallet } from '../contexts/WalletContext';
 import { Maximize2, Minimize2, User } from 'lucide-react';
 import MarkerProfileOverlay from './MarkerProfileOverlay';
+import { NFTCollectionOverlay } from './NFTCollectionOverlay';
+import { GeoLinkStatus } from './GeoLinkStatus';
 
 const MapContainer = styled.div`
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: none;
   border-radius: 16px;
   padding: 1.5rem;
-  color: white;
+  color: #FFFFFF;
   height: 500px;
   position: relative;
   overflow: hidden;
+                      box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
   
   @media (max-width: 768px) {
     height: 580px;
@@ -80,9 +83,9 @@ const ViewControls = styled.div`
 `;
 
 const LocationButton = styled.button`
-  background: rgba(0, 212, 255, 0.2);
-  border: 1px solid rgba(0, 212, 255, 0.5);
-  color: #00d4ff;
+  background: rgba(255, 215, 0, 0.2);
+  border: none;
+  color: #FFD700;
   padding: 0.5rem 1rem;
   border-radius: 6px;
   cursor: pointer;
@@ -90,7 +93,7 @@ const LocationButton = styled.button`
   font-size: 0.8rem;
   
   &:hover {
-    background: rgba(0, 212, 255, 0.3);
+    background: rgba(255, 215, 0, 0.3);
   }
   
   @media (max-width: 768px) {
@@ -100,9 +103,9 @@ const LocationButton = styled.button`
 `;
 
 const ViewButton = styled.button<{ $active: boolean }>`
-  background: ${props => props.$active ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.1)'};
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: white;
+  background: ${props => props.$active ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255, 215, 0, 0.1)'};
+  border: none;
+  color: #FFFFFF;
   padding: 0.5rem 1rem;
   border-radius: 6px;
   cursor: pointer;
@@ -110,7 +113,7 @@ const ViewButton = styled.button<{ $active: boolean }>`
   font-size: 0.8rem;
   
   &:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 215, 0, 0.3);
   }
   
   @media (max-width: 768px) {
@@ -120,9 +123,9 @@ const ViewButton = styled.button<{ $active: boolean }>`
 `;
 
 const StyleSelect = styled.select`
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: white;
+  background: rgba(255, 215, 0, 0.1);
+  border: none;
+  color: #FFFFFF;
   padding: 0.5rem 1rem;
   border-radius: 6px;
   cursor: pointer;
@@ -130,12 +133,12 @@ const StyleSelect = styled.select`
   font-size: 0.8rem;
   
   &:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 215, 0, 0.2);
   }
   
   option {
-    background: #1a1a1a;
-    color: white;
+    background: #000000;
+    color: #FFFFFF;
   }
   
   @media (max-width: 768px) {
@@ -145,9 +148,9 @@ const StyleSelect = styled.select`
 `;
 
 const FullscreenButton = styled.button`
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: white;
+  background: rgba(255, 215, 0, 0.1);
+  border: none;
+  color: #FFFFFF;
   padding: 0.5rem;
   border-radius: 6px;
   cursor: pointer;
@@ -158,7 +161,7 @@ const FullscreenButton = styled.button`
   justify-content: center;
   
   &:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 215, 0, 0.2);
   }
   
   @media (max-width: 768px) {
@@ -209,14 +212,14 @@ const FullscreenMapWrapper = styled.div`
   border-radius: 12px;
   overflow: hidden;
   position: relative;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 215, 0, 0.1);
+  border: none;
 `;
 
 const CloseButton = styled.button`
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: white;
+  background: rgba(255, 215, 0, 0.1);
+  border: none;
+  color: #FFFFFF;
   padding: 0.5rem;
   border-radius: 6px;
   cursor: pointer;
@@ -226,7 +229,7 @@ const CloseButton = styled.button`
   justify-content: center;
   
   &:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 215, 0, 0.2);
   }
 `;
 
@@ -293,9 +296,11 @@ const map3DStyles: Record<MapStyle, string> = {
 
 interface MapboxMapProps {
   onFullscreenChange?: (isFullscreen: boolean) => void;
+  selectedNFTForZoom?: any;
+  isFullscreen?: boolean;
 }
 
-const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
+const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTForZoom, isFullscreen: externalIsFullscreen }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const fullscreenMapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -313,14 +318,25 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
   const [isMarkerProfileOpen, setIsMarkerProfileOpen] = useState(false);
   const [is3DEnabled, setIs3DEnabled] = useState(false);
   const [isFullscreen3DEnabled, setIsFullscreen3DEnabled] = useState(false);
+  const [selectedNFT, setSelectedNFT] = useState<any>(null);
+  const [isNFTCollectionOpen, setIsNFTCollectionOpen] = useState(false);
+  const [nftToZoomTo, setNftToZoomTo] = useState<any>(null);
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fullscreenUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const styleChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const previousNFTsRef = useRef<any[]>([]);
+  const lastNFTUpdateRef = useRef<number>(0);
+  const nftMarkersInitialized = useRef<boolean>(false);
+  const nftMarkersRef = useRef<mapboxgl.Marker[]>([]);
+  const fullscreenNFTMarkersRef = useRef<mapboxgl.Marker[]>([]);
+  const stableNFTsRef = useRef<any[]>([]);
   const { 
     currentLocation, 
     isLocationEnabled, 
     enableLocation, 
     nearbyUsers,
+    nearbyNFTs,
+    collectNFT,
     searchRadius,
     showAllUsers,
     privacyEnabled,
@@ -341,6 +357,40 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
     publicKey: publicKey ? `${publicKey.slice(0, 8)}...${publicKey.slice(-8)}` : 'No wallet',
     nearbyUsers: nearbyUsers.length
   });
+
+  // Handle external fullscreen state changes
+  useEffect(() => {
+    if (externalIsFullscreen !== undefined && externalIsFullscreen !== isFullscreen) {
+      console.log('External fullscreen state change:', externalIsFullscreen);
+      
+      // If closing fullscreen externally, capture and apply view state
+      if (!externalIsFullscreen && isFullscreen && fullscreenMap.current) {
+        const center = fullscreenMap.current.getCenter();
+        const zoom = fullscreenMap.current.getZoom();
+        const fullscreenViewState: { center: [number, number]; zoom: number } = {
+          center: [center.lng, center.lat] as [number, number],
+          zoom: zoom
+        };
+        console.log('Capturing fullscreen view state (external close):', fullscreenViewState);
+        
+        // Apply the fullscreen view to the main map
+        if (map.current) {
+          console.log('Applying fullscreen view to main map (external close):', fullscreenViewState);
+          setTimeout(() => {
+            if (map.current) {
+              map.current.flyTo({
+                center: fullscreenViewState.center,
+                zoom: fullscreenViewState.zoom,
+                duration: 1000 // Smooth transition
+              });
+            }
+          }, 300); // Delay to ensure main map is ready
+        }
+      }
+      
+      setIsFullscreen(externalIsFullscreen);
+    }
+  }, [externalIsFullscreen, isFullscreen]);
 
   // Function to handle zoom-based style switching and 3D navigation
   const handleZoomBasedStyle = (mapInstance: mapboxgl.Map, isFullscreenMap: boolean = false) => {
@@ -490,6 +540,130 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
     checkMap();
   };
 
+  // Function to render NFT markers
+  const renderNFTMarkers = (mapInstance: mapboxgl.Map, markersRef: React.MutableRefObject<mapboxgl.Marker[]>) => {
+    console.log('🎨 renderNFTMarkers called with', nearbyNFTs.length, 'NFTs');
+    
+    // Clear existing NFT markers
+    markersRef.current.forEach(marker => marker.remove());
+    markersRef.current = [];
+    
+    // Add markers for nearby NFTs
+    nearbyNFTs.forEach((nft, index) => {
+      if (nft.latitude && nft.longitude) {
+        // Construct image URL from server_url + ipfs_hash
+        const imageUrl = nft.server_url && nft.ipfs_hash 
+          ? `${nft.server_url}${nft.ipfs_hash}` 
+          : nft.image_url || 'https://via.placeholder.com/48x48?text=NFT';
+        
+        const el = document.createElement('div');
+        el.className = 'nft-marker';
+        el.innerHTML = `
+          <div style="
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            border: 2px solid #FFD700;
+            max-width: 150px;
+            word-break: break-all;
+            position: relative;
+            cursor: pointer;
+          ">
+            <div style="
+              position: absolute;
+              top: calc(100% - 12px);
+              left: 50%;
+              transform: translateX(-50%);
+              width: 48px;
+              height: 48px;
+              background-image: url('${imageUrl}');
+              background-size: cover;
+              background-repeat: no-repeat;
+              background-position: center;
+              border-radius: 50%;
+              z-index: 10;
+              border: 2px solid #FFD700;
+            "></div>
+            <div style="font-size: 0.6rem; margin-bottom: 0.2rem; opacity: 0.8;">NFT</div>
+            <div>${nft.collection_name || 'Unknown NFT'}</div>
+            <div style="font-size: 0.6rem; margin-top: 0.2rem; opacity: 0.8;">${Math.round(nft.distance)}m away</div>
+            <button 
+              class="nft-collect-button" 
+              data-nft-index="${index}"
+              style="
+                position: absolute;
+                top: -8px;
+                right: -8px;
+                width: 24px;
+                height: 24px;
+                background: rgba(0, 0, 0, 0.8);
+                border: 2px solid #FFD700;
+                border-radius: 50%;
+                color: white;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 12px;
+                z-index: 20;
+                transition: all 0.2s ease;
+              "
+            >
+              🎯
+            </button>
+            <div style="
+              position: absolute;
+              bottom: -6px;
+              left: 50%;
+              transform: translateX(-50%);
+              width: 0;
+              height: 0;
+              border-left: 6px solid transparent;
+              border-right: 6px solid transparent;
+              border-top: 6px solid white;
+            "></div>
+          </div>
+        `;
+
+        const nftMarker = new mapboxgl.Marker(el)
+          .setLngLat([nft.longitude, nft.latitude])
+          .addTo(mapInstance);
+        
+        // Add click event listener for NFT collection button
+        const collectButton = el.querySelector('.nft-collect-button') as HTMLButtonElement;
+        if (collectButton) {
+          collectButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            setSelectedNFT(nft);
+            setIsNFTCollectionOpen(true);
+          });
+          
+          // Add hover effects
+          collectButton.addEventListener('mouseenter', () => {
+            collectButton.style.background = 'rgba(255, 107, 107, 0.9)';
+          });
+          
+          collectButton.addEventListener('mouseleave', () => {
+            collectButton.style.background = 'rgba(0, 0, 0, 0.8)';
+          });
+        }
+        
+        // Add click event listener for the main NFT marker to show details
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          setSelectedNFT(nft);
+          setIsNFTCollectionOpen(true);
+        });
+        
+        markersRef.current.push(nftMarker);
+      }
+    });
+  };
+
   // Function to update nearby user markers with privacy radius
   const updateNearbyMarkers = (mapInstance: mapboxgl.Map, markersRef: React.MutableRefObject<mapboxgl.Marker[]>) => {
     // Check if map instance is valid
@@ -569,7 +743,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
             font-size: 0.7rem;
             font-weight: 600;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-            border: 2px solid white;
+            border: 2px solid #FFD700;
             max-width: 150px;
             word-break: break-all;
             position: relative;
@@ -601,7 +775,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
                 width: 24px;
                 height: 24px;
                 background: rgba(0, 0, 0, 0.8);
-                border: 2px solid white;
+                border: 2px solid #FFD700;
                 border-radius: 50%;
                 color: white;
                 cursor: pointer;
@@ -823,14 +997,14 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
           el.className = 'wallet-marker';
         el.innerHTML = `
           <div style="
-            background: linear-gradient(45deg, #00d4ff, #0099cc);
-            color: white;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            color: #000000;
             padding: 0.5rem;
             border-radius: 8px;
             font-size: 0.8rem;
             font-weight: 600;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            border: 2px solid white;
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+            border: 2px solid #FFD700;
             max-width: 200px;
             word-break: break-all;
             position: relative;
@@ -860,7 +1034,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
               height: 0;
               border-left: 8px solid transparent;
               border-right: 8px solid transparent;
-              border-top: 8px solid white;
+              border-top: 8px solid #FFD700;
             "></div>
           </div>
         `;
@@ -953,14 +1127,14 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
     el.className = 'wallet-marker';
     el.innerHTML = `
       <div style="
-        background: linear-gradient(45deg, #00d4ff, #0099cc);
-        color: white;
+        background: linear-gradient(45deg, #FFD700, #FFA500);
+        color: #000000;
         padding: 0.5rem;
         border-radius: 8px;
         font-size: 0.8rem;
         font-weight: 600;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        border: 2px solid white;
+        box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+        border: 2px solid #FFD700;
         max-width: 200px;
         word-break: break-all;
         position: relative;
@@ -1000,6 +1174,40 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
       debouncedUpdateNearbyMarkers(fullscreenMap.current, nearbyMarkers, fullscreenUpdateTimeoutRef);
     }
   }, [nearbyUsers]);
+
+  // Update NFT markers when nearbyNFTs changes
+  useEffect(() => {
+    console.log('🔄 NFT markers useEffect triggered, nearbyNFTs count:', nearbyNFTs.length);
+    
+    // Check if NFT data has actually changed
+    const hasChanged = nearbyNFTs.length !== stableNFTsRef.current.length || 
+      nearbyNFTs.some((nft, index) => {
+        const prevNFT = stableNFTsRef.current[index];
+        return !prevNFT || nft.id !== prevNFT.id || nft.latitude !== prevNFT.latitude || nft.longitude !== prevNFT.longitude;
+      });
+    
+    if (!hasChanged) {
+      console.log('🔄 NFT data unchanged, skipping update');
+      return;
+    }
+    
+    console.log('🔄 NFT data changed, updating markers');
+    stableNFTsRef.current = [...nearbyNFTs];
+    lastNFTUpdateRef.current = Date.now();
+    nftMarkersInitialized.current = true;
+    
+    // Only update if we have NFTs and the map is ready
+    if (nearbyNFTs.length > 0 && map.current) {
+      console.log('🎯 Updating main map NFT markers');
+      renderNFTMarkers(map.current, nftMarkersRef);
+    }
+    
+    // Also update fullscreen map if it exists
+    if (fullscreenMap.current) {
+      console.log('🎯 Updating fullscreen map NFT markers');
+      renderNFTMarkers(fullscreenMap.current, fullscreenNFTMarkersRef);
+    }
+  }, [nearbyNFTs]);
 
   // Update user's own marker when location changes
   useEffect(() => {
@@ -1141,14 +1349,14 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
         el.className = 'wallet-marker';
         el.innerHTML = `
           <div style="
-            background: linear-gradient(45deg, #00d4ff, #0099cc);
-            color: white;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            color: #000000;
             padding: 0.5rem;
             border-radius: 8px;
             font-size: 0.8rem;
             font-weight: 600;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            border: 2px solid white;
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+            border: 2px solid #FFD700;
             max-width: 200px;
             word-break: break-all;
             position: relative;
@@ -1178,7 +1386,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
               height: 0;
               border-left: 8px solid transparent;
               border-right: 8px solid transparent;
-              border-top: 8px solid white;
+              border-top: 8px solid #FFD700;
             "></div>
           </div>
         `;
@@ -1198,10 +1406,22 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
           updateNearbyMarkers(fullscreenMap.current!, nearbyMarkers);
         }, 100); // Short delay to ensure map is ready
       }
+
+      // Immediately update NFT markers if available
+      if (nearbyNFTs.length > 0) {
+        console.log('Fullscreen map initialized, immediately updating NFT markers');
+        setTimeout(() => {
+          renderNFTMarkers(fullscreenMap.current!, fullscreenNFTMarkersRef);
+        }, 100); // Short delay to ensure map is ready
+      }
     }
 
     return () => {
       if (fullscreenMap.current && !isFullscreen) {
+        // Clear NFT markers before removing the map
+        fullscreenNFTMarkersRef.current.forEach(marker => marker.remove());
+        fullscreenNFTMarkersRef.current = [];
+        
         fullscreenMap.current.remove();
         fullscreenMap.current = null;
         fullscreenMarker.current = null;
@@ -1209,6 +1429,43 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
       }
     };
   }, [isFullscreen, currentView]); // Only reinitialize on fullscreen/view changes, not style changes
+
+  // Handle zooming to selected NFT when fullscreen map opens
+  useEffect(() => {
+    if (isFullscreen && fullscreenMap.current && nftToZoomTo && nftToZoomTo.latitude && nftToZoomTo.longitude) {
+      console.log('Zooming to selected NFT:', nftToZoomTo);
+      
+      // Wait for the map to be ready, then zoom to the NFT location
+      const zoomToNFT = () => {
+        if (fullscreenMap.current) {
+          fullscreenMap.current.flyTo({
+            center: [nftToZoomTo.longitude, nftToZoomTo.latitude],
+            zoom: 18,
+            duration: 1000
+          });
+          // Clear the NFT to zoom to after zooming
+          setNftToZoomTo(null);
+        }
+      };
+      
+      // If map is already loaded, zoom immediately
+      if (fullscreenMap.current.isStyleLoaded()) {
+        setTimeout(zoomToNFT, 500); // Small delay to ensure map is ready
+      } else {
+        // Wait for map to load, then zoom
+        fullscreenMap.current.on('load', () => {
+          setTimeout(zoomToNFT, 500);
+        });
+      }
+    }
+  }, [isFullscreen, nftToZoomTo]);
+
+  // Handle selectedNFTForZoom prop from Dashboard
+  useEffect(() => {
+    if (selectedNFTForZoom && selectedNFTForZoom.latitude && selectedNFTForZoom.longitude) {
+      setNftToZoomTo(selectedNFTForZoom);
+    }
+  }, [selectedNFTForZoom]);
 
   // Handle fullscreen style changes without reinitializing the map
   useEffect(() => {
@@ -1253,14 +1510,14 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
             el.className = 'wallet-marker';
             el.innerHTML = `
               <div style="
-                background: linear-gradient(45deg, #00d4ff, #0099cc);
-                color: white;
+                background: linear-gradient(45deg, #FFD700, #FFA500);
+                color: #000000;
                 padding: 0.5rem;
                 border-radius: 8px;
                 font-size: 0.8rem;
                 font-weight: 600;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-                border: 2px solid white;
+                box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+                border: 2px solid #FFD700;
                 max-width: 150px;
                 word-break: break-all;
                 position: relative;
@@ -1307,6 +1564,11 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
             updateNearbyMarkers(fullscreenMap.current, nearbyMarkers);
           }
           
+          // Update fullscreen NFT markers
+          if (nearbyNFTs.length > 0) {
+            renderNFTMarkers(fullscreenMap.current, fullscreenNFTMarkersRef);
+          }
+          
           // Update fullscreen user marker
           if (fullscreenMarker.current) {
             fullscreenMarker.current.remove();
@@ -1318,14 +1580,14 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
             el.className = 'wallet-marker';
             el.innerHTML = `
               <div style="
-                background: linear-gradient(45deg, #00d4ff, #0099cc);
-                color: white;
+                background: linear-gradient(45deg, #FFD700, #FFA500);
+                color: #000000;
                 padding: 0.5rem;
                 border-radius: 8px;
                 font-size: 0.8rem;
                 font-weight: 600;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-                border: 2px solid white;
+                box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+                border: 2px solid #FFD700;
                 max-width: 150px;
                 word-break: break-all;
                 position: relative;
@@ -1390,6 +1652,11 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
         // Update fullscreen map markers if it exists
         if (fullscreenMap.current && fullscreenMap.current.isStyleLoaded()) {
           updateNearbyMarkers(fullscreenMap.current, nearbyMarkers);
+          
+          // Update fullscreen NFT markers
+          if (nearbyNFTs.length > 0) {
+            renderNFTMarkers(fullscreenMap.current, fullscreenNFTMarkersRef);
+          }
         }
       }
     }, 500); // Debounce delay
@@ -1415,15 +1682,46 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
           if (nearbyUsers.length > 0) {
             updateNearbyMarkers(fullscreenMap.current, nearbyMarkers);
           }
+          
+          // Update NFT markers
+          if (nearbyNFTs.length > 0) {
+            renderNFTMarkers(fullscreenMap.current, fullscreenNFTMarkersRef);
+          }
         }
       }, 500); // Short delay to ensure map is ready
     }
   };
 
   const handleCloseFullscreen = () => {
+    // Capture the fullscreen map's view state before closing
+    let fullscreenViewState: { center: [number, number]; zoom: number } | null = null;
+    if (fullscreenMap.current) {
+      const center = fullscreenMap.current.getCenter();
+      const zoom = fullscreenMap.current.getZoom();
+      fullscreenViewState = {
+        center: [center.lng, center.lat] as [number, number],
+        zoom: zoom
+      };
+      console.log('Capturing fullscreen view state:', fullscreenViewState);
+    }
+    
     setIsFullscreen(false);
     setIsFullscreenMapInitialized(false);
     onFullscreenChange?.(false);
+    
+    // Apply the fullscreen view to the main map
+    if (map.current && fullscreenViewState) {
+      console.log('Applying fullscreen view to main map:', fullscreenViewState);
+      setTimeout(() => {
+        if (map.current) {
+          map.current.flyTo({
+            center: fullscreenViewState!.center,
+            zoom: fullscreenViewState!.zoom,
+            duration: 1000 // Smooth transition
+          });
+        }
+      }, 300); // Delay to ensure main map is ready
+    }
     
     // Update markers on main map when returning from fullscreen
     if (map.current && nearbyUsers.length > 0) {
@@ -1484,6 +1782,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
           <MapTitle>
             🌍 <span>Global Map</span>
           </MapTitle>
+          <GeoLinkStatus />
           <ViewControls>
             {/* Map Style and View Controls */}
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -1556,14 +1855,14 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
                   el.className = 'wallet-marker';
                   el.innerHTML = `
                     <div style="
-                      background: linear-gradient(45deg, #ff6b6b, #ee5a24);
-                      color: white;
+                      background: linear-gradient(45deg, #FFD700, #FFA500);
+                      color: #000000;
                       padding: 0.5rem;
                       border-radius: 8px;
                       font-size: 0.8rem;
                       font-weight: 600;
-                      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-                      border: 2px solid white;
+                      box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+                      border: 2px solid #FFD700;
                       max-width: 200px;
                       word-break: break-all;
                       position: relative;
@@ -1579,7 +1878,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
                         height: 0;
                         border-left: 8px solid transparent;
                         border-right: 8px solid transparent;
-                        border-top: 8px solid white;
+                        border-top: 8px solid #FFD700;
                       "></div>
                     </div>
                   `;
@@ -1877,6 +2176,31 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange }) => {
             setSelectedMarkerUser(null);
           }}
           user={selectedMarkerUser}
+        />
+      )}
+
+      {/* NFT Collection Overlay */}
+      {selectedNFT && (
+        <NFTCollectionOverlay
+          nft={selectedNFT}
+          onCollect={() => {
+            collectNFT(selectedNFT);
+            setSelectedNFT(null);
+            setIsNFTCollectionOpen(false);
+          }}
+          onClose={() => {
+            setSelectedNFT(null);
+            setIsNFTCollectionOpen(false);
+          }}
+          onZoomIn={() => {
+            if (selectedNFT.latitude && selectedNFT.longitude) {
+              // Set the NFT to zoom to and open fullscreen map
+              setNftToZoomTo(selectedNFT);
+              setIsFullscreen(true);
+              setSelectedNFT(null);
+              setIsNFTCollectionOpen(false);
+            }
+          }}
         />
       )}
     </>

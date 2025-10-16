@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import toast from 'react-hot-toast';
+import { GeoLinkIntegration } from '../services/geoLinkService';
 
 interface LocationData {
   latitude: number;
@@ -19,6 +20,12 @@ interface LocationContextType {
   showAllUsers: boolean;
   privacyEnabled: boolean;
   
+  // NFT state
+  nearbyNFTs: any[];
+  userNFTs: any[];
+  geoLink: GeoLinkIntegration | null;
+  geoLinkStatus: 'disconnected' | 'connecting' | 'connected' | 'error';
+  
   // Location actions
   enableLocation: () => Promise<void>;
   disableLocation: () => void;
@@ -28,6 +35,12 @@ interface LocationContextType {
   setSearchRadius: (radius: number) => void;
   setShowAllUsers: (showAll: boolean) => void;
   setPrivacyEnabled: (enabled: boolean) => void;
+  
+  // NFT actions
+  updateNearbyNFTs: () => Promise<void>;
+  refreshNFTs: () => void;
+  collectNFT: (nft: any) => Promise<void>;
+  refreshUserNFTs: () => Promise<void>;
   
   // Loading states
   isLocationLoading: boolean;
@@ -67,6 +80,13 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
   });
   const [isLocationLoading, setIsLocationLoading] = useState(false);
   const hasCalledUpdateOnMount = useRef(false);
+  const lastNFTUpdateTime = useRef(0);
+
+  // NFT state
+  const [nearbyNFTs, setNearbyNFTs] = useState<any[]>([]);
+  const [userNFTs, setUserNFTs] = useState<any[]>([]);
+  const [geoLink, setGeoLink] = useState<GeoLinkIntegration | null>(null);
+  const [geoLinkStatus, setGeoLinkStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
 
   const submitLocationToBackend = useCallback(async (locationData: LocationData) => {
     try {
@@ -160,6 +180,45 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       // Submit location to backend
       await submitLocationToBackend(locationData);
       
+      // Send to GeoLink if connected
+      if (geoLink && geoLinkStatus === 'connected') {
+        const userPublicKey = localStorage.getItem('wallet_publicKey');
+        if (userPublicKey) {
+          try {
+            console.log('📍 Sending location to GeoLink:', {
+              latitude: locationData.latitude,
+              longitude: locationData.longitude,
+              walletAddress: userPublicKey
+            });
+            const result = await geoLink.updateUserLocation(userPublicKey, locationData.latitude, locationData.longitude);
+            console.log('📍 Location sent to GeoLink successfully:', result);
+          } catch (error) {
+            console.error('❌ Failed to send location to GeoLink:', error);
+            setGeoLinkStatus('error');
+          }
+        }
+      }
+      
+      // Get nearby NFTs if connected (or try again later if still connecting)
+      if (geoLink && geoLinkStatus === 'connected') {
+        console.log('🔄 Calling updateNearbyNFTs from updateLocation...');
+        await updateNearbyNFTs();
+      } else if (geoLinkStatus === 'connecting') {
+        console.log('⏳ GeoLink still connecting, will retry NFT update in 2 seconds...');
+        // Retry NFT update after a short delay when GeoLink finishes connecting
+        setTimeout(async () => {
+          if (geoLink && (geoLinkStatus as string) === 'connected') {
+            console.log('🔄 Retrying updateNearbyNFTs after GeoLink connection...');
+            await updateNearbyNFTs();
+          }
+        }, 2000);
+      } else {
+        console.log('⚠️ Skipping NFT update - GeoLink not ready:', {
+          geoLink: !!geoLink,
+          geoLinkStatus
+        });
+      }
+      
       // Update location history
       setLocationHistory(prev => [...prev.slice(-49), locationData]);
       
@@ -185,6 +244,55 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       setIsLocationLoading(false);
     }
   }, [isLocationEnabled, submitLocationToBackend]);
+
+  // Initialize GeoLink integration with environment awareness
+  useEffect(() => {
+    const initializeGeoLink = async () => {
+    const walletProviderKey = process.env.REACT_APP_GEOLINK_WALLET_PROVIDER_KEY || '8390a5a72db59d0c256498dbb543cd652f991928705161386ab28d73ecf0a8fa';
+    const dataConsumerKey = process.env.REACT_APP_GEOLINK_DATA_CONSUMER_KEY || '54a0688fa6c54fe04ebe62a2678efa9a9f631e49b0a43b325d77e3081194a740';
+    const baseUrl = process.env.REACT_APP_GEOLINK_BASE_URL || 'http://localhost:4000';
+      
+      console.log('GeoLink Configuration:', {
+        baseUrl,
+        hasWalletProviderKey: !!walletProviderKey,
+        hasDataConsumerKey: !!dataConsumerKey,
+        environment: process.env.NODE_ENV
+      });
+      
+      if (walletProviderKey && dataConsumerKey) {
+        setGeoLinkStatus('connecting');
+        try {
+          const geoLinkInstance = new GeoLinkIntegration(walletProviderKey, dataConsumerKey);
+          
+          // Test connection to GeoLink
+          await testGeoLinkConnection(geoLinkInstance);
+          
+          setGeoLink(geoLinkInstance);
+          setGeoLinkStatus('connected');
+          console.log('✅ GeoLink connected successfully');
+        } catch (error) {
+          console.error('❌ Failed to connect to GeoLink:', error);
+          setGeoLinkStatus('error');
+        }
+      } else {
+        console.warn('⚠️ GeoLink API keys not configured');
+        setGeoLinkStatus('disconnected');
+      }
+    };
+
+    initializeGeoLink();
+  }, []);
+
+  // Test GeoLink connection
+  const testGeoLinkConnection = async (geoLinkInstance: GeoLinkIntegration) => {
+    try {
+      // Try to get nearby NFTs with dummy coordinates to test connection
+      await geoLinkInstance.getNearbyNFTs(0, 0, 1000);
+    } catch (error) {
+      // If it fails, that's okay - we just want to test the connection
+      console.log('GeoLink connection test completed');
+    }
+  };
 
   // Load location settings from localStorage on mount
   useEffect(() => {
@@ -402,6 +510,74 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     }
   }, []);
 
+  // Get nearby NFTs from GeoLink with debouncing
+  const updateNearbyNFTs = useCallback(async () => {
+    const now = Date.now();
+    const timeSinceLastUpdate = now - lastNFTUpdateTime.current;
+    
+    // Debounce: only update if at least 5 seconds have passed since last update
+    if (timeSinceLastUpdate < 5000) {
+      console.log('⏳ Debouncing NFT update - too soon since last update', {
+        timeSinceLastUpdate,
+        lastUpdate: new Date(lastNFTUpdateTime.current).toISOString(),
+        now: new Date(now).toISOString()
+      });
+      return;
+    }
+    
+    console.log('🔍 updateNearbyNFTs called:', {
+      hasGeoLink: !!geoLink,
+      geoLinkStatus,
+      hasCurrentLocation: !!currentLocation,
+      latitude: currentLocation?.latitude,
+      longitude: currentLocation?.longitude,
+      showAllUsers,
+      searchRadius,
+      timeSinceLastUpdate,
+      nearbyNFTsCount: nearbyNFTs.length
+    });
+    
+    if (geoLink && geoLinkStatus === 'connected' && currentLocation) {
+      try {
+        lastNFTUpdateTime.current = now; // Update the timestamp
+        console.log('🎯 Fetching NFTs from GeoLink...');
+        
+        // Use a much larger radius when "Global" is enabled
+        // 20,000km radius covers the entire world (Earth's circumference is ~40,000km)
+        const nftRadius = showAllUsers ? 20000000 : 1000; // 20,000km for global, 1km for local
+        console.log(`🎯 Using NFT search radius: ${nftRadius}m (${showAllUsers ? 'Global' : 'Local'} mode)`);
+        
+        const response = await geoLink.getNearbyNFTs(currentLocation.latitude, currentLocation.longitude, nftRadius);
+        console.log('🎯 GeoLink response:', response);
+        
+        // Handle the expected response format
+        if (response && response.nfts && response.nfts.length > 0) {
+          console.log('🎯 Setting NFTs:', response.nfts.length, 'items');
+          setNearbyNFTs(response.nfts);
+          console.log(`🎯 Found ${response.nfts.length} nearby NFTs`);
+        } else {
+          console.log('🎯 No NFTs found in response - keeping existing NFTs');
+          // Don't clear existing NFTs if no new ones found - this prevents flickering
+        }
+      } catch (error) {
+        console.error('❌ Failed to get nearby NFTs:', error);
+        // Only clear NFTs if it's a real error, not a temporary network issue
+        if (error instanceof Error && error.message && error.message.includes('Failed to fetch')) {
+          console.log('🔄 Network error - keeping existing NFTs');
+        } else {
+          console.log('🧹 Clearing NFTs due to error:', error);
+          setNearbyNFTs([]);
+        }
+      }
+    } else {
+      console.log('⚠️ Cannot fetch NFTs - missing requirements:', {
+        geoLink: !!geoLink,
+        geoLinkStatus,
+        currentLocation: !!currentLocation
+      });
+    }
+  }, [geoLink, geoLinkStatus, currentLocation, showAllUsers, searchRadius]);
+
   // Auto-update location and nearby users every 10 seconds when enabled
   useEffect(() => {
     if (!isLocationEnabled) return;
@@ -410,10 +586,35 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       updateLocation();
       // Also fetch nearby users automatically with current search parameters
       getNearbyUsers(searchRadius, showAllUsers);
+      // Note: NFTs are updated separately when location changes significantly
     }, 10000); // 10 seconds - more responsive updates
 
     return () => clearInterval(interval);
   }, [isLocationEnabled, updateLocation, getNearbyUsers, searchRadius, showAllUsers]);
+
+  // Update NFTs when GeoLink status changes to connected (only once)
+  useEffect(() => {
+    if (geoLinkStatus === 'connected' && currentLocation && geoLink) {
+      console.log('🎯 GeoLink connected, fetching NFTs for current location...');
+      updateNearbyNFTs();
+    }
+  }, [geoLinkStatus, geoLink]); // Removed currentLocation dependency
+
+  // Manual NFT refresh function
+  const refreshNFTs = useCallback(() => {
+    if (geoLinkStatus === 'connected' && currentLocation && geoLink) {
+      console.log('🔄 Manual NFT refresh triggered...');
+      updateNearbyNFTs();
+    }
+  }, [geoLinkStatus, currentLocation, geoLink, updateNearbyNFTs]);
+
+  // Update NFTs when Global setting changes
+  useEffect(() => {
+    if (geoLinkStatus === 'connected' && currentLocation && geoLink) {
+      console.log('🔄 Global setting changed, updating NFTs...');
+      updateNearbyNFTs();
+    }
+  }, [showAllUsers]); // Only trigger when Global setting changes
 
   const setSearchRadiusHandler = (radius: number) => {
     setSearchRadius(radius);
@@ -429,11 +630,56 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       setSearchRadius(10); // Reset to default when global is on
       localStorage.setItem('location_searchRadius', '10');
     }
+    // Note: NFT update is handled by useEffect when showAllUsers changes
   };
 
   const setPrivacyEnabledHandler = (enabled: boolean) => {
     setPrivacyEnabled(enabled);
     localStorage.setItem('location_privacyEnabled', enabled.toString());
+  };
+
+
+  // Collect an NFT with enhanced error handling
+  const collectNFT = async (nft: any) => {
+    if (geoLink && geoLinkStatus === 'connected' && currentLocation) {
+      const userPublicKey = localStorage.getItem('wallet_publicKey');
+      if (!userPublicKey) {
+        toast.error('No wallet connected');
+        return;
+      }
+
+      try {
+        const result = await geoLink.collectNFT(nft.id, userPublicKey, currentLocation.latitude, currentLocation.longitude);
+        
+        if (result.success) {
+          // Update local state
+          setUserNFTs(prev => [...prev, nft]);
+          setNearbyNFTs(prev => prev.filter(n => n.id !== nft.id));
+          
+          toast.success('🎉 NFT collected successfully!');
+        } else {
+          toast.error(result.error || 'Failed to collect NFT');
+        }
+      } catch (error) {
+        console.error('❌ Failed to collect NFT:', error);
+        toast.error('Failed to collect NFT: ' + (error as Error).message);
+      }
+    } else {
+      toast.error('GeoLink not connected. Please check your connection.');
+    }
+  };
+
+  // Refresh user's NFT collection
+  const refreshUserNFTs = async () => {
+    if (geoLink && geoLinkStatus === 'connected') {
+      try {
+        const response = await geoLink.getUserNFTs();
+        setUserNFTs(response.nfts || []);
+        console.log(`📚 Loaded ${response.nfts?.length || 0} user NFTs`);
+      } catch (error) {
+        console.error('❌ Failed to get user NFTs:', error);
+      }
+    }
   };
 
   const value: LocationContextType = {
@@ -445,6 +691,10 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     searchRadius,
     showAllUsers,
     privacyEnabled,
+    nearbyNFTs,
+    userNFTs,
+    geoLink,
+    geoLinkStatus,
     enableLocation,
     disableLocation,
     updateLocation,
@@ -453,6 +703,10 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     setSearchRadius: setSearchRadiusHandler,
     setShowAllUsers: setShowAllUsersHandler,
     setPrivacyEnabled: setPrivacyEnabledHandler,
+    updateNearbyNFTs,
+    refreshNFTs,
+    collectNFT,
+    refreshUserNFTs,
     isLocationLoading
   };
 

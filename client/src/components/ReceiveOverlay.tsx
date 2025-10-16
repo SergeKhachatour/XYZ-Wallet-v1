@@ -19,8 +19,9 @@ const Overlay = styled.div`
 `;
 
 const OverlayCard = styled.div`
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: none;
   border-radius: 16px;
   padding: 2rem;
   max-width: 500px;
@@ -28,6 +29,7 @@ const OverlayCard = styled.div`
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
   
   /* Custom scrollbar styling */
   &::-webkit-scrollbar {

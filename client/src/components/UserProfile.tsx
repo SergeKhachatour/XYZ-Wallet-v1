@@ -22,7 +22,7 @@ const ProfileOverlay = styled.div<{ $isOpen: boolean }>`
 const ProfileCard = styled.div`
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: none;
   border-radius: 20px;
   padding: 2rem;
   max-width: 600px;
@@ -32,6 +32,7 @@ const ProfileCard = styled.div`
   position: relative;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
   
   @media (min-width: 768px) {
     max-width: 700px;
@@ -43,6 +44,7 @@ const ProfileCard = styled.div`
     width: 95%;
     max-height: 95vh;
     padding: 1.5rem;
+    border-radius: 16px;
   }
 `;
 
@@ -168,9 +170,9 @@ const StatusBadge = styled.div<{ $status: 'online' | 'offline' | 'away' }>`
 `;
 
 const ActionButton = styled.button`
-  background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
   border: none;
-  color: white;
+  color: #000000;
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
   cursor: pointer;
@@ -183,8 +185,9 @@ const ActionButton = styled.button`
   justify-content: center;
   
   &:hover {
+    background: linear-gradient(135deg, #FFA500 0%, #FF8C00 100%);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 8px 24px rgba(255, 215, 0, 0.4);
   }
   
   &:disabled {
@@ -195,10 +198,11 @@ const ActionButton = styled.button`
 `;
 
 const PrimaryButton = styled(ActionButton)`
-  background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+  background: linear-gradient(135deg, #00FF00 0%, #00CC00 100%);
   
   &:hover {
-    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    background: linear-gradient(135deg, #00CC00 0%, #009900 100%);
+    box-shadow: 0 8px 24px rgba(0, 255, 0, 0.4);
   }
 `;
 
@@ -207,9 +211,10 @@ const MiniMap = styled.div`
   border-radius: 8px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: none;
   position: relative;
   margin: 1rem 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 `;
 
 const PaymentForm = styled.div`

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { Wallet, MapPin, ArrowLeftRight, TrendingUp, Send, QrCode } from 'lucide-react';
+import { Wallet, MapPin, ArrowLeftRight, TrendingUp, Send, QrCode, Image, ZoomIn } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useLocation } from '../contexts/LocationContext';
 import { useNavigate } from 'react-router-dom';
@@ -9,32 +9,50 @@ import MapboxMap from '../components/MapboxMap';
 import UserProfile from '../components/UserProfile';
 import ReceiveOverlay from '../components/ReceiveOverlay';
 import SendOverlay from '../components/SendOverlay';
+import { NFTCollectionOverlay } from '../components/NFTCollectionOverlay';
 
 
 const DashboardContainer = styled.div`
   display: grid;
   grid-template-columns: 1fr;
-  gap: 2rem;
+  gap: 1rem;
   margin-bottom: 2rem;
+  padding: 0 1rem;
   
-  /* Make the map span 2 columns on larger screens */
+  /* Mobile-first responsive design */
+  @media (min-width: 480px) {
+    gap: 1.25rem;
+    padding: 0 1.5rem;
+  }
+  
   @media (min-width: 768px) {
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    padding: 0 2rem;
+  }
+  
+  @media (min-width: 1024px) {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
   }
   
   @media (min-width: 1200px) {
-    grid-template-columns: repeat(3, 1fr);
+    gap: 2.5rem;
   }
 `;
 
-const MapGridItem = styled.div`
+const PriceChartContainer = styled.div`
   grid-column: 1 / -1;
   
   @media (min-width: 768px) {
-    grid-column: span 2;
+    grid-column: span 1;
   }
+`;
+
+const MapContainer = styled.div`
+  grid-column: 1 / -1;
   
-  @media (min-width: 1200px) {
+  @media (min-width: 768px) {
     grid-column: span 2;
   }
 `;
@@ -42,28 +60,50 @@ const MapGridItem = styled.div`
 const Card = styled.div`
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: none;
   border-radius: 16px;
-  padding: 2rem;
-  color: white;
+  padding: 1.5rem;
+  color: #FFFFFF;
   transition: transform 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  
+  /* Mobile optimizations */
+  @media (max-width: 767px) {
+    padding: 1rem;
+    border-radius: 12px;
+  }
+  
+  @media (min-width: 768px) {
+    padding: 2rem;
+  }
   
   &:hover {
     transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(255, 215, 0, 0.3);
   }
 `;
 
 const CardHeader = styled.div`
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  
+  @media (min-width: 768px) {
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
 `;
 
 const CardTitle = styled.h2`
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   font-weight: 600;
   margin: 0;
+  
+  @media (min-width: 768px) {
+    font-size: 1.25rem;
+  }
 `;
 
 const CardContent = styled.div`
@@ -77,7 +117,7 @@ const StatItem = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
   
   &:last-child {
     border-bottom: none;
@@ -91,22 +131,38 @@ const StatLabel = styled.span`
 const StatValue = styled.span`
   font-weight: 600;
   font-family: monospace;
+  color: #FFD700;
 `;
 
 const ActionButton = styled.button`
-  background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
   border: none;
-  color: white;
+  color: #000000;
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
   cursor: pointer;
   font-weight: 500;
   transition: all 0.2s ease;
   margin-top: 1rem;
+  width: 100%;
+  font-size: 0.9rem;
+  
+  /* Mobile optimizations */
+  @media (max-width: 767px) {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    border-radius: 6px;
+  }
+  
+  @media (min-width: 768px) {
+    width: auto;
+    font-size: 0.9rem;
+  }
   
   &:hover {
+    background: linear-gradient(135deg, #FFA500 0%, #FF8C00 100%);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 8px 24px rgba(255, 215, 0, 0.4);
   }
 `;
 
@@ -141,7 +197,7 @@ const TopRightIcons = styled.div<{ $hideOnMobile?: boolean }>`
 const IconButton = styled.button`
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: none;
   border-radius: 50%;
   width: 48px;
   height: 48px;
@@ -149,15 +205,15 @@ const IconButton = styled.button`
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: white;
+  color: #FFFFFF;
   transition: all 0.2s ease;
   position: relative;
   z-index: 1;
   
   &:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 215, 0, 0.2);
     transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 8px 24px rgba(255, 215, 0, 0.3);
   }
   
   &:active {
@@ -167,10 +223,9 @@ const IconButton = styled.button`
   @media (max-width: 768px) {
     width: 40px;
     height: 40px;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(255, 255, 255, 0.1);
     backdrop-filter: none;
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
   
   @media (max-width: 480px) {
@@ -181,15 +236,13 @@ const IconButton = styled.button`
 
 const ReceiveIcon = styled(IconButton)`
   &:hover {
-    color: #4ade80;
-    border-color: #4ade80;
+    color: #00FF00;
   }
 `;
 
 const SendIcon = styled(IconButton)`
   &:hover {
-    color: #f59e0b;
-    border-color: #f59e0b;
+    color: #FFD700;
   }
 `;
 
@@ -208,21 +261,27 @@ const Dashboard: React.FC = () => {
     isVisible, 
     currentLocation, 
     nearbyUsers,
+    nearbyNFTs,
     searchRadius,
     showAllUsers,
     getNearbyUsers,
     setSearchRadius,
-    setShowAllUsers
+    setShowAllUsers,
+    collectNFT,
+    refreshNFTs
   } = useLocation();
   
   const navigate = useNavigate();
   const [serverStatus, setServerStatus] = useState<'online' | 'offline' | 'checking'>('checking');
   const [availableTokens, setAvailableTokens] = useState<any[]>([]);
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [selectedNFT, setSelectedNFT] = useState<any>(null);
+  const [nftToZoomTo, setNftToZoomTo] = useState<any>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isReceiveOpen, setIsReceiveOpen] = useState(false);
   const [isSendOpen, setIsSendOpen] = useState(false);
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
+  const [isNFTCollectionOpen, setIsNFTCollectionOpen] = useState(false);
 
   const handleUserClick = (user: any) => {
     setSelectedUser(user);
@@ -232,6 +291,31 @@ const Dashboard: React.FC = () => {
   const handleCloseProfile = () => {
     setIsProfileOpen(false);
     setSelectedUser(null);
+  };
+
+  const handleNFTClick = (nft: any) => {
+    setSelectedNFT(nft);
+    setIsNFTCollectionOpen(true);
+  };
+
+  const handleCloseNFT = () => {
+    setIsNFTCollectionOpen(false);
+    setSelectedNFT(null);
+  };
+
+  const handleNFTZoomIn = () => {
+    // Open fullscreen map and zoom to NFT location
+    if (selectedNFT && selectedNFT.latitude && selectedNFT.longitude) {
+      // Set the NFT to zoom to
+      setNftToZoomTo(selectedNFT);
+      
+      // Open fullscreen map
+      setIsMapFullscreen(true);
+      
+      // Close the NFT overlay
+      setSelectedNFT(null);
+      setIsNFTCollectionOpen(false);
+    }
   };
 
   // Check server status
@@ -297,6 +381,13 @@ const Dashboard: React.FC = () => {
       getNearbyUsers(searchRadius, showAllUsers);
     }
   }, [isConnected, isLocationEnabled, serverStatus, getNearbyUsers, searchRadius, showAllUsers]);
+
+  // Clear nftToZoomTo when fullscreen map closes
+  useEffect(() => {
+    if (!isMapFullscreen && nftToZoomTo) {
+      setNftToZoomTo(null);
+    }
+  }, [isMapFullscreen, nftToZoomTo]);
 
   if (!isConnected) {
     return (
@@ -399,13 +490,19 @@ const Dashboard: React.FC = () => {
         </Card>
       )}
 
-      {/* XLM Price Chart */}
-      <PriceChart />
+      {/* XLM Price Chart - Mobile: full width, Desktop: 1 column */}
+      <PriceChartContainer>
+        <PriceChart />
+      </PriceChartContainer>
 
-      {/* Global Map */}
-      <MapGridItem>
-        <MapboxMap onFullscreenChange={setIsMapFullscreen} />
-      </MapGridItem>
+      {/* Global Map - Mobile: full width, Desktop: 2 columns */}
+      <MapContainer>
+        <MapboxMap 
+          onFullscreenChange={setIsMapFullscreen} 
+          selectedNFTForZoom={nftToZoomTo}
+          isFullscreen={isMapFullscreen}
+        />
+      </MapContainer>
 
       {/* Wallet Overview */}
       <Card>
@@ -428,97 +525,6 @@ const Dashboard: React.FC = () => {
           </StatItem>
           <ActionButton onClick={() => navigate('/wallet')}>
             Manage Wallet
-          </ActionButton>
-        </CardContent>
-      </Card>
-
-      {/* Location Services */}
-      <Card>
-        <CardHeader>
-          <MapPin size={24} />
-          <CardTitle>Location Services</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <StatItem>
-            <StatLabel>Status</StatLabel>
-            <StatValue>{isLocationEnabled ? 'Enabled' : 'Disabled'}</StatValue>
-          </StatItem>
-          <StatItem>
-            <StatLabel>Visibility</StatLabel>
-            <StatValue>{isVisible ? 'Visible' : 'Hidden'}</StatValue>
-          </StatItem>
-          <StatItem>
-            <StatLabel>Nearby Users</StatLabel>
-            <StatValue>{nearbyUsers.length}</StatValue>
-          </StatItem>
-          {currentLocation && (
-            <StatItem>
-              <StatLabel>Current Location</StatLabel>
-              <StatValue>
-                {currentLocation.latitude.toFixed(4)}, {currentLocation.longitude.toFixed(4)}
-              </StatValue>
-            </StatItem>
-          )}
-          
-          {/* Enhanced Location Search Controls */}
-          {isLocationEnabled && (
-            <>
-              <StatItem>
-                <StatLabel>Search Mode</StatLabel>
-                <StatValue>{showAllUsers ? 'Global' : `${searchRadius} km`}</StatValue>
-              </StatItem>
-              
-              <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                  <input
-                    type="checkbox"
-                    id="dashboardShowAllUsers"
-                    checked={showAllUsers}
-                    onChange={(e) => setShowAllUsers(e.target.checked)}
-                    style={{ marginRight: '0.5rem' }}
-                  />
-                  <label htmlFor="dashboardShowAllUsers" style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.8)' }}>
-                    Show All Users (Global)
-                  </label>
-                </div>
-                
-                {!showAllUsers && (
-                  <select
-                    value={searchRadius}
-                    onChange={(e) => setSearchRadius(parseInt(e.target.value))}
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.1)',
-                      border: '1px solid rgba(255, 255, 255, 0.3)',
-                      borderRadius: '8px',
-                      padding: '0.5rem',
-                      color: 'white',
-                      fontSize: '0.9rem'
-                    }}
-                  >
-                    <option value={1}>1 km</option>
-                    <option value={5}>5 km</option>
-                    <option value={10}>10 km</option>
-                    <option value={25}>25 km</option>
-                    <option value={50}>50 km</option>
-                    <option value={100}>100 km</option>
-                    <option value={250}>250 km</option>
-                    <option value={500}>500 km</option>
-                    <option value={1000}>1000 km</option>
-                  </select>
-                )}
-                
-                <ActionButton 
-                  onClick={() => getNearbyUsers(searchRadius, showAllUsers)}
-                  style={{ marginTop: '0.5rem', fontSize: '0.9rem', padding: '0.5rem 1rem' }}
-                >
-                  {showAllUsers ? 'Show All Users' : `Search ${searchRadius} km`}
-                </ActionButton>
-              </div>
-            </>
-          )}
-          
-          <ActionButton onClick={() => navigate('/location')}>
-            Manage Location
           </ActionButton>
         </CardContent>
       </Card>
@@ -559,7 +565,7 @@ const Dashboard: React.FC = () => {
                       e.currentTarget.style.transform = 'translateY(0)';
                     }}
                   >
-                    <div style={{ flex: 1, minWidth: '200px' }}>
+                      <div style={{ flex: 1, minWidth: '150px' }}>
                       <div style={{ fontFamily: 'monospace', fontSize: '0.9rem', fontWeight: '600', wordBreak: 'break-all' }}>
                         {user.publicKey.slice(0, 8)}...{user.publicKey.slice(-8)}
                       </div>
@@ -618,6 +624,168 @@ const Dashboard: React.FC = () => {
             </ActionButton>
           </CardContent>
         </Card>
+      )}
+
+      {/* Nearby NFTs */}
+      {isLocationEnabled && (
+        <Card>
+            <CardHeader>
+              <Image size={24} />
+              <CardTitle>Nearby NFTs ({nearbyNFTs.length})</CardTitle>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <ActionButton 
+                  onClick={refreshNFTs}
+                  style={{ 
+                    padding: '0.5rem 1rem', 
+                    fontSize: '0.9rem',
+                    margin: 0,
+                    background: 'rgba(74, 222, 128, 0.2)',
+                    border: '1px solid #4ade80',
+                    color: '#4ade80'
+                  }}
+                >
+                  🔄 Refresh
+                </ActionButton>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {nearbyNFTs.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '300px', overflowY: 'auto' }}>
+                  {nearbyNFTs.slice(0, 5).map((nft, index) => {
+                    // Construct image URL from server_url + ipfs_hash
+                    const imageUrl = nft.server_url && nft.ipfs_hash 
+                      ? `${nft.server_url}${nft.ipfs_hash}` 
+                      : nft.image_url || 'https://via.placeholder.com/48x48?text=NFT';
+                    
+                    return (
+                      <div
+                        key={index}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          borderRadius: '8px',
+                          padding: '0.75rem',
+                          transition: 'all 0.2s ease',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          flexWrap: 'wrap',
+                          gap: '0.5rem',
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => handleNFTClick(nft)}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                          e.currentTarget.style.transform = 'translateY(-2px)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, minWidth: '150px' }}>
+                          <img 
+                            src={imageUrl} 
+                            alt={nft.collection_name || 'NFT'} 
+                            style={{
+                              width: '48px',
+                              height: '48px',
+                              borderRadius: '8px',
+                              objectFit: 'cover',
+                              border: '2px solid rgba(255, 255, 255, 0.2)'
+                            }}
+                          />
+                          <div>
+                            <div style={{ fontFamily: 'monospace', fontSize: '0.9rem', fontWeight: '600' }}>
+                              {nft.collection_name || 'Unknown NFT'}
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.7)' }}>
+                              {Math.round(nft.distance)}m away • {nft.rarity_level || 'Unknown'} rarity
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleNFTClick(nft);
+                            }}
+                            style={{
+                              background: 'rgba(255, 107, 107, 0.2)',
+                              border: '1px solid #ff6b6b',
+                              borderRadius: '6px',
+                              padding: '0.25rem 0.5rem',
+                              color: '#ff6b6b',
+                              fontSize: '0.8rem',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.25rem',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = 'rgba(255, 107, 107, 0.3)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'rgba(255, 107, 107, 0.2)';
+                            }}
+                          >
+                            <Image size={12} />
+                            View
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Set the NFT to zoom to and open fullscreen map
+                              setNftToZoomTo(nft);
+                              setIsMapFullscreen(true);
+                            }}
+                            style={{
+                              background: 'rgba(74, 222, 128, 0.2)',
+                              border: '1px solid #4ade80',
+                              borderRadius: '6px',
+                              padding: '0.25rem 0.5rem',
+                              color: '#4ade80',
+                              fontSize: '0.8rem',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.25rem',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = 'rgba(74, 222, 128, 0.3)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'rgba(74, 222, 128, 0.2)';
+                            }}
+                          >
+                            <ZoomIn size={12} />
+                            Zoom
+                          </button>
+                          <div style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+                            {nft.is_active ? 'Active' : 'Inactive'}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {nearbyNFTs.length > 5 && (
+                    <div style={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.8rem', padding: '0.5rem' }}>
+                      +{nearbyNFTs.length - 5} more NFTs
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.6)', padding: '2rem' }}>
+                  {showAllUsers ? 'No NFTs found globally' : `No NFTs found within ${searchRadius} km`}
+                </div>
+              )}
+              <ActionButton onClick={() => navigate('/location')} style={{ marginTop: '1rem' }}>
+                View All NFTs
+              </ActionButton>
+            </CardContent>
+          </Card>
       )}
 
       {/* Recent Transactions */}
@@ -738,7 +906,98 @@ const Dashboard: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Available Tokens for Swapping */}
+      {/* Location Services */}
+      <Card>
+        <CardHeader>
+          <MapPin size={24} />
+          <CardTitle>Location Services</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <StatItem>
+            <StatLabel>Status</StatLabel>
+            <StatValue>{isLocationEnabled ? 'Enabled' : 'Disabled'}</StatValue>
+          </StatItem>
+          <StatItem>
+            <StatLabel>Visibility</StatLabel>
+            <StatValue>{isVisible ? 'Visible' : 'Hidden'}</StatValue>
+          </StatItem>
+          <StatItem>
+            <StatLabel>Nearby Users</StatLabel>
+            <StatValue>{nearbyUsers.length}</StatValue>
+          </StatItem>
+          {currentLocation && (
+            <StatItem>
+              <StatLabel>Current Location</StatLabel>
+              <StatValue>
+                {currentLocation.latitude.toFixed(4)}, {currentLocation.longitude.toFixed(4)}
+              </StatValue>
+            </StatItem>
+          )}
+          
+          {/* Enhanced Location Search Controls */}
+          {isLocationEnabled && (
+            <>
+              <StatItem>
+                <StatLabel>Search Mode</StatLabel>
+                <StatValue>{showAllUsers ? 'Global' : `${searchRadius} km`}</StatValue>
+              </StatItem>
+              
+              <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <input
+                    type="checkbox"
+                    id="dashboardShowAllUsers"
+                    checked={showAllUsers}
+                    onChange={(e) => setShowAllUsers(e.target.checked)}
+                    style={{ marginRight: '0.5rem' }}
+                  />
+                  <label htmlFor="dashboardShowAllUsers" style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.8)' }}>
+                    Show All Users (Global)
+                  </label>
+                </div>
+                
+                {!showAllUsers && (
+                  <select
+                    value={searchRadius}
+                    onChange={(e) => setSearchRadius(parseInt(e.target.value))}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      border: '1px solid rgba(255, 255, 255, 0.3)',
+                      borderRadius: '8px',
+                      padding: '0.5rem',
+                      color: 'white',
+                      fontSize: '0.9rem'
+                    }}
+                  >
+                    <option value={1}>1 km</option>
+                    <option value={5}>5 km</option>
+                    <option value={10}>10 km</option>
+                    <option value={25}>25 km</option>
+                    <option value={50}>50 km</option>
+                    <option value={100}>100 km</option>
+                    <option value={250}>250 km</option>
+                    <option value={500}>500 km</option>
+                    <option value={1000}>1000 km</option>
+                  </select>
+                )}
+                
+                <ActionButton 
+                  onClick={() => getNearbyUsers(searchRadius, showAllUsers)}
+                  style={{ marginTop: '0.5rem', fontSize: '0.9rem', padding: '0.5rem 1rem' }}
+                >
+                  {showAllUsers ? 'Show All Users' : `Search ${searchRadius} km`}
+                </ActionButton>
+              </div>
+            </>
+          )}
+          
+          <ActionButton onClick={() => navigate('/location')}>
+            Manage Location
+          </ActionButton>
+        </CardContent>
+      </Card>
+        {/* Available Tokens for Swapping - Full Width */}
+        <div style={{ gridColumn: '1 / -1' }}>
       <Card>
         <CardHeader>
           <ArrowLeftRight size={24} />
@@ -782,6 +1041,7 @@ const Dashboard: React.FC = () => {
           </ActionButton>
         </CardContent>
       </Card>
+      </div>
 
       {/* User Profile Modal */}
       <UserProfile
@@ -802,6 +1062,20 @@ const Dashboard: React.FC = () => {
         isOpen={isSendOpen}
         onClose={() => setIsSendOpen(false)}
       />
+
+      {/* NFT Collection Overlay */}
+      {selectedNFT && (
+        <NFTCollectionOverlay
+          nft={selectedNFT}
+          onCollect={() => {
+            collectNFT(selectedNFT);
+            setSelectedNFT(null);
+            setIsNFTCollectionOpen(false);
+          }}
+          onClose={handleCloseNFT}
+          onZoomIn={handleNFTZoomIn}
+        />
+      )}
     </>
   );
 };

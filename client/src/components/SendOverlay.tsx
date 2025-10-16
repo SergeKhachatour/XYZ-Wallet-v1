@@ -20,8 +20,9 @@ const Overlay = styled.div`
 `;
 
 const OverlayCard = styled.div`
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: none;
   border-radius: 16px;
   padding: 2rem;
   max-width: 500px;
@@ -29,6 +30,7 @@ const OverlayCard = styled.div`
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
   
   /* Custom scrollbar styling */
   &::-webkit-scrollbar {
@@ -113,53 +115,53 @@ const Label = styled.label`
 `;
 
 const Input = styled.input`
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(123, 104, 238, 0.3);
   border-radius: 8px;
   padding: 0.75rem;
-  color: white;
+  color: #F8FAFC;
   font-size: 0.9rem;
   transition: all 0.2s ease;
   
   &:focus {
     outline: none;
-    border-color: #4ade80;
-    box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.2);
+    border-color: #7B68EE;
+    box-shadow: 0 0 0 2px rgba(123, 104, 238, 0.2);
   }
   
   &::placeholder {
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(248, 250, 252, 0.5);
   }
 `;
 
 const Select = styled.select`
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(123, 104, 238, 0.3);
   border-radius: 8px;
   padding: 0.75rem;
-  color: white;
+  color: #F8FAFC;
   font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.2s ease;
   
   &:focus {
     outline: none;
-    border-color: #4ade80;
-    box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.2);
+    border-color: #7B68EE;
+    box-shadow: 0 0 0 2px rgba(123, 104, 238, 0.2);
   }
   
   option {
-    background: #2d2d2d;
-    color: white;
+    background: #0F172A;
+    color: #F8FAFC;
   }
 `;
 
 const TextArea = styled.textarea`
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(123, 104, 238, 0.3);
   border-radius: 8px;
   padding: 0.75rem;
-  color: white;
+  color: #F8FAFC;
   font-size: 0.9rem;
   font-family: inherit;
   resize: vertical;
@@ -168,19 +170,19 @@ const TextArea = styled.textarea`
   
   &:focus {
     outline: none;
-    border-color: #4ade80;
-    box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.2);
+    border-color: #7B68EE;
+    box-shadow: 0 0 0 2px rgba(123, 104, 238, 0.2);
   }
   
   &::placeholder {
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(248, 250, 252, 0.5);
   }
 `;
 
 const Button = styled.button`
-  background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
   border: none;
-  color: white;
+  color: #000000;
   padding: 1rem 2rem;
   border-radius: 8px;
   cursor: pointer;
@@ -192,10 +194,12 @@ const Button = styled.button`
   gap: 0.5rem;
   transition: all 0.2s ease;
   margin-top: 1rem;
+  width: 100%;
   
   &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #FFA500 0%, #FF8C00 100%);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(74, 222, 128, 0.3);
+    box-shadow: 0 8px 24px rgba(255, 215, 0, 0.4);
   }
   
   &:disabled {
@@ -203,20 +207,32 @@ const Button = styled.button`
     cursor: not-allowed;
     transform: none;
   }
+  
+  @media (max-width: 768px) {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9rem;
+  }
 `;
 
 const SecondaryButton = styled.button`
   background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  color: #FFFFFF;
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
   cursor: pointer;
   font-weight: 500;
   transition: all 0.2s ease;
+  width: 100%;
   
   &:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 215, 0, 0.1);
+    border-color: rgba(255, 215, 0, 0.5);
+  }
+  
+  @media (max-width: 768px) {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.9rem;
   }
 `;
 
@@ -227,35 +243,35 @@ const ButtonGroup = styled.div`
 `;
 
 const BalanceInfo = styled.div`
-  background: rgba(74, 222, 128, 0.1);
-  border: 1px solid rgba(74, 222, 128, 0.3);
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1rem;
 `;
 
 const BalanceText = styled.div`
-  color: #4ade80;
+  color: #10B981;
   font-size: 0.9rem;
   font-weight: 500;
 `;
 
 const ErrorMessage = styled.div`
-  background: rgba(220, 53, 69, 0.1);
-  border: 1px solid rgba(220, 53, 69, 0.3);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
   border-radius: 8px;
   padding: 0.75rem;
-  color: #dc3545;
+  color: #EF4444;
   font-size: 0.9rem;
   margin-top: 1rem;
 `;
 
 const SuccessMessage = styled.div`
-  background: rgba(40, 167, 69, 0.1);
-  border: 1px solid rgba(40, 167, 69, 0.3);
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
   border-radius: 8px;
   padding: 0.75rem;
-  color: #28a745;
+  color: #10B981;
   font-size: 0.9rem;
   margin-top: 1rem;
 `;
@@ -316,9 +332,9 @@ const ScannerButtons = styled.div`
 `;
 
 const ScannerButton = styled.button`
-  background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
   border: none;
-  color: white;
+  color: #000000;
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
   cursor: pointer;
@@ -329,8 +345,9 @@ const ScannerButton = styled.button`
   transition: all 0.2s ease;
   
   &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #FFA500 0%, #FF8C00 100%);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(74, 222, 128, 0.3);
+    box-shadow: 0 8px 24px rgba(255, 215, 0, 0.4);
   }
   
   &:disabled {
@@ -341,16 +358,20 @@ const ScannerButton = styled.button`
 `;
 
 const ScannerCloseButton = styled(ScannerButton)`
-  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  color: #FFFFFF;
   
   &:hover {
-    box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+    background: rgba(255, 215, 0, 0.1);
+    border-color: rgba(255, 215, 0, 0.5);
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
   }
 `;
 
 const QRButton = styled.button`
   background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 215, 0, 0.3);
   color: white;
   padding: 0.5rem;
   border-radius: 8px;
@@ -362,9 +383,8 @@ const QRButton = styled.button`
   margin-left: 0.5rem;
   
   &:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: #4ade80;
-    color: #4ade80;
+    background: rgba(255, 215, 0, 0.1);
+    border-color: rgba(255, 215, 0, 0.5);
   }
 `;
 

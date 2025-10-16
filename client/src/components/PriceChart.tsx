@@ -5,10 +5,11 @@ import { TrendingUp, TrendingDown } from 'lucide-react';
 const ChartContainer = styled.div`
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: none;
   border-radius: 16px;
   padding: 1.5rem;
-  color: white;
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
 `;
 
 const ChartHeader = styled.div`
@@ -35,11 +36,12 @@ const CurrentPrice = styled.div`
   font-size: 1.5rem;
   font-weight: 700;
   font-family: monospace;
+  color: #FFD700;
 `;
 
 const PriceChange = styled.div<{ $positive: boolean }>`
   font-size: 0.9rem;
-  color: ${props => props.$positive ? '#28a745' : '#dc3545'};
+  color: ${props => props.$positive ? '#00FF00' : '#FF0000'};
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -48,14 +50,15 @@ const PriceChange = styled.div<{ $positive: boolean }>`
 
 const ChartArea = styled.div`
   height: 120px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 215, 0, 0.1);
   border-radius: 8px;
   padding: 1rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.8);
   font-size: 0.9rem;
+  border: none;
 `;
 
 interface PriceData {
@@ -141,7 +144,7 @@ const PriceChart: React.FC = () => {
         <ChartArea>
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Loading...</div>
-            <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+            <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.8)' }}>
               Fetching latest price data
             </div>
           </div>
@@ -161,10 +164,10 @@ const PriceChart: React.FC = () => {
         </ChartHeader>
         <ChartArea>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '1rem', marginBottom: '0.5rem', color: '#dc3545' }}>
+            <div style={{ fontSize: '1rem', marginBottom: '0.5rem', color: '#FF0000' }}>
               {error || 'Price data unavailable'}
             </div>
-            <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+            <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.8)' }}>
               Unable to fetch price data
             </div>
           </div>
@@ -196,7 +199,7 @@ const PriceChart: React.FC = () => {
             fontSize: '2rem', 
             fontWeight: 'bold', 
             marginBottom: '0.5rem',
-            background: 'linear-gradient(45deg, #00d4ff, #0099cc)',
+            background: 'linear-gradient(45deg, #FFD700, #FFA500)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text'
@@ -205,7 +208,7 @@ const PriceChart: React.FC = () => {
           </div>
           <div style={{ 
             fontSize: '1rem', 
-            color: isPositive ? '#28a745' : '#dc3545',
+            color: isPositive ? '#00FF00' : '#FF0000',
             marginBottom: '0.5rem',
             display: 'flex',
             alignItems: 'center',
@@ -215,7 +218,7 @@ const PriceChart: React.FC = () => {
             {isPositive ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
             {Math.abs(priceData.changePercent24h).toFixed(2)}% (24h)
           </div>
-          <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+          <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.8)' }}>
             Real-time data from Soroswap
           </div>
         </div>
