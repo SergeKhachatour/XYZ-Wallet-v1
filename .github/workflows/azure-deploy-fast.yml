@@ -65,7 +65,6 @@ jobs:
           cp -r server/routes deploy-package/server/
           cp package.json deploy-package/
           cp package-lock.json deploy-package/
-          cp startup.txt deploy-package/
           
           # Copy client build
           cp -r client/build/* deploy-package/client/build/
@@ -79,7 +78,7 @@ jobs:
           # Remove unnecessary files to minimize package size
           echo "Cleaning up unnecessary files..."
           find deploy-package -name "*.md" -delete 2>/dev/null || true
-          find deploy-package -name "*.txt" -not -name "startup.txt" -delete 2>/dev/null || true
+          find deploy-package -name "*.txt" -delete 2>/dev/null || true
           find deploy-package -name ".git*" -delete 2>/dev/null || true
           # Clean up cache and temp files but skip problematic directories
           find deploy-package -name "node_modules/.cache" -type d -exec rm -rf {} + 2>/dev/null || true
