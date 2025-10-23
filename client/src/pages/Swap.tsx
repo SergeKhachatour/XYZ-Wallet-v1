@@ -353,7 +353,7 @@ const Swap: React.FC = () => {
   useEffect(() => {
     const loadTokens = async () => {
       try {
-        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/soroswap/tokens`);
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001'}/api/soroswap/tokens`);
         const data = await response.json();
         
         if (response.ok && data.length > 0) {
@@ -408,7 +408,7 @@ const Swap: React.FC = () => {
       
       console.log('Request body:', requestBody);
       
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/soroswap/quote?network=testnet`, {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001'}/api/soroswap/quote?network=testnet`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -505,7 +505,7 @@ const Swap: React.FC = () => {
       console.log('Executing swap with quote:', quote);
       
       // Build transaction
-      const buildResponse = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/soroswap/build`, {
+      const buildResponse = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001'}/api/soroswap/build`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

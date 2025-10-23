@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { TrendingUp, TrendingDown } from 'lucide-react';
+import MiniRadar from './MiniRadar';
 
 const ChartContainer = styled.div`
   background: rgba(255, 255, 255, 0.1);
@@ -61,13 +62,31 @@ const ChartArea = styled.div`
   border: none;
 `;
 
+const Separator = styled.div`
+  height: 1px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: 1rem 0;
+`;
+
+const RadarSection = styled.div`
+  margin-top: 1rem;
+`;
+
 interface PriceData {
   price: number;
   change24h: number;
   changePercent24h: number;
 }
 
-const PriceChart: React.FC = () => {
+interface PriceChartProps {
+  nearbyNFTs?: any[];
+  onRadarFullscreen?: () => void;
+  onNFTClick?: (nft: any) => void;
+  userLatitude?: number;
+  userLongitude?: number;
+}
+
+const PriceChart: React.FC<PriceChartProps> = ({ nearbyNFTs = [], onRadarFullscreen, onNFTClick, userLatitude, userLongitude }) => {
   const [priceData, setPriceData] = useState<PriceData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -79,7 +98,7 @@ const PriceChart: React.FC = () => {
         setError(null);
         
         // Using Soroswap API for XLM price (using mainnet for real price data)
-        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/soroswap/price?network=mainnet&asset=CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC`);
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001'}/api/soroswap/price?network=mainnet&asset=CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC`);
         
         let data;
         try {
@@ -223,6 +242,18 @@ const PriceChart: React.FC = () => {
           </div>
         </div>
       </ChartArea>
+      
+      <Separator />
+      
+      <RadarSection>
+        <MiniRadar 
+          nearbyNFTs={nearbyNFTs}
+          onFullscreenClick={onRadarFullscreen || (() => {})}
+          onNFTClick={onNFTClick || (() => {})}
+          userLatitude={userLatitude}
+          userLongitude={userLongitude}
+        />
+      </RadarSection>
     </ChartContainer>
   );
 };

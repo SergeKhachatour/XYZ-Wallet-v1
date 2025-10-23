@@ -448,7 +448,7 @@ const Settings: React.FC = () => {
             </SettingDescription>
           </SettingInfo>
           <InfoValue style={{ fontSize: '0.9rem' }}>
-            {process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}
+            {process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001'}
           </InfoValue>
         </SettingItem>
       </Section>

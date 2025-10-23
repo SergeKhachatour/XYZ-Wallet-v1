@@ -108,7 +108,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
         longitude += lngOffset;
       }
       
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/location/submit`, {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001'}/api/location/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -168,9 +168,9 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 15000, // 15 seconds timeout
-          maximumAge: 60000 // 60 seconds cache to match update interval
+          enableHighAccuracy: false, // Use faster, less accurate location for initial load
+          timeout: 5000, // 5 seconds timeout for faster initial load
+          maximumAge: 300000 // 5 minutes cache for better performance
         });
       });
 
@@ -189,23 +189,32 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       // Submit location to backend
       await submitLocationToBackend(locationData);
       
-      // Send to GeoLink if connected
-      if (geoLink && geoLinkStatus === 'connected') {
+      // Send to GeoLink if connected or connecting (as wallet provider)
+      if (geoLink && (geoLinkStatus === 'connected' || geoLinkStatus === 'connecting')) {
         const userPublicKey = localStorage.getItem('wallet_publicKey');
         if (userPublicKey) {
-          try {
-            console.log('📍 Sending location to GeoLink:', {
-              latitude: locationData.latitude,
-              longitude: locationData.longitude,
-              walletAddress: userPublicKey
-            });
-            const result = await geoLink.updateUserLocation(userPublicKey, locationData.latitude, locationData.longitude);
-            console.log('📍 Location sent to GeoLink successfully:', result);
-          } catch (error) {
-            console.error('❌ Failed to send location to GeoLink:', error);
-            setGeoLinkStatus('error');
-          }
+          // Make GeoLink API call non-blocking
+          setTimeout(async () => {
+            try {
+              console.log('📍 Sending location to GeoLink (Wallet Provider):', {
+                latitude: locationData.latitude,
+                longitude: locationData.longitude,
+                walletAddress: userPublicKey,
+                geoLinkStatus
+              });
+              const result = await geoLink.updateUserLocation(userPublicKey, locationData.latitude, locationData.longitude);
+              console.log('📍 Location sent to GeoLink successfully:', result);
+            } catch (error) {
+              console.error('❌ Failed to send location to GeoLink:', error);
+              setGeoLinkStatus('error');
+            }
+          }, 100); // Small delay to prevent blocking
         }
+      } else {
+        console.log('⚠️ Skipping GeoLink location submission - not ready:', {
+          geoLink: !!geoLink,
+          geoLinkStatus
+        });
       }
       
       // Get nearby NFTs if connected (or try again later if still connecting)
@@ -259,7 +268,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     const initializeGeoLink = async () => {
     const walletProviderKey = process.env.REACT_APP_GEOLINK_WALLET_PROVIDER_KEY || '8390a5a72db59d0c256498dbb543cd652f991928705161386ab28d73ecf0a8fa';
     const dataConsumerKey = process.env.REACT_APP_GEOLINK_DATA_CONSUMER_KEY || '54a0688fa6c54fe04ebe62a2678efa9a9f631e49b0a43b325d77e3081194a740';
-    const baseUrl = process.env.REACT_APP_GEOLINK_BASE_URL || 'https://geolink-buavavc6gse5c9fw.westus-01.azurewebsites.net';
+    const baseUrl = process.env.REACT_APP_GEOLINK_BASE_URL || 'http://localhost:4000';
       
       console.log('GeoLink Configuration:', {
         baseUrl,
@@ -273,10 +282,12 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
         try {
           const geoLinkInstance = new GeoLinkIntegration(walletProviderKey, dataConsumerKey);
           
+          // Set GeoLink instance immediately so it can be used for location submission
+          setGeoLink(geoLinkInstance);
+          
           // Test connection to GeoLink
           await testGeoLinkConnection(geoLinkInstance);
           
-          setGeoLink(geoLinkInstance);
           setGeoLinkStatus('connected');
           console.log('✅ GeoLink connected successfully');
         } catch (error) {
@@ -394,7 +405,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
   const syncVisibilityWithBackend = async (visible: boolean) => {
     try {
       const publicKey = localStorage.getItem('wallet_publicKey');
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001';
       
       console.log('Syncing visibility with backend:', { publicKey, visible, backendUrl });
       
@@ -429,7 +440,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       setIsLocationLoading(true);
       
       const publicKey = localStorage.getItem('wallet_publicKey');
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001';
       
       console.log('Toggling visibility:', { publicKey, visible, backendUrl });
       
@@ -493,7 +504,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
         params.append('radius', radius.toString());
       }
       
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/location/nearby/${publicKey}?${params.toString()}`);
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001'}/api/location/nearby/${publicKey}?${params.toString()}`);
       const data = await response.json();
       
       if (response.ok) {
@@ -519,7 +530,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     }
   }, []);
 
-  // Get nearby NFTs from GeoLink with debouncing
+  // Get nearby NFTs from GeoLink with debouncing (as data consumer)
   const updateNearbyNFTs = useCallback(async () => {
     const now = Date.now();
     const timeSinceLastUpdate = now - lastNFTUpdateTime.current;
@@ -534,7 +545,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       return;
     }
     
-    console.log('🔍 updateNearbyNFTs called:', {
+    console.log('🔍 updateNearbyNFTs called (Data Consumer):', {
       hasGeoLink: !!geoLink,
       geoLinkStatus,
       hasCurrentLocation: !!currentLocation,
@@ -549,7 +560,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     if (geoLink && geoLinkStatus === 'connected' && currentLocation) {
       try {
         lastNFTUpdateTime.current = now; // Update the timestamp
-        console.log('🎯 Fetching NFTs from GeoLink...');
+        console.log('🎯 Fetching NFTs from GeoLink (Data Consumer API)...');
         
         // Use a much larger radius when "Global" is enabled
         // 20,000km radius covers the entire world (Earth's circumference is ~40,000km)
@@ -557,7 +568,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
         console.log(`🎯 Using NFT search radius: ${nftRadius}m (${showAllUsers ? 'Global' : 'Local'} mode)`);
         
         const response = await geoLink.getNearbyNFTs(currentLocation.latitude, currentLocation.longitude, nftRadius);
-        console.log('🎯 GeoLink response:', response);
+        console.log('🎯 GeoLink Data Consumer API response:', response);
         
         // Handle the expected response format
         if (response && response.nfts && response.nfts.length > 0) {
@@ -569,7 +580,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
           // Don't clear existing NFTs if no new ones found - this prevents flickering
         }
       } catch (error) {
-        console.error('❌ Failed to get nearby NFTs:', error);
+        console.error('❌ Failed to get nearby NFTs from GeoLink:', error);
         // Only clear NFTs if it's a real error, not a temporary network issue
         if (error instanceof Error && error.message && error.message.includes('Failed to fetch')) {
           console.log('🔄 Network error - keeping existing NFTs');
@@ -656,7 +667,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
   };
 
 
-  // Collect an NFT with enhanced error handling
+  // Collect an NFT with enhanced error handling (as data consumer)
   const collectNFT = async (nft: any) => {
     if (geoLink && geoLinkStatus === 'connected' && currentLocation) {
       const userPublicKey = localStorage.getItem('wallet_publicKey');
@@ -666,7 +677,15 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       }
 
       try {
+        console.log('🎯 Collecting NFT via GeoLink Data Consumer API:', {
+          nftId: nft.id,
+          userPublicKey,
+          latitude: currentLocation.latitude,
+          longitude: currentLocation.longitude
+        });
+        
         const result = await geoLink.collectNFT(nft.id, userPublicKey, currentLocation.latitude, currentLocation.longitude);
+        console.log('🎯 NFT collection result:', result);
         
         if (result.success) {
           // Update local state
@@ -686,11 +705,13 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     }
   };
 
-  // Refresh user's NFT collection
+  // Refresh user's NFT collection (as data consumer)
   const refreshUserNFTs = async () => {
     if (geoLink && geoLinkStatus === 'connected') {
       try {
+        console.log('📚 Fetching user NFTs via GeoLink Data Consumer API...');
         const response = await geoLink.getUserNFTs();
+        console.log('📚 User NFTs response:', response);
         setUserNFTs(response.nfts || []);
         console.log(`📚 Loaded ${response.nfts?.length || 0} user NFTs`);
       } catch (error) {

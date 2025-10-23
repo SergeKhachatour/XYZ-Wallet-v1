@@ -4,7 +4,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import styled from 'styled-components';
 import { useLocation } from '../contexts/LocationContext';
 import { useWallet } from '../contexts/WalletContext';
-import { Maximize2, Minimize2, User } from 'lucide-react';
+import { Maximize2, Minimize2, User, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import MarkerProfileOverlay from './MarkerProfileOverlay';
 import { NFTCollectionOverlay } from './NFTCollectionOverlay';
 import { GeoLinkStatus } from './GeoLinkStatus';
@@ -19,7 +19,7 @@ const MapContainer = styled.div`
   height: 500px;
   position: relative;
   overflow: hidden;
-                      box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
   
   @media (max-width: 768px) {
     height: 700px;
@@ -29,6 +29,34 @@ const MapContainer = styled.div`
   @media (max-width: 480px) {
     height: 650px;
     padding: 0.75rem;
+  }
+`;
+
+const MapLoadingOverlay = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  border-radius: 16px;
+  
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 215, 0, 0.3);
+    border-top: 3px solid #FFD700;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
   }
 `;
 
@@ -170,6 +198,240 @@ const FullscreenButton = styled.button`
   }
 `;
 
+const ZoomToMeButton = styled.button`
+  background: rgba(74, 222, 128, 0.1);
+  border: none;
+  color: #FFFFFF;
+  padding: 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.5rem;
+  
+  &:hover {
+    background: rgba(74, 222, 128, 0.2);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 0.4rem;
+    font-size: 0.7rem;
+  }
+`;
+
+
+const RadarOverlay = styled.div<{ $isOpen: boolean }>`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(10px);
+  z-index: 1500;
+  display: ${props => props.$isOpen ? 'flex' : 'none'};
+  flex-direction: column;
+  padding: 1rem;
+  align-items: center;
+  justify-content: center;
+`;
+
+const RadarContainer = styled.div`
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  border: 2px solid rgba(255, 107, 107, 0.3);
+  max-width: 600px;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+`;
+
+const RadarHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+`;
+
+const RadarTitle = styled.h2`
+  color: #FFFFFF;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+const RadarCloseButton = styled.button`
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  color: #FFFFFF;
+  padding: 0.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1.2rem;
+  
+  &:hover {
+    background: rgba(255, 107, 107, 0.2);
+  }
+`;
+
+const RadarDisplayContainer = styled.div`
+  position: relative;
+  width: 400px;
+  height: 400px;
+  margin: 0 auto;
+  border: 2px solid rgba(0, 255, 0, 0.3);
+  border-radius: 50%;
+  overflow: hidden;
+  cursor: grab;
+  
+  &:active {
+    cursor: grabbing;
+  }
+`;
+
+const RadarDisplay = styled.div<{ $zoom: number; $panX: number; $panY: number }>`
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(0, 255, 0, 0.1) 0%, rgba(0, 255, 0, 0.05) 50%, transparent 70%);
+  transform: scale(${props => props.$zoom}) translate(${props => props.$panX}px, ${props => props.$panY}px);
+  transform-origin: center;
+  transition: transform 0.1s ease-out;
+`;
+
+const RadarControls = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  justify-content: center;
+`;
+
+const RadarControlButton = styled.button`
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #FFFFFF;
+  padding: 0.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+  }
+`;
+
+const RadarSweep = styled.div`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2px;
+  height: 200px;
+  background: linear-gradient(to bottom, rgba(0, 255, 0, 0.8), transparent);
+  transform-origin: bottom center;
+  animation: radarSweep 3s linear infinite;
+  
+  @keyframes radarSweep {
+    0% { transform: translate(-50%, -100%) rotate(0deg); }
+    100% { transform: translate(-50%, -100%) rotate(360deg); }
+  }
+`;
+
+const RadarCenter = styled.div`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  background: #00FF00;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 10px #00FF00;
+`;
+
+const NFTRadarPoint = styled.div<{ $angle: number; $distance: number; $isCollected: boolean }>`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  border: 3px solid ${props => props.$isCollected ? '#666' : '#FF6B6B'};
+  transform: translate(-50%, -50%) rotate(${props => props.$angle}deg) translateY(-${props => props.$distance}px);
+  box-shadow: 0 0 16px ${props => props.$isCollected ? '#666' : '#FF6B6B'};
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+  overflow: hidden;
+  
+  &:hover {
+    transform: translate(-50%, -50%) rotate(${props => props.$angle}deg) translateY(-${props => props.$distance}px) scale(1.3);
+    z-index: 20;
+  }
+`;
+
+const NFTRadarImage = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 9px;
+`;
+
+const RadarInfo = styled.div`
+  margin-top: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+`;
+
+const NFTInfoCard = styled.div<{ $isCollected: boolean }>`
+  background: ${props => props.$isCollected ? 'rgba(102, 102, 102, 0.1)' : 'rgba(255, 107, 107, 0.1)'};
+  border: 1px solid ${props => props.$isCollected ? 'rgba(102, 102, 102, 0.3)' : 'rgba(255, 107, 107, 0.3)'};
+  border-radius: 12px;
+  padding: 1rem;
+  color: #FFFFFF;
+  opacity: ${props => props.$isCollected ? 0.6 : 1};
+`;
+
+const NFTName = styled.h3`
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: ${props => props.color || '#FFFFFF'};
+`;
+
+const NFTDistance = styled.p`
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+  color: #CCCCCC;
+`;
+
+const NFTStatus = styled.span<{ $isCollected: boolean }>`
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: ${props => props.$isCollected ? '#666' : '#00FF00'};
+`;
+
 const FullscreenOverlay = styled.div<{ $isOpen: boolean }>`
   position: fixed;
   top: 0;
@@ -286,21 +548,23 @@ const mapStyles: Record<MapStyle, string> = {
 
 // 3D Navigation styles for zoomed-in view
 const map3DStyles: Record<MapStyle, string> = {
-  'satellite': 'mapbox://styles/mapbox/satellite-v9',
-  'streets': 'mapbox://styles/mapbox/streets-v12',
-  'outdoors': 'mapbox://styles/mapbox/outdoors-v12',
-  'light': 'mapbox://styles/mapbox/light-v11',
-  'dark': 'mapbox://styles/mapbox/dark-v11',
-  'satellite-streets': 'mapbox://styles/mapbox/satellite-streets-v12'
+  'satellite': mapStyles.satellite,
+  'streets': mapStyles.streets,
+  'outdoors': mapStyles.outdoors,
+  'light': mapStyles.light,
+  'dark': mapStyles.dark,
+  'satellite-streets': mapStyles['satellite-streets']
 };
 
 interface MapboxMapProps {
   onFullscreenChange?: (isFullscreen: boolean) => void;
   selectedNFTForZoom?: any;
   isFullscreen?: boolean;
+  isRadarOpen?: boolean;
+  onRadarToggle?: () => void;
 }
 
-const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTForZoom, isFullscreen: externalIsFullscreen }) => {
+const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTForZoom, isFullscreen: externalIsFullscreen, isRadarOpen: externalIsRadarOpen, onRadarToggle }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const fullscreenMapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -314,6 +578,23 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const [isMapInitialized, setIsMapInitialized] = useState(false);
   const [isFullscreenMapInitialized, setIsFullscreenMapInitialized] = useState(false);
+  const [isRadarOpen, setIsRadarOpen] = useState(false);
+  const [radarZoom, setRadarZoom] = useState(1);
+  const [radarPanX, setRadarPanX] = useState(0);
+  const [radarPanY, setRadarPanY] = useState(0);
+  const [isRadarDragging, setIsRadarDragging] = useState(false);
+  const [radarDragStart, setRadarDragStart] = useState({ x: 0, y: 0 });
+  const radarRef = useRef<HTMLDivElement>(null);
+  
+  // Use external radar state if provided, otherwise use internal state
+  const currentRadarOpen = externalIsRadarOpen !== undefined ? externalIsRadarOpen : isRadarOpen;
+  const handleRadarToggle = () => {
+    if (onRadarToggle) {
+      onRadarToggle();
+    } else {
+      setIsRadarOpen(!isRadarOpen);
+    }
+  };
   const [selectedMarkerUser, setSelectedMarkerUser] = useState<any>(null);
   const [isMarkerProfileOpen, setIsMarkerProfileOpen] = useState(false);
   const [is3DEnabled, setIs3DEnabled] = useState(false);
@@ -518,7 +799,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
     
     timeoutRef.current = setTimeout(() => {
       updateNearbyMarkers(mapInstance, markersRef);
-    }, 200); // Reduced to 200ms for faster updates
+    }, 50); // Reduced to 50ms for much faster updates
   };
 
   // Function to wait for map to be ready
@@ -558,103 +839,27 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
         
         const el = document.createElement('div');
         el.className = 'nft-marker';
-        el.innerHTML = `
-          <div style="
-            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
-            color: white;
-            padding: 0.4rem 0.6rem;
-            border-radius: 6px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-            border: 2px solid #FFD700;
-            max-width: 150px;
-            word-break: break-all;
-            position: relative;
-            cursor: pointer;
-          ">
-            <div style="
-              position: absolute;
-              top: calc(100% - 12px);
-              left: 50%;
-              transform: translateX(-50%);
-              width: 48px;
-              height: 48px;
-              background-image: url('${imageUrl}');
-              background-size: cover;
-              background-repeat: no-repeat;
-              background-position: center;
-              border-radius: 50%;
-              z-index: 10;
-              border: 2px solid #FFD700;
-            "></div>
-            <div style="font-size: 0.6rem; margin-bottom: 0.2rem; opacity: 0.8;">NFT</div>
-            <div>${nft.collection_name || 'Unknown NFT'}</div>
-            <div style="font-size: 0.6rem; margin-top: 0.2rem; opacity: 0.8;">${Math.round(nft.distance)}m away</div>
-            <button 
-              class="nft-collect-button" 
-              data-nft-index="${index}"
-              style="
-                position: absolute;
-                top: -8px;
-                right: -8px;
-                width: 24px;
-                height: 24px;
-                background: rgba(0, 0, 0, 0.8);
-                border: 2px solid #FFD700;
-                border-radius: 50%;
-                color: white;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 12px;
-                z-index: 20;
-                transition: all 0.2s ease;
-              "
-            >
-              🎯
-            </button>
-            <div style="
-              position: absolute;
-              bottom: -6px;
-              left: 50%;
-              transform: translateX(-50%);
-              width: 0;
-              height: 0;
-              border-left: 6px solid transparent;
-              border-right: 6px solid transparent;
-              border-top: 6px solid white;
-            "></div>
-          </div>
+        el.style.cssText = `
+          width: 64px;
+          height: 64px;
+          background-image: url('${imageUrl}');
+          background-size: cover;
+          background-repeat: no-repeat;
+          background-position: center;
+          border-radius: 8px;
+          border: 3px solid #FFD700;
+          cursor: pointer;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
         `;
 
         const nftMarker = new mapboxgl.Marker(el)
           .setLngLat([nft.longitude, nft.latitude])
           .addTo(mapInstance);
         
-        // Add click event listener for NFT collection button
-        const collectButton = el.querySelector('.nft-collect-button') as HTMLButtonElement;
-        if (collectButton) {
-          collectButton.addEventListener('click', (e) => {
-            e.stopPropagation();
-            setSelectedNFT(nft);
-            setIsNFTCollectionOpen(true);
-          });
-          
-          // Add hover effects
-          collectButton.addEventListener('mouseenter', () => {
-            collectButton.style.background = 'rgba(255, 107, 107, 0.9)';
-          });
-          
-          collectButton.addEventListener('mouseleave', () => {
-            collectButton.style.background = 'rgba(0, 0, 0, 0.8)';
-          });
-        }
-        
-        // Add click event listener for the main NFT marker to show details
+        // Add click event to show NFT info
         el.addEventListener('click', (e) => {
           e.stopPropagation();
+          console.log('NFT marker clicked:', nft);
           setSelectedNFT(nft);
           setIsNFTCollectionOpen(true);
         });
@@ -664,41 +869,17 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
     });
   };
 
-  // Function to update nearby user markers with privacy radius
+  // Function to update nearby user markers with privacy radius (optimized for speed)
   const updateNearbyMarkers = (mapInstance: mapboxgl.Map, markersRef: React.MutableRefObject<mapboxgl.Marker[]>) => {
-    // Check if map instance is valid
-    if (!mapInstance || !mapInstance.isStyleLoaded) {
-      console.log('Map instance is null or not ready, skipping marker update');
+    // Quick validation - only check essential properties
+    if (!mapInstance || !mapInstance.getContainer()) {
+      console.log('Map instance invalid, skipping marker update');
       return;
     }
     
-    // Check if map is loaded and ready
-    if (!mapInstance.isStyleLoaded()) {
-      console.log('Map style not loaded yet, waiting...');
-      // Only add listener once to prevent multiple listeners
-      const handleStyleLoad = () => {
-        console.log('Map style loaded, updating markers...');
-        updateNearbyMarkers(mapInstance, markersRef);
-        mapInstance.off('styledata', handleStyleLoad);
-      };
-      mapInstance.on('styledata', handleStyleLoad);
-      return;
-    }
+    // Skip style loading checks for faster rendering - markers can be added immediately
+    console.log('Updating markers immediately for faster loading');
     
-    // Additional check to ensure map is not being destroyed
-    if (!mapInstance || mapInstance.getContainer() === null) {
-      console.log('Map instance is being destroyed, skipping marker update');
-      return;
-    }
-    
-    // Additional check to ensure map is fully ready
-    if (!mapInstance.getSource || !mapInstance.addLayer) {
-      console.log('Map not fully ready, retrying in 500ms...');
-      setTimeout(() => updateNearbyMarkers(mapInstance, markersRef), 500);
-      return;
-    }
-    
-    console.log('Map is ready, updating nearby markers...');
     // Clear existing nearby markers
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
@@ -716,7 +897,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
       }
     }
 
-    // Add markers for nearby users with privacy offset
+    // Add markers for nearby users with privacy offset (optimized for speed)
     nearbyUsers.forEach((user, index) => {
       if (user.latitude && user.longitude) {
         // Generate privacy offset (100 meters radius for better privacy)
@@ -726,105 +907,34 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
         const approximateLat = user.latitude + latOffset;
         const approximateLng = user.longitude + lngOffset;
         
-        console.log(`Privacy offset for user ${index}:`, {
-          original: { lat: user.latitude, lng: user.longitude },
-          offset: { latOffset, lngOffset },
-          approximate: { lat: approximateLat, lng: approximateLng }
-        });
-        
+        // Create optimized marker element (simplified for speed)
         const el = document.createElement('div');
         el.className = 'nearby-user-marker';
-        el.innerHTML = `
-          <div style="
-            background: linear-gradient(45deg, #4ade80, #22c55e);
-            color: white;
-            padding: 0.4rem 0.6rem;
-            border-radius: 6px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-            border: 2px solid #FFD700;
-            max-width: 150px;
-            word-break: break-all;
-            position: relative;
-          ">
-            <div style="
-              position: absolute;
-              top: calc(100% - 12px);
-              left: 50%;
-              transform: translateX(-50%);
-              width: 48px;
-              height: 48px;
-              background-image: url('/stellar-location.png');
-              background-size: contain;
-              background-repeat: no-repeat;
-              background-position: center;
-              border-radius: 50%;
-              z-index: 10;
-            "></div>
-            <div style="font-size: 0.6rem; margin-bottom: 0.2rem; opacity: 0.8;">Nearby User</div>
-            <div>${user.publicKey.slice(0, 6)}...${user.publicKey.slice(-6)}</div>
-            <div style="font-size: 0.6rem; margin-top: 0.2rem; opacity: 0.8;">${user.distance}km away</div>
-            <button 
-              class="profile-button" 
-              data-user-index="${index}"
-              style="
-                position: absolute;
-                top: -8px;
-                right: -8px;
-                width: 24px;
-                height: 24px;
-                background: rgba(0, 0, 0, 0.8);
-                border: 2px solid #FFD700;
-                border-radius: 50%;
-                color: white;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 12px;
-                z-index: 20;
-                transition: all 0.2s ease;
-              "
-            >
-              👤
-            </button>
-            <div style="
-              position: absolute;
-              bottom: -6px;
-              left: 50%;
-              transform: translateX(-50%);
-              width: 0;
-              height: 0;
-              border-left: 6px solid transparent;
-              border-right: 6px solid transparent;
-              border-top: 6px solid white;
-            "></div>
-          </div>
+        el.style.cssText = `
+          width: 40px;
+          height: 40px;
+          background: linear-gradient(45deg, #4ade80, #22c55e);
+          border-radius: 50%;
+          border: 2px solid #FFD700;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 16px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         `;
+        el.innerHTML = '👤';
 
         const userMarker = new mapboxgl.Marker(el)
           .setLngLat([approximateLng, approximateLat])
           .addTo(mapInstance);
         
-        // Add click event listener for profile button
-        const profileButton = el.querySelector('.profile-button') as HTMLButtonElement;
-        if (profileButton) {
-          profileButton.addEventListener('click', (e) => {
-            e.stopPropagation();
-            setSelectedMarkerUser(user);
-            setIsMarkerProfileOpen(true);
-          });
-          
-          // Add hover effects
-          profileButton.addEventListener('mouseenter', () => {
-            profileButton.style.background = 'rgba(74, 222, 128, 0.9)';
-          });
-          
-          profileButton.addEventListener('mouseleave', () => {
-            profileButton.style.background = 'rgba(0, 0, 0, 0.8)';
-          });
-        }
+        // Add simple click event for profile
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          setSelectedMarkerUser(user);
+          setIsMarkerProfileOpen(true);
+        });
         
         markersRef.current.push(userMarker);
         
@@ -907,21 +1017,10 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
     mapboxgl.accessToken = mapboxToken;
 
     if (mapContainer.current && !map.current && !isMapInitialized) {
-      // Determine initial center and zoom based on location data
-      let initialCenter: [number, number];
-      let initialZoom: number;
-      
-      if (latitude && longitude) {
-        // User has location data - center on their location but start zoomed out to show globe
-        initialCenter = [longitude, latitude];
-        initialZoom = currentView === 'globe' ? 1 : 2;
-        console.log('Map initializing with user location:', { latitude, longitude });
-      } else {
-        // No location data - use default global view
-        initialCenter = [0, 0];
-        initialZoom = currentView === 'globe' ? 0.5 : 1;
-        console.log('Map initializing with default global view');
-      }
+      // Always initialize with default global view first for fast loading
+      const initialCenter: [number, number] = [0, 0];
+      const initialZoom: number = currentView === 'globe' ? 0.5 : 1;
+      console.log('Map initializing with default global view for fast loading');
 
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
@@ -945,21 +1044,32 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
       // Add navigation controls
       map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
       
-      // Add DEM source for 3D terrain
+      // Add DEM source for 3D terrain (non-blocking)
       map.current.on('load', () => {
         if (!map.current) return;
         
-        try {
-          // Add DEM source for 3D terrain
-          map.current.addSource('mapbox-dem', {
-            'type': 'raster-dem',
-            'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
-            'tileSize': 512,
-            'maxzoom': 14
-          });
-          console.log('DEM source added to main map');
-        } catch (error) {
-          console.warn('Error adding DEM source to main map:', error);
+        // Use requestIdleCallback for non-blocking DEM source loading
+        const addDEMSource = () => {
+          try {
+            if (map.current && !map.current.getSource('mapbox-dem')) {
+              map.current.addSource('mapbox-dem', {
+                'type': 'raster-dem',
+                'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
+                'tileSize': 512,
+                'maxzoom': 14
+              });
+              console.log('DEM source added to main map');
+            }
+          } catch (error) {
+            console.warn('Error adding DEM source to main map:', error);
+          }
+        };
+        
+        // Use requestIdleCallback if available, otherwise setTimeout
+        if (window.requestIdleCallback) {
+          window.requestIdleCallback(addDEMSource);
+        } else {
+          setTimeout(addDEMSource, 0);
         }
       });
 
@@ -984,17 +1094,65 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
         setHasUserInteracted(true);
       });
 
-      // Add user location marker if coordinates are available
-      if (latitude && longitude && publicKey) {
-        // Wait for style to load before adding marker
-        const addUserMarker = () => {
-          if (!map.current || !map.current.isStyleLoaded()) {
-            setTimeout(addUserMarker, 100);
-            return;
-          }
-          
-          const el = document.createElement('div');
-          el.className = 'wallet-marker';
+      // Mark map as initialized immediately - don't wait for location
+      setIsMapInitialized(true);
+      
+      // Update markers with small delay to prevent blocking
+      console.log('Map initialized, updating markers');
+      setTimeout(() => {
+        if (map.current) {
+          updateNearbyMarkers(map.current, nearbyMarkers);
+        }
+      }, 50); // Small delay to prevent blocking
+    }
+
+    return () => {
+      if (map.current) {
+        map.current.remove();
+        map.current = null;
+        setIsMapInitialized(false);
+      }
+    };
+  }, []); // Only initialize once on mount
+
+  // Handle main map style changes without reinitializing the map
+  useEffect(() => {
+    if (map.current && map.current.isStyleLoaded() && !isFullscreen) {
+      console.log('Changing main map style to:', currentStyle);
+      map.current.setStyle(mapStyles[currentStyle]);
+    }
+  }, [currentStyle, isFullscreen]);
+
+  // Handle location updates after map is initialized (non-blocking)
+  useEffect(() => {
+    if (map.current && latitude && longitude && publicKey && !hasUserInteracted) {
+      console.log('Location available, updating map:', { latitude, longitude });
+      
+      // Use setTimeout to make this non-blocking
+      setTimeout(() => {
+        if (map.current) {
+          // Center map on user location
+          map.current.easeTo({
+            center: [longitude, latitude],
+            zoom: currentView === 'globe' ? 1 : 2,
+            duration: 2000
+          });
+      
+      // Add user location marker
+      const addUserMarker = () => {
+        if (!map.current || !map.current.isStyleLoaded()) {
+          requestAnimationFrame(addUserMarker);
+          return;
+        }
+        
+        // Remove existing marker if any
+        if (marker.current) {
+          marker.current.remove();
+        }
+        
+        // Create marker element with public key display
+        const el = document.createElement('div');
+        el.className = 'wallet-marker';
         el.innerHTML = `
           <div style="
             background: linear-gradient(45deg, #FFD700, #FFA500);
@@ -1005,7 +1163,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
             font-weight: 600;
             box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
             border: 2px solid #FFD700;
-            max-width: 200px;
+            max-width: 150px;
             word-break: break-all;
             position: relative;
           ">
@@ -1023,18 +1181,18 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
               border-radius: 50%;
               z-index: 10;
             "></div>
-            <div style="font-size: 0.7rem; margin-bottom: 0.25rem; opacity: 0.8;">Your Location</div>
-            <div>${publicKey.slice(0, 8)}...${publicKey.slice(-8)}</div>
+            <div style="font-size: 0.6rem; margin-bottom: 0.2rem; opacity: 0.8;">Your Wallet</div>
+            <div>${publicKey.slice(0, 6)}...${publicKey.slice(-6)}</div>
             <div style="
               position: absolute;
-              bottom: -8px;
+              bottom: -6px;
               left: 50%;
               transform: translateX(-50%);
               width: 0;
               height: 0;
-              border-left: 8px solid transparent;
-              border-right: 8px solid transparent;
-              border-top: 8px solid #FFD700;
+              border-left: 6px solid transparent;
+              border-right: 6px solid transparent;
+              border-top: 6px solid white;
             "></div>
           </div>
         `;
@@ -1043,55 +1201,17 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
           .setLngLat([longitude, latitude])
           .addTo(map.current);
         
-        // Smoothly zoom to the marker location
-        map.current.easeTo({
-          center: [longitude, latitude],
-          zoom: currentView === 'globe' ? 1 : 2,
-          duration: 2000
+        // Add click event to show wallet info
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          console.log('User wallet marker clicked:', publicKey);
+          // You can add wallet info display here if needed
         });
-        };
-        
-        addUserMarker();
-      }
+      };
       
-      // Mark map as initialized
-      setIsMapInitialized(true);
-      
-      // Immediately update markers if nearby users are available
-      if (nearbyUsers.length > 0) {
-        console.log('Map initialized, immediately updating markers');
-        setTimeout(() => {
-          updateNearbyMarkers(map.current!, nearbyMarkers);
-        }, 100); // Short delay to ensure map is ready
-      }
-    }
-
-    return () => {
-      if (map.current) {
-        map.current.remove();
-        map.current = null;
-        setIsMapInitialized(false);
-      }
-    };
-  }, [currentView]); // Only reinitialize on view changes, not style changes
-
-  // Handle main map style changes without reinitializing the map
-  useEffect(() => {
-    if (map.current && map.current.isStyleLoaded() && !isFullscreen) {
-      console.log('Changing main map style to:', currentStyle);
-      map.current.setStyle(mapStyles[currentStyle]);
-    }
-  }, [currentStyle, isFullscreen]);
-
-  // Center map on user location when first available (only once)
-  useEffect(() => {
-    if (map.current && latitude && longitude && publicKey && !hasUserInteracted) {
-      console.log('Centering map on user location:', { latitude, longitude });
-      map.current.easeTo({
-        center: [longitude, latitude],
-        zoom: currentView === 'globe' ? 1 : 2,
-        duration: 2000
-      });
+          requestAnimationFrame(addUserMarker);
+        }
+      }, 100); // Small delay to prevent blocking
     }
   }, [latitude, longitude, publicKey, currentView, hasUserInteracted]);
 
@@ -1196,17 +1316,19 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
     lastNFTUpdateRef.current = Date.now();
     nftMarkersInitialized.current = true;
     
-    // Only update if we have NFTs and the map is ready
-    if (nearbyNFTs.length > 0 && map.current) {
-      console.log('🎯 Updating main map NFT markers');
-      renderNFTMarkers(map.current, nftMarkersRef);
-    }
-    
-    // Also update fullscreen map if it exists
-    if (fullscreenMap.current) {
-      console.log('🎯 Updating fullscreen map NFT markers');
-      renderNFTMarkers(fullscreenMap.current, fullscreenNFTMarkersRef);
-    }
+    // Update NFT markers with small delay to prevent blocking
+    setTimeout(() => {
+      if (map.current) {
+        console.log('🎯 Updating main map NFT markers');
+        renderNFTMarkers(map.current, nftMarkersRef);
+      }
+      
+      // Also update fullscreen map if it exists
+      if (fullscreenMap.current) {
+        console.log('🎯 Updating fullscreen map NFT markers');
+        renderNFTMarkers(fullscreenMap.current, fullscreenNFTMarkersRef);
+      }
+    }, 50); // Small delay to prevent blocking
   }, [nearbyNFTs]);
 
   // Update user's own marker when location changes
@@ -1225,13 +1347,13 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
   // Force update markers when component becomes visible (user navigates back)
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (!document.hidden && nearbyUsers.length > 0) {
+      if (!document.hidden) {
         console.log('Page became visible, force updating markers');
         if (map.current) {
-          setTimeout(() => updateNearbyMarkers(map.current!, nearbyMarkers), 100);
+          updateNearbyMarkers(map.current!, nearbyMarkers);
         }
         if (fullscreenMap.current) {
-          setTimeout(() => updateNearbyMarkers(fullscreenMap.current!, nearbyMarkers), 100);
+          updateNearbyMarkers(fullscreenMap.current!, nearbyMarkers);
         }
       }
     };
@@ -1399,21 +1521,13 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
       // Mark fullscreen map as initialized
       setIsFullscreenMapInitialized(true);
       
-      // Immediately update markers if nearby users are available
-      if (nearbyUsers.length > 0) {
-        console.log('Fullscreen map initialized, immediately updating markers');
-        setTimeout(() => {
-          updateNearbyMarkers(fullscreenMap.current!, nearbyMarkers);
-        }, 100); // Short delay to ensure map is ready
-      }
+      // Always update markers immediately for faster loading
+      console.log('Fullscreen map initialized, immediately updating markers');
+      updateNearbyMarkers(fullscreenMap.current!, nearbyMarkers);
 
-      // Immediately update NFT markers if available
-      if (nearbyNFTs.length > 0) {
-        console.log('Fullscreen map initialized, immediately updating NFT markers');
-        setTimeout(() => {
-          renderNFTMarkers(fullscreenMap.current!, fullscreenNFTMarkersRef);
-        }, 100); // Short delay to ensure map is ready
-      }
+      // Always update NFT markers immediately for faster loading
+      console.log('Fullscreen map initialized, immediately updating NFT markers');
+      renderNFTMarkers(fullscreenMap.current!, fullscreenNFTMarkersRef);
     }
 
     return () => {
@@ -1641,23 +1755,17 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
     
     // Debounce marker updates to prevent multiple triggers
     styleChangeTimeoutRef.current = setTimeout(() => {
-      if (nearbyUsers.length > 0) {
-        console.log('Style changed, updating markers on both maps');
-        
-        // Update main map markers after style change
-        if (map.current && map.current.isStyleLoaded()) {
-          updateNearbyMarkers(map.current, nearbyMarkers);
-        }
-        
-        // Update fullscreen map markers if it exists
-        if (fullscreenMap.current && fullscreenMap.current.isStyleLoaded()) {
-          updateNearbyMarkers(fullscreenMap.current, nearbyMarkers);
-          
-          // Update fullscreen NFT markers
-          if (nearbyNFTs.length > 0) {
-            renderNFTMarkers(fullscreenMap.current, fullscreenNFTMarkersRef);
-          }
-        }
+      console.log('Style changed, updating markers on both maps');
+      
+      // Update main map markers after style change
+      if (map.current && map.current.isStyleLoaded()) {
+        updateNearbyMarkers(map.current, nearbyMarkers);
+      }
+      
+      // Update fullscreen map markers if it exists
+      if (fullscreenMap.current && fullscreenMap.current.isStyleLoaded()) {
+        updateNearbyMarkers(fullscreenMap.current, nearbyMarkers);
+        renderNFTMarkers(fullscreenMap.current, fullscreenNFTMarkersRef);
       }
     }, 500); // Debounce delay
   };
@@ -1679,14 +1787,8 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
           }
           
           // Update markers
-          if (nearbyUsers.length > 0) {
-            updateNearbyMarkers(fullscreenMap.current, nearbyMarkers);
-          }
-          
-          // Update NFT markers
-          if (nearbyNFTs.length > 0) {
-            renderNFTMarkers(fullscreenMap.current, fullscreenNFTMarkersRef);
-          }
+          updateNearbyMarkers(fullscreenMap.current, nearbyMarkers);
+          renderNFTMarkers(fullscreenMap.current, fullscreenNFTMarkersRef);
         }
       }, 500); // Short delay to ensure map is ready
     }
@@ -1724,11 +1826,9 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
     }
     
     // Update markers on main map when returning from fullscreen
-    if (map.current && nearbyUsers.length > 0) {
+    if (map.current) {
       console.log('Closing fullscreen, updating main map markers');
-      setTimeout(() => {
-        updateNearbyMarkers(map.current!, nearbyMarkers);
-      }, 200); // Short delay to ensure main map is ready
+      updateNearbyMarkers(map.current!, nearbyMarkers);
     }
   };
 
@@ -1741,11 +1841,9 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
         onFullscreenChange?.(false);
         
         // Update markers on main map when closing with ESC
-        if (map.current && nearbyUsers.length > 0) {
+        if (map.current) {
           console.log('ESC key closing fullscreen, updating main map markers');
-          setTimeout(() => {
-            updateNearbyMarkers(map.current!, nearbyMarkers);
-          }, 200); // Short delay to ensure main map is ready
+          updateNearbyMarkers(map.current!, nearbyMarkers);
         }
       }
     };
@@ -1767,13 +1865,97 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
       }
       
       // Update markers
-      if (nearbyUsers.length > 0) {
-        setTimeout(() => {
-          updateNearbyMarkers(map.current!, nearbyMarkers);
-        }, 500); // Delay to ensure style sync is complete
-      }
+      updateNearbyMarkers(map.current!, nearbyMarkers);
     }
   }, [isFullscreen, nearbyUsers, currentStyle]);
+
+  const handleZoomToMe = () => {
+    if (map.current && latitude && longitude) {
+      console.log('Zooming to user location (birds-eye view):', { latitude, longitude });
+      map.current.easeTo({
+        center: [longitude, latitude],
+        zoom: 18, // Birds-eye view zoom level
+        duration: 1500
+      });
+    } else {
+      console.log('Cannot zoom to location - no coordinates available');
+    }
+  };
+
+  const handleFullscreenZoomToMe = () => {
+    if (fullscreenMap.current && latitude && longitude) {
+      console.log('Zooming fullscreen to user location (birds-eye view):', { latitude, longitude });
+      fullscreenMap.current.easeTo({
+        center: [longitude, latitude],
+        zoom: 18, // Birds-eye view zoom level
+        duration: 1500
+      });
+    } else {
+      console.log('Cannot zoom fullscreen to location - no coordinates available');
+    }
+  };
+
+
+  const calculateRadarPosition = (nft: any) => {
+    if (!latitude || !longitude) return { angle: 0, distance: 0 };
+    
+    // Calculate bearing from user to NFT
+    const lat1 = latitude * Math.PI / 180;
+    const lat2 = nft.latitude * Math.PI / 180;
+    const deltaLng = (nft.longitude - longitude) * Math.PI / 180;
+    
+    const y = Math.sin(deltaLng) * Math.cos(lat2);
+    const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLng);
+    const bearing = Math.atan2(y, x) * 180 / Math.PI;
+    const angle = (bearing + 360) % 360;
+    
+    // Calculate distance (normalized to radar display)
+    const distance = Math.min(nft.distance / 1000, 180); // Max 180px for radar display
+    
+    return { angle, distance };
+  };
+
+  const handleNFTRadarClick = (nft: any) => {
+    console.log('NFT radar clicked:', nft);
+    setSelectedNFT(nft);
+    setIsNFTCollectionOpen(true);
+  };
+
+  const handleRadarZoomIn = () => {
+    setRadarZoom(prev => Math.min(prev * 1.2, 3));
+  };
+
+  const handleRadarZoomOut = () => {
+    setRadarZoom(prev => Math.max(prev / 1.2, 0.5));
+  };
+
+  const handleRadarReset = () => {
+    setRadarZoom(1);
+    setRadarPanX(0);
+    setRadarPanY(0);
+  };
+
+  const handleRadarMouseDown = (e: React.MouseEvent) => {
+    setIsRadarDragging(true);
+    setRadarDragStart({ x: e.clientX - radarPanX, y: e.clientY - radarPanY });
+  };
+
+  const handleRadarMouseMove = (e: React.MouseEvent) => {
+    if (isRadarDragging) {
+      setRadarPanX(e.clientX - radarDragStart.x);
+      setRadarPanY(e.clientY - radarDragStart.y);
+    }
+  };
+
+  const handleRadarMouseUp = () => {
+    setIsRadarDragging(false);
+  };
+
+  const handleRadarWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    setRadarZoom(prev => Math.max(0.5, Math.min(3, prev * delta)));
+  };
 
   return (
     <>
@@ -1815,6 +1997,14 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
                   📐
                 </ViewButton>
               </div>
+              
+              <ZoomToMeButton 
+                onClick={handleZoomToMe} 
+                title="Zoom to my location"
+                disabled={!latitude || !longitude}
+              >
+                🎯
+              </ZoomToMeButton>
               
               <FullscreenButton onClick={handleFullscreenToggle} title="Expand to fullscreen">
                 <Maximize2 size={16} />
@@ -1958,6 +2148,11 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
         </MapHeader>
         
         <MapWrapper>
+          {!isMapInitialized && (
+            <MapLoadingOverlay>
+              <div className="loading-spinner"></div>
+            </MapLoadingOverlay>
+          )}
           <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
           
           {latitude && longitude && (
@@ -2016,6 +2211,14 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
           </FullscreenTitle>
           <FullscreenControls>
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <ZoomToMeButton 
+                onClick={handleFullscreenZoomToMe} 
+                title="Zoom to my location"
+                disabled={!latitude || !longitude}
+              >
+                🎯
+              </ZoomToMeButton>
+              
               <StyleSelect 
                 value={currentStyle} 
                 onChange={(e) => handleStyleChange(e.target.value as MapStyle)}
@@ -2204,6 +2407,83 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
           }}
         />
       )}
+
+      {/* NFT Radar Overlay */}
+        <RadarOverlay $isOpen={currentRadarOpen}>
+        <RadarContainer>
+          <RadarHeader>
+            <RadarTitle>
+              📡 NFT Radar
+            </RadarTitle>
+            <RadarCloseButton onClick={handleRadarToggle}>
+              ✕
+            </RadarCloseButton>
+          </RadarHeader>
+          
+          <RadarDisplayContainer
+            ref={radarRef}
+            onMouseDown={handleRadarMouseDown}
+            onMouseMove={handleRadarMouseMove}
+            onMouseUp={handleRadarMouseUp}
+            onMouseLeave={handleRadarMouseUp}
+            onWheel={handleRadarWheel}
+          >
+            <RadarDisplay $zoom={radarZoom} $panX={radarPanX} $panY={radarPanY}>
+              <RadarSweep />
+              <RadarCenter />
+              {nearbyNFTs.map((nft, index) => {
+                const { angle, distance } = calculateRadarPosition(nft);
+                // Construct image URL from server_url + ipfs_hash (same logic as map markers)
+                const imageUrl = nft.server_url && nft.ipfs_hash 
+                  ? `${nft.server_url}${nft.ipfs_hash}` 
+                  : nft.image_url || 'https://via.placeholder.com/48x48?text=NFT';
+                return (
+                  <NFTRadarPoint
+                    key={index}
+                    $angle={angle}
+                    $distance={distance}
+                    $isCollected={false} // You can add collected state logic here
+                    onClick={() => handleNFTRadarClick(nft)}
+                    title={`${nft.collection_name || 'Unknown NFT'} - ${Math.round(nft.distance)}m away`}
+                  >
+                    <NFTRadarImage 
+                      src={imageUrl} 
+                      alt={nft.collection_name || 'NFT'}
+                      onError={(e) => {
+                        e.currentTarget.src = 'https://via.placeholder.com/48x48?text=NFT';
+                      }}
+                    />
+                  </NFTRadarPoint>
+                );
+              })}
+            </RadarDisplay>
+          </RadarDisplayContainer>
+          
+          <RadarControls>
+            <RadarControlButton onClick={handleRadarZoomIn} title="Zoom In">
+              <ZoomIn size={16} />
+            </RadarControlButton>
+            <RadarControlButton onClick={handleRadarZoomOut} title="Zoom Out">
+              <ZoomOut size={16} />
+            </RadarControlButton>
+            <RadarControlButton onClick={handleRadarReset} title="Reset View">
+              <RotateCcw size={16} />
+            </RadarControlButton>
+          </RadarControls>
+          
+          <RadarInfo>
+            {nearbyNFTs.map((nft, index) => (
+              <NFTInfoCard key={index} $isCollected={false}>
+                <NFTName>{nft.collection_name || 'Unknown NFT'}</NFTName>
+                <NFTDistance>{Math.round(nft.distance)}m away</NFTDistance>
+                <NFTStatus $isCollected={false}>
+                  {nft.distance < 100 ? '🎯 In Range!' : '📍 Navigate to collect'}
+                </NFTStatus>
+              </NFTInfoCard>
+            ))}
+          </RadarInfo>
+        </RadarContainer>
+      </RadarOverlay>
     </>
   );
 };

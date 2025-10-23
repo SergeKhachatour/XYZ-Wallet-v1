@@ -282,6 +282,7 @@ const Dashboard: React.FC = () => {
   const [isSendOpen, setIsSendOpen] = useState(false);
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
   const [isNFTCollectionOpen, setIsNFTCollectionOpen] = useState(false);
+  const [isRadarOpen, setIsRadarOpen] = useState(false);
 
   const handleUserClick = (user: any) => {
     setSelectedUser(user);
@@ -324,7 +325,7 @@ const Dashboard: React.FC = () => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
       
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/health`, { 
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001'}/health`, { 
         method: 'GET',
         signal: controller.signal
       });
@@ -339,7 +340,7 @@ const Dashboard: React.FC = () => {
   // Fetch available tokens
   const fetchAvailableTokens = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/soroswap/tokens`);
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001'}/api/soroswap/tokens`);
       
       let data;
       try {
@@ -490,9 +491,15 @@ const Dashboard: React.FC = () => {
         </Card>
       )}
 
-      {/* XLM Price Chart - Mobile: full width, Desktop: 1 column */}
+      {/* XLM Price Chart with Mini Radar - Mobile: full width, Desktop: 1 column */}
       <PriceChartContainer>
-        <PriceChart />
+        <PriceChart 
+          nearbyNFTs={nearbyNFTs}
+          onRadarFullscreen={() => setIsRadarOpen(true)}
+          onNFTClick={handleNFTClick}
+          userLatitude={currentLocation?.latitude}
+          userLongitude={currentLocation?.longitude}
+        />
       </PriceChartContainer>
 
       {/* Global Map - Mobile: full width, Desktop: 2 columns */}
@@ -501,130 +508,10 @@ const Dashboard: React.FC = () => {
           onFullscreenChange={setIsMapFullscreen} 
           selectedNFTForZoom={nftToZoomTo}
           isFullscreen={isMapFullscreen}
+          isRadarOpen={isRadarOpen}
+          onRadarToggle={() => setIsRadarOpen(!isRadarOpen)}
         />
       </MapContainer>
-
-      {/* Wallet Overview */}
-      <Card>
-        <CardHeader>
-          <Wallet size={24} />
-          <CardTitle>Wallet Overview</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <StatItem>
-            <StatLabel>Total Balance</StatLabel>
-            <StatValue>{totalBalance.toFixed(7)} XLM</StatValue>
-          </StatItem>
-          <StatItem>
-            <StatLabel>Assets</StatLabel>
-            <StatValue>{balances.length}</StatValue>
-          </StatItem>
-          <StatItem>
-            <StatLabel>Transactions</StatLabel>
-            <StatValue>{transactions.length}</StatValue>
-          </StatItem>
-          <ActionButton onClick={() => navigate('/wallet')}>
-            Manage Wallet
-          </ActionButton>
-        </CardContent>
-      </Card>
-
-      {/* Nearby Users */}
-      {isLocationEnabled && (
-        <Card>
-          <CardHeader>
-            <MapPin size={24} />
-            <CardTitle>Nearby Users ({nearbyUsers.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {nearbyUsers.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '300px', overflowY: 'auto' }}>
-                {nearbyUsers.slice(0, 5).map((user, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      borderRadius: '8px',
-                      padding: '0.75rem',
-                      transition: 'all 0.2s ease',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      flexWrap: 'wrap',
-                      gap: '0.5rem',
-                      cursor: 'pointer'
-                    }}
-                    onClick={() => handleUserClick(user)}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                      e.currentTarget.style.transform = 'translateY(0)';
-                    }}
-                  >
-                      <div style={{ flex: 1, minWidth: '150px' }}>
-                      <div style={{ fontFamily: 'monospace', fontSize: '0.9rem', fontWeight: '600', wordBreak: 'break-all' }}>
-                        {user.publicKey.slice(0, 8)}...{user.publicKey.slice(-8)}
-                      </div>
-                      <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.7)' }}>
-                        {user.distance} km away
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleUserClick(user);
-                        }}
-                        style={{
-                          background: 'rgba(74, 222, 128, 0.2)',
-                          border: '1px solid #4ade80',
-                          borderRadius: '6px',
-                          padding: '0.25rem 0.5rem',
-                          color: '#4ade80',
-                          fontSize: '0.8rem',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.25rem',
-                          transition: 'all 0.2s ease'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = 'rgba(74, 222, 128, 0.3)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = 'rgba(74, 222, 128, 0.2)';
-                        }}
-                      >
-                        <Send size={12} />
-                        Send
-                      </button>
-                      <div style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.6)' }}>
-                        {new Date(user.lastSeen).toLocaleTimeString()}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {nearbyUsers.length > 5 && (
-                  <div style={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.8rem', padding: '0.5rem' }}>
-                    +{nearbyUsers.length - 5} more users
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div style={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.6)', padding: '2rem' }}>
-                {showAllUsers ? 'No users found globally' : `No users found within ${searchRadius} km`}
-              </div>
-            )}
-            <ActionButton onClick={() => navigate('/location')} style={{ marginTop: '1rem' }}>
-              View All Users
-            </ActionButton>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Nearby NFTs */}
       {isLocationEnabled && (
@@ -789,6 +676,128 @@ const Dashboard: React.FC = () => {
             </CardContent>
           </Card>
       )}
+
+      {/* Nearby Users */}
+      {isLocationEnabled && (
+        <Card>
+          <CardHeader>
+            <MapPin size={24} />
+            <CardTitle>Nearby Users ({nearbyUsers.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {nearbyUsers.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '300px', overflowY: 'auto' }}>
+                {nearbyUsers.slice(0, 5).map((user, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '8px',
+                      padding: '0.75rem',
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      flexWrap: 'wrap',
+                      gap: '0.5rem',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => handleUserClick(user)}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                  >
+                      <div style={{ flex: 1, minWidth: '150px' }}>
+                      <div style={{ fontFamily: 'monospace', fontSize: '0.9rem', fontWeight: '600', wordBreak: 'break-all' }}>
+                        {user.publicKey.slice(0, 8)}...{user.publicKey.slice(-8)}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.7)' }}>
+                        {user.distance} km away
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleUserClick(user);
+                        }}
+                        style={{
+                          background: 'rgba(74, 222, 128, 0.2)',
+                          border: '1px solid #4ade80',
+                          borderRadius: '6px',
+                          padding: '0.25rem 0.5rem',
+                          color: '#4ade80',
+                          fontSize: '0.8rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'rgba(74, 222, 128, 0.3)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'rgba(74, 222, 128, 0.2)';
+                        }}
+                      >
+                        <Send size={12} />
+                        Send
+                      </button>
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+                        {new Date(user.lastSeen).toLocaleTimeString()}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {nearbyUsers.length > 5 && (
+                  <div style={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.8rem', padding: '0.5rem' }}>
+                    +{nearbyUsers.length - 5} more users
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.6)', padding: '2rem' }}>
+                {showAllUsers ? 'No users found globally' : `No users found within ${searchRadius} km`}
+              </div>
+            )}
+            <ActionButton onClick={() => navigate('/location')} style={{ marginTop: '1rem' }}>
+              View All Users
+            </ActionButton>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Wallet Overview */}
+      <Card>
+        <CardHeader>
+          <Wallet size={24} />
+          <CardTitle>Wallet Overview</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <StatItem>
+            <StatLabel>Total Balance</StatLabel>
+            <StatValue>{totalBalance.toFixed(7)} XLM</StatValue>
+          </StatItem>
+          <StatItem>
+            <StatLabel>Assets</StatLabel>
+            <StatValue>{balances.length}</StatValue>
+          </StatItem>
+          <StatItem>
+            <StatLabel>Transactions</StatLabel>
+            <StatValue>{transactions.length}</StatValue>
+          </StatItem>
+          <ActionButton onClick={() => navigate('/wallet')}>
+            Manage Wallet
+          </ActionButton>
+        </CardContent>
+      </Card>
 
       {/* Recent Transactions */}
       <Card>

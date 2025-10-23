@@ -9,32 +9,34 @@ export class GeoLinkIntegration {
     this.dataConsumerKey = dataConsumerKey;
     
     // Environment-based base URL configuration
-    this.baseUrl = process.env.REACT_APP_GEOLINK_BASE_URL || 'https://geolink-buavavc6gse5c9fw.westus-01.azurewebsites.net';
+    this.baseUrl = process.env.REACT_APP_GEOLINK_BASE_URL || 'http://localhost:4000';
   }
 
   // Send user location to GeoLink (as wallet provider)
   async updateUserLocation(publicKey: string, latitude: number, longitude: number) {
-    const response = await fetch(`${this.baseUrl}/api/locations/submit`, {
+    const response = await fetch(`${this.baseUrl}/api/location/update`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${this.walletProviderKey}`,
+        'X-API-Key': this.walletProviderKey,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
+        public_key: publicKey,
+        blockchain: 'Stellar',
         latitude,
         longitude,
-        accuracy: 10, // in meters
-        timestamp: new Date().toISOString(),
-        wallet_address: publicKey,
-        device_info: {
-          platform: 'mobile',
-          version: '1.0.0'
-        }
+        wallet_type_id: 0
       })
     });
     
     if (!response.ok) {
-      throw new Error(`GeoLink API error: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('GeoLink API error details:', {
+        status: response.status,
+        statusText: response.statusText,
+        errorBody: errorText
+      });
+      throw new Error(`GeoLink API error: ${response.status} ${response.statusText} - ${errorText}`);
     }
     
     return response.json();
@@ -45,7 +47,7 @@ export class GeoLinkIntegration {
     const response = await fetch(`${this.baseUrl}/api/locations/update`, {
       method: 'PUT',
       headers: {
-        'Authorization': `Bearer ${this.walletProviderKey}`,
+        'X-API-Key': this.walletProviderKey,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
@@ -69,7 +71,7 @@ export class GeoLinkIntegration {
     const response = await fetch(`${this.baseUrl}/api/locations/history?wallet_address=${publicKey}`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${this.walletProviderKey}`
+        'X-API-Key': this.walletProviderKey
       }
     });
     
@@ -94,7 +96,7 @@ export class GeoLinkIntegration {
     
     const response = await fetch(url, {
       headers: {
-        'Authorization': `Bearer ${this.dataConsumerKey}`,
+        'X-API-Key': this.dataConsumerKey,
         'Content-Type': 'application/json'
       }
     });
@@ -115,7 +117,7 @@ export class GeoLinkIntegration {
     const response = await fetch(`${this.baseUrl}/api/nft/collect`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${this.dataConsumerKey}`,
+        'X-API-Key': this.dataConsumerKey,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
@@ -137,7 +139,7 @@ export class GeoLinkIntegration {
   async getUserNFTs() {
     const response = await fetch(`${this.baseUrl}/api/nft/user-collection`, {
       headers: {
-        'Authorization': `Bearer ${this.dataConsumerKey}`,
+        'X-API-Key': this.dataConsumerKey,
         'Content-Type': 'application/json'
       }
     });

@@ -108,7 +108,7 @@ const LocationDebugger: React.FC = () => {
 
   const clearRateLimits = async () => {
     try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001';
       const response = await fetch(`${backendUrl}/api/location/debug/clear-rate-limits`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
@@ -126,7 +126,7 @@ const LocationDebugger: React.FC = () => {
 
   const checkVisibilityData = async () => {
     try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001';
       const response = await fetch(`${backendUrl}/api/location/debug/visibility-data`);
       const result = await response.json();
       
@@ -141,7 +141,7 @@ const LocationDebugger: React.FC = () => {
   const runDiagnostics = async () => {
     setIsLoading(true);
     try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001';
       
       // Test backend connection
       const healthResponse = await fetch(`${backendUrl}/health`);
