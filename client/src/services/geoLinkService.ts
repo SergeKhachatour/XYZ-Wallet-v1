@@ -26,18 +26,18 @@ export class GeoLinkIntegration {
       url: `${this.baseUrl}/api/location/update`,
       method: 'POST',
       headers: {
-        'X-API-Key': this.walletProviderKey ? `${this.walletProviderKey.substring(0, 8)}...` : 'MISSING',
+        'Authorization': `Bearer ${this.walletProviderKey ? `${this.walletProviderKey.substring(0, 8)}...` : 'MISSING'}`,
         'Content-Type': 'application/json'
       },
       body: requestBody,
       fullApiKey: this.walletProviderKey // For debugging - remove in production
     });
     
-    // Try with X-API-Key first (current method)
+    // Try with Authorization Bearer token (correct method)
     const response = await fetch(`${this.baseUrl}/api/location/update`, {
       method: 'POST',
       headers: {
-        'X-API-Key': this.walletProviderKey,
+        'Authorization': `Bearer ${this.walletProviderKey}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(requestBody)
@@ -67,7 +67,7 @@ export class GeoLinkIntegration {
     const response = await fetch(`${this.baseUrl}/api/locations/update`, {
       method: 'PUT',
       headers: {
-        'X-API-Key': this.walletProviderKey,
+        'Authorization': `Bearer ${this.walletProviderKey}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
@@ -91,7 +91,7 @@ export class GeoLinkIntegration {
     const response = await fetch(`${this.baseUrl}/api/locations/history?wallet_address=${publicKey}`, {
       method: 'GET',
       headers: {
-        'X-API-Key': this.walletProviderKey
+        'Authorization': `Bearer ${this.walletProviderKey}`
       }
     });
     
@@ -116,7 +116,7 @@ export class GeoLinkIntegration {
     
     const response = await fetch(url, {
       headers: {
-        'X-API-Key': this.dataConsumerKey,
+        'Authorization': `Bearer ${this.dataConsumerKey}`,
         'Content-Type': 'application/json'
       }
     });
@@ -137,7 +137,7 @@ export class GeoLinkIntegration {
     const response = await fetch(`${this.baseUrl}/api/nft/collect`, {
       method: 'POST',
       headers: {
-        'X-API-Key': this.dataConsumerKey,
+        'Authorization': `Bearer ${this.dataConsumerKey}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
@@ -159,7 +159,7 @@ export class GeoLinkIntegration {
   async getUserNFTs() {
     const response = await fetch(`${this.baseUrl}/api/nft/user-collection`, {
       headers: {
-        'X-API-Key': this.dataConsumerKey,
+        'Authorization': `Bearer ${this.dataConsumerKey}`,
         'Content-Type': 'application/json'
       }
     });
