@@ -242,18 +242,46 @@ const RadarOverlay = styled.div<{ $isOpen: boolean }>`
   padding: 1rem;
   align-items: center;
   justify-content: center;
+  
+  @media (max-width: 768px) {
+    padding: 0.5rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.25rem;
+  }
 `;
 
 const RadarContainer = styled.div`
-  background: linear-gradient(135deg, #1a1a2e, #16213e);
-  border-radius: 20px;
-  padding: 2rem;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-  border: 2px solid rgba(255, 107, 107, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: none;
+  border-radius: 16px;
+  padding: 1.5rem;
+  color: #FFFFFF;
+  transition: transform 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   max-width: 600px;
   width: 100%;
   position: relative;
   overflow: hidden;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(255, 215, 0, 0.2);
+  }
+  
+  @media (max-width: 768px) {
+    max-width: 90vw;
+    padding: 1rem;
+    border-radius: 12px;
+  }
+  
+  @media (max-width: 480px) {
+    max-width: 95vw;
+    padding: 0.75rem;
+    border-radius: 8px;
+  }
 `;
 
 const RadarHeader = styled.div`
@@ -261,6 +289,17 @@ const RadarHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
 `;
 
 const RadarTitle = styled.h2`
@@ -271,6 +310,14 @@ const RadarTitle = styled.h2`
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  
+  @media (max-width: 768px) {
+    font-size: 1.25rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1rem;
+  }
 `;
 
 const RadarCloseButton = styled.button`
@@ -315,6 +362,16 @@ const RadarTypeButton = styled.button<{ $active: boolean }>`
     background: ${props => props.$active ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255, 255, 255, 0.1)'};
     transform: scale(1.05);
   }
+  
+  @media (max-width: 768px) {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.75rem;
+  }
 `;
 
 const RadarDisplayContainer = styled.div`
@@ -329,6 +386,16 @@ const RadarDisplayContainer = styled.div`
   
   &:active {
     cursor: grabbing;
+  }
+  
+  @media (max-width: 768px) {
+    width: 300px;
+    height: 300px;
+  }
+  
+  @media (max-width: 480px) {
+    width: 250px;
+    height: 250px;
   }
 `;
 
@@ -347,6 +414,16 @@ const RadarControls = styled.div`
   gap: 0.5rem;
   margin-top: 1rem;
   justify-content: center;
+  
+  @media (max-width: 768px) {
+    gap: 0.25rem;
+    margin-top: 0.75rem;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 0.2rem;
+    margin-top: 0.5rem;
+  }
 `;
 
 const RadarControlButton = styled.button`
@@ -367,6 +444,20 @@ const RadarControlButton = styled.button`
   &:hover {
     background: rgba(255, 255, 255, 0.2);
     transform: scale(1.1);
+  }
+  
+  @media (max-width: 768px) {
+    width: 35px;
+    height: 35px;
+    padding: 0.4rem;
+    font-size: 0.7rem;
+  }
+  
+  @media (max-width: 480px) {
+    width: 30px;
+    height: 30px;
+    padding: 0.3rem;
+    font-size: 0.6rem;
   }
 `;
 
