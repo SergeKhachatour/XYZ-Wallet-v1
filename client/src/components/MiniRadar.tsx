@@ -231,7 +231,7 @@ const MiniRadar: React.FC<MiniRadarProps> = ({
   const [panY, setPanY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [radarType, setRadarType] = useState<'nft' | 'wallet'>('nft');
+  const [radarType, setRadarType] = useState<'nft' | 'wallet'>('wallet');
   const radarRef = useRef<HTMLDivElement>(null);
 
   const calculateRadarPosition = (item: any) => {

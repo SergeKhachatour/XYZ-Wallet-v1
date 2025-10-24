@@ -288,6 +288,35 @@ const RadarCloseButton = styled.button`
   }
 `;
 
+const RadarTypeToggle = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 0.5rem;
+`;
+
+const RadarTypeButton = styled.button<{ $active: boolean }>`
+  background: ${props => props.$active ? 'rgba(255, 215, 0, 0.2)' : 'transparent'};
+  border: 1px solid ${props => props.$active ? 'rgba(255, 215, 0, 0.5)' : 'rgba(255, 255, 255, 0.2)'};
+  color: ${props => props.$active ? '#FFD700' : 'rgba(255, 255, 255, 0.7)'};
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  
+  &:hover {
+    background: ${props => props.$active ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255, 255, 255, 0.1)'};
+    transform: scale(1.05);
+  }
+`;
+
 const RadarDisplayContainer = styled.div`
   position: relative;
   width: 400px;
@@ -562,9 +591,11 @@ interface MapboxMapProps {
   isFullscreen?: boolean;
   isRadarOpen?: boolean;
   onRadarToggle?: () => void;
+  nearbyUsers?: any[];
+  onUserClick?: (user: any) => void;
 }
 
-const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTForZoom, isFullscreen: externalIsFullscreen, isRadarOpen: externalIsRadarOpen, onRadarToggle }) => {
+const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTForZoom, isFullscreen: externalIsFullscreen, isRadarOpen: externalIsRadarOpen, onRadarToggle, nearbyUsers = [], onUserClick }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const fullscreenMapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -582,6 +613,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
   const [radarZoom, setRadarZoom] = useState(1);
   const [radarPanX, setRadarPanX] = useState(0);
   const [radarPanY, setRadarPanY] = useState(0);
+  const [radarType, setRadarType] = useState<'nft' | 'wallet'>('wallet');
   const [isRadarDragging, setIsRadarDragging] = useState(false);
   const [radarDragStart, setRadarDragStart] = useState({ x: 0, y: 0 });
   const radarRef = useRef<HTMLDivElement>(null);
@@ -2413,11 +2445,27 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
         <RadarContainer>
           <RadarHeader>
             <RadarTitle>
-              📡 NFT Radar
+              📡 {radarType === 'nft' ? 'NFT Radar' : 'Wallet Radar'}
             </RadarTitle>
-            <RadarCloseButton onClick={handleRadarToggle}>
-              ✕
-            </RadarCloseButton>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+              <RadarTypeToggle>
+                <RadarTypeButton 
+                  $active={radarType === 'nft'} 
+                  onClick={() => setRadarType('nft')}
+                >
+                  🖼️ NFT
+                </RadarTypeButton>
+                <RadarTypeButton 
+                  $active={radarType === 'wallet'} 
+                  onClick={() => setRadarType('wallet')}
+                >
+                  👥 Wallet
+                </RadarTypeButton>
+              </RadarTypeToggle>
+              <RadarCloseButton onClick={handleRadarToggle}>
+                ✕
+              </RadarCloseButton>
+            </div>
           </RadarHeader>
           
           <RadarDisplayContainer
@@ -2431,30 +2479,60 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
             <RadarDisplay $zoom={radarZoom} $panX={radarPanX} $panY={radarPanY}>
               <RadarSweep />
               <RadarCenter />
-              {nearbyNFTs.map((nft, index) => {
-                const { angle, distance } = calculateRadarPosition(nft);
-                // Construct image URL from server_url + ipfs_hash (same logic as map markers)
-                const imageUrl = nft.server_url && nft.ipfs_hash 
-                  ? `${nft.server_url}${nft.ipfs_hash}` 
-                  : nft.image_url || 'https://via.placeholder.com/48x48?text=NFT';
-                return (
-                  <NFTRadarPoint
-                    key={index}
-                    $angle={angle}
-                    $distance={distance}
-                    $isCollected={false} // You can add collected state logic here
-                    onClick={() => handleNFTRadarClick(nft)}
-                    title={`${nft.collection_name || 'Unknown NFT'} - ${Math.round(nft.distance)}m away`}
-                  >
-                    <NFTRadarImage 
-                      src={imageUrl} 
-                      alt={nft.collection_name || 'NFT'}
-                      onError={(e) => {
-                        e.currentTarget.src = 'https://via.placeholder.com/48x48?text=NFT';
-                      }}
-                    />
-                  </NFTRadarPoint>
-                );
+              {(radarType === 'nft' ? nearbyNFTs : nearbyUsers).map((item, index) => {
+                const { angle, distance } = calculateRadarPosition(item);
+                
+                if (radarType === 'nft') {
+                  // NFT display logic
+                  const imageUrl = item.server_url && item.ipfs_hash 
+                    ? `${item.server_url}${item.ipfs_hash}` 
+                    : item.image_url || 'https://via.placeholder.com/48x48?text=NFT';
+                  return (
+                    <NFTRadarPoint
+                      key={`nft-${index}`}
+                      $angle={angle}
+                      $distance={distance}
+                      $isCollected={false}
+                      onClick={() => handleNFTRadarClick(item)}
+                      title={`${item.collection_name || 'Unknown NFT'} - ${Math.round(item.distance)}m away`}
+                    >
+                      <NFTRadarImage 
+                        src={imageUrl} 
+                        alt={item.collection_name || 'NFT'}
+                        onError={(e) => {
+                          e.currentTarget.src = 'https://via.placeholder.com/48x48?text=NFT';
+                        }}
+                      />
+                    </NFTRadarPoint>
+                  );
+                } else {
+                  // Wallet display logic
+                  return (
+                    <NFTRadarPoint
+                      key={`wallet-${index}`}
+                      $angle={angle}
+                      $distance={distance}
+                      $isCollected={false}
+                      onClick={() => onUserClick?.(item)}
+                      title={`Wallet ${item.publicKey?.slice(0, 8)}... - ${Math.round(item.distance)}m away`}
+                    >
+                      <div style={{
+                        width: '100%',
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: 'linear-gradient(45deg, #4ade80, #22c55e)',
+                        borderRadius: '9px',
+                        fontSize: '16px',
+                        fontWeight: 'bold',
+                        color: 'white'
+                      }}>
+                        💳
+                      </div>
+                    </NFTRadarPoint>
+                  );
+                }
               })}
             </RadarDisplay>
           </RadarDisplayContainer>
@@ -2472,12 +2550,20 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
           </RadarControls>
           
           <RadarInfo>
-            {nearbyNFTs.map((nft, index) => (
-              <NFTInfoCard key={index} $isCollected={false}>
-                <NFTName>{nft.collection_name || 'Unknown NFT'}</NFTName>
-                <NFTDistance>{Math.round(nft.distance)}m away</NFTDistance>
+            {(radarType === 'nft' ? nearbyNFTs : nearbyUsers).map((item, index) => (
+              <NFTInfoCard key={`${radarType}-${index}`} $isCollected={false}>
+                <NFTName>
+                  {radarType === 'nft' 
+                    ? (item.collection_name || 'Unknown NFT')
+                    : `Wallet ${item.publicKey?.slice(0, 8)}...`
+                  }
+                </NFTName>
+                <NFTDistance>{Math.round(item.distance)}m away</NFTDistance>
                 <NFTStatus $isCollected={false}>
-                  {nft.distance < 100 ? '🎯 In Range!' : '📍 Navigate to collect'}
+                  {radarType === 'nft' 
+                    ? (item.distance < 100 ? '🎯 In Range!' : '📍 Navigate to collect')
+                    : (item.distance < 100 ? '🎯 Nearby!' : '📍 Navigate to connect')
+                  }
                 </NFTStatus>
               </NFTInfoCard>
             ))}
