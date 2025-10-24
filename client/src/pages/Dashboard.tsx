@@ -512,7 +512,7 @@ const Dashboard: React.FC = () => {
           isFullscreen={isMapFullscreen}
           isRadarOpen={isRadarOpen}
           onRadarToggle={() => setIsRadarOpen(!isRadarOpen)}
-          nearbyUsers={nearbyUsers}
+          radarNearbyUsers={nearbyUsers}
           onUserClick={handleUserClick}
         />
       </MapContainer>

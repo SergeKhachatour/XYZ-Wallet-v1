@@ -591,11 +591,11 @@ interface MapboxMapProps {
   isFullscreen?: boolean;
   isRadarOpen?: boolean;
   onRadarToggle?: () => void;
-  nearbyUsers?: any[];
+  radarNearbyUsers?: any[];
   onUserClick?: (user: any) => void;
 }
 
-const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTForZoom, isFullscreen: externalIsFullscreen, isRadarOpen: externalIsRadarOpen, onRadarToggle, nearbyUsers = [], onUserClick }) => {
+const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTForZoom, isFullscreen: externalIsFullscreen, isRadarOpen: externalIsRadarOpen, onRadarToggle, radarNearbyUsers = [], onUserClick }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const fullscreenMapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -2479,7 +2479,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
             <RadarDisplay $zoom={radarZoom} $panX={radarPanX} $panY={radarPanY}>
               <RadarSweep />
               <RadarCenter />
-              {(radarType === 'nft' ? nearbyNFTs : nearbyUsers).map((item, index) => {
+              {(radarType === 'nft' ? nearbyNFTs : radarNearbyUsers).map((item, index) => {
                 const { angle, distance } = calculateRadarPosition(item);
                 
                 if (radarType === 'nft') {
@@ -2550,7 +2550,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
           </RadarControls>
           
           <RadarInfo>
-            {(radarType === 'nft' ? nearbyNFTs : nearbyUsers).map((item, index) => (
+            {(radarType === 'nft' ? nearbyNFTs : radarNearbyUsers).map((item, index) => (
               <NFTInfoCard key={`${radarType}-${index}`} $isCollected={false}>
                 <NFTName>
                   {radarType === 'nft' 
