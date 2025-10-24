@@ -45,7 +45,7 @@ jobs:
           export REACT_APP_MAPBOX_TOKEN="pk.eyJ1Ijoic2VyZ2UzNjl4MzMiLCJhIjoiY20zZHkzb2xoMDA0eTJxcHU4MTNoYjNlaCJ9.Xl6OxzF9td1IgTTeUp526w"
           # GeoLink Integration Environment Variables
           export REACT_APP_GEOLINK_BASE_URL="https://geolink-buavavc6gse5c9fw.westus-01.azurewebsites.net"
-          export REACT_APP_GEOLINK_WALLET_PROVIDER_KEY="ca56b11b4d40523995c101c06a929087e7e55f2811b8e698ddf5a0a7c8177d29"
+          export REACT_APP_GEOLINK_WALLET_PROVIDER_KEY="8d6aaf5ce265afed4debbf97252ac4a5beb0853c63573d555617865a413af050"
           export REACT_APP_GEOLINK_DATA_CONSUMER_KEY="8d6aaf5ce265afed4debbf97252ac4a5beb0853c63573d555617865a413af050"
           # Force cache bust with version
           export REACT_APP_VERSION="$(date +%s)"
