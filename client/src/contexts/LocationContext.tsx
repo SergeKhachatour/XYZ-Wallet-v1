@@ -190,8 +190,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       await submitLocationToBackend(locationData);
       
       // Send to GeoLink if connected or connecting (as wallet provider)
-      // TEMPORARILY DISABLED: Waiting for valid production Wallet Provider key
-      if (false && geoLink && (geoLinkStatus === 'connected' || geoLinkStatus === 'connecting')) {
+      if (geoLink && (geoLinkStatus === 'connected' || geoLinkStatus === 'connecting')) {
         const userPublicKey = localStorage.getItem('wallet_publicKey');
         if (userPublicKey) {
           // Make GeoLink API call non-blocking
