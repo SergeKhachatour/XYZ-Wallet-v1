@@ -203,7 +203,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
                 walletAddress: userPublicKey,
                 geoLinkStatus
               });
-              if (geoLink) {
+              if (geoLink && userPublicKey) {
                 const result = await geoLink.updateUserLocation(userPublicKey, locationData.latitude, locationData.longitude);
                 console.log('📍 Location sent to GeoLink successfully:', result);
               }
