@@ -14,19 +14,39 @@ export class GeoLinkIntegration {
 
   // Send user location to GeoLink (as wallet provider)
   async updateUserLocation(publicKey: string, latitude: number, longitude: number) {
+    const requestBody = {
+      public_key: publicKey,
+      blockchain: 'Stellar',
+      latitude,
+      longitude,
+      wallet_type_id: 0
+    };
+    
+    console.log('🔑 GeoLink Wallet Provider API call:', {
+      url: `${this.baseUrl}/api/location/update`,
+      method: 'POST',
+      headers: {
+        'X-API-Key': this.walletProviderKey ? `${this.walletProviderKey.substring(0, 8)}...` : 'MISSING',
+        'Content-Type': 'application/json'
+      },
+      body: requestBody,
+      fullApiKey: this.walletProviderKey // For debugging - remove in production
+    });
+    
+    // Try with X-API-Key first (current method)
     const response = await fetch(`${this.baseUrl}/api/location/update`, {
       method: 'POST',
       headers: {
         'X-API-Key': this.walletProviderKey,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        public_key: publicKey,
-        blockchain: 'Stellar',
-        latitude,
-        longitude,
-        wallet_type_id: 0
-      })
+      body: JSON.stringify(requestBody)
+    });
+    
+    console.log('🔑 GeoLink Wallet Provider API response:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok
     });
     
     if (!response.ok) {
