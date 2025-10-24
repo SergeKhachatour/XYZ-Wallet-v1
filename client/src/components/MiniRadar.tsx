@@ -1,6 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
-import { Radar, Maximize2, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { Radar, Maximize2, ZoomIn, ZoomOut, RotateCcw, Users, Image } from 'lucide-react';
 
 const MiniRadarContainer = styled.div`
   background: rgba(255, 255, 255, 0.1);
@@ -180,36 +180,74 @@ const NFTDistance = styled.div`
   color: rgba(255, 255, 255, 0.6);
 `;
 
+const RadarTypeToggle = styled.div`
+  display: flex;
+  gap: 0.25rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.25rem;
+`;
+
+const RadarTypeButton = styled.button<{ $active: boolean }>`
+  background: ${props => props.$active ? 'rgba(255, 215, 0, 0.2)' : 'transparent'};
+  border: 1px solid ${props => props.$active ? 'rgba(255, 215, 0, 0.5)' : 'rgba(255, 255, 255, 0.2)'};
+  color: ${props => props.$active ? '#FFD700' : 'rgba(255, 255, 255, 0.7)'};
+  padding: 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  
+  &:hover {
+    background: ${props => props.$active ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255, 255, 255, 0.1)'};
+    transform: scale(1.05);
+  }
+`;
+
 interface MiniRadarProps {
   nearbyNFTs: any[];
+  nearbyUsers?: any[];
   onFullscreenClick: () => void;
   onNFTClick: (nft: any) => void;
+  onUserClick?: (user: any) => void;
   userLatitude?: number;
   userLongitude?: number;
 }
 
-const MiniRadar: React.FC<MiniRadarProps> = ({ nearbyNFTs, onFullscreenClick, onNFTClick, userLatitude, userLongitude }) => {
+const MiniRadar: React.FC<MiniRadarProps> = ({ 
+  nearbyNFTs, 
+  nearbyUsers = [], 
+  onFullscreenClick, 
+  onNFTClick, 
+  onUserClick,
+  userLatitude, 
+  userLongitude 
+}) => {
   const [zoom, setZoom] = useState(1);
   const [panX, setPanX] = useState(0);
   const [panY, setPanY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [radarType, setRadarType] = useState<'nft' | 'wallet'>('nft');
   const radarRef = useRef<HTMLDivElement>(null);
 
-  const calculateRadarPosition = (nft: any) => {
+  const calculateRadarPosition = (item: any) => {
     if (!userLatitude || !userLongitude) {
       // Fallback to simple positioning if no user location
       const maxDistance = 100; // meters
-      const distance = Math.min(nft.distance || 0, maxDistance);
+      const distance = Math.min(item.distance || 0, maxDistance);
       const radarDistance = (distance / maxDistance) * 50; // Scale to radar size
       const angle = Math.random() * 360;
       return { angle, distance: radarDistance };
     }
     
-    // Calculate bearing from user to NFT (same logic as fullscreen radar)
+    // Calculate bearing from user to item (same logic as fullscreen radar)
     const lat1 = userLatitude * Math.PI / 180;
-    const lat2 = nft.latitude * Math.PI / 180;
-    const deltaLng = (nft.longitude - userLongitude) * Math.PI / 180;
+    const lat2 = item.latitude * Math.PI / 180;
+    const deltaLng = (item.longitude - userLongitude) * Math.PI / 180;
     
     const y = Math.sin(deltaLng) * Math.cos(lat2);
     const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLng);
@@ -217,7 +255,7 @@ const MiniRadar: React.FC<MiniRadarProps> = ({ nearbyNFTs, onFullscreenClick, on
     const angle = (bearing + 360) % 360;
     
     // Calculate distance (normalized to mini radar display)
-    const distance = Math.min(nft.distance / 1000, 50); // Max 50px for mini radar display
+    const distance = Math.min(item.distance / 1000, 50); // Max 50px for mini radar display
     
     return { angle, distance };
   };
@@ -258,21 +296,46 @@ const MiniRadar: React.FC<MiniRadarProps> = ({ nearbyNFTs, onFullscreenClick, on
     setZoom(prev => Math.max(0.5, Math.min(3, prev * delta)));
   };
 
-  const closestNFT = nearbyNFTs.length > 0 ? nearbyNFTs.reduce((closest, nft) => 
-    nft.distance < closest.distance ? nft : closest
+  // Get current data based on radar type
+  const currentData = radarType === 'nft' ? nearbyNFTs : nearbyUsers;
+  const closestItem = currentData.length > 0 ? currentData.reduce((closest, item) => 
+    item.distance < closest.distance ? item : closest
   ) : null;
+
+  // Update data when nearbyNFTs or nearbyUsers change
+  useEffect(() => {
+    // This ensures the radar updates when new data comes in
+  }, [nearbyNFTs, nearbyUsers]);
 
   return (
     <MiniRadarContainer>
       <MiniRadarHeader>
         <MiniRadarTitle>
           <Radar size={16} />
-          NFT Radar
+          {radarType === 'nft' ? 'NFT Radar' : 'Wallet Radar'}
         </MiniRadarTitle>
-        <FullscreenButton onClick={onFullscreenClick} title="Open Full Radar">
-          <Maximize2 size={12} />
-          Full
-        </FullscreenButton>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <RadarTypeToggle>
+            <RadarTypeButton 
+              $active={radarType === 'nft'} 
+              onClick={() => setRadarType('nft')}
+              title="Show NFT Radar"
+            >
+              <Image size={12} />
+            </RadarTypeButton>
+            <RadarTypeButton 
+              $active={radarType === 'wallet'} 
+              onClick={() => setRadarType('wallet')}
+              title="Show Wallet Radar"
+            >
+              <Users size={12} />
+            </RadarTypeButton>
+          </RadarTypeToggle>
+          <FullscreenButton onClick={onFullscreenClick} title="Open Fullscreen Radar">
+            <Maximize2 size={12} />
+            Full
+          </FullscreenButton>
+        </div>
       </MiniRadarHeader>
       
       <MiniRadarDisplayContainer
@@ -286,30 +349,59 @@ const MiniRadar: React.FC<MiniRadarProps> = ({ nearbyNFTs, onFullscreenClick, on
         <MiniRadarDisplay $zoom={zoom} $panX={panX} $panY={panY}>
           <MiniRadarSweep />
           <MiniRadarCenter />
-          {nearbyNFTs.slice(0, 3).map((nft, index) => {
-            const { angle, distance } = calculateRadarPosition(nft);
-            // Construct image URL from server_url + ipfs_hash (same logic as map markers)
-            const imageUrl = nft.server_url && nft.ipfs_hash 
-              ? `${nft.server_url}${nft.ipfs_hash}` 
-              : nft.image_url || 'https://via.placeholder.com/48x48?text=NFT';
-            return (
-              <MiniNFTRadarPoint
-                key={index}
-                $angle={angle}
-                $distance={distance}
-                onClick={() => onNFTClick(nft)}
-                title={`${nft.collection_name || 'Unknown NFT'} - ${Math.round(nft.distance)}m away`}
-              >
-                <MiniNFTImage 
-                  src={imageUrl} 
-                  alt={nft.collection_name || 'NFT'}
-                  onError={(e) => {
-                    e.currentTarget.src = 'https://via.placeholder.com/48x48?text=NFT';
-                  }}
-                />
-              </MiniNFTRadarPoint>
-            );
-          })}
+                 {currentData.slice(0, 3).map((item, index) => {
+                   const { angle, distance } = calculateRadarPosition(item);
+                   
+                   if (radarType === 'nft') {
+                     // NFT display logic
+                     const imageUrl = item.server_url && item.ipfs_hash 
+                       ? `${item.server_url}${item.ipfs_hash}` 
+                       : item.image_url || 'https://via.placeholder.com/48x48?text=NFT';
+                     return (
+                       <MiniNFTRadarPoint
+                         key={`nft-${index}`}
+                         $angle={angle}
+                         $distance={distance}
+                         onClick={() => onNFTClick(item)}
+                         title={`${item.collection_name || 'Unknown NFT'} - ${Math.round(item.distance)}m away`}
+                       >
+                         <MiniNFTImage 
+                           src={imageUrl} 
+                           alt={item.collection_name || 'NFT'}
+                           onError={(e) => {
+                             e.currentTarget.src = 'https://via.placeholder.com/48x48?text=NFT';
+                           }}
+                         />
+                       </MiniNFTRadarPoint>
+                     );
+                   } else {
+                     // Wallet display logic
+                     return (
+                       <MiniNFTRadarPoint
+                         key={`wallet-${index}`}
+                         $angle={angle}
+                         $distance={distance}
+                         onClick={() => onUserClick?.(item)}
+                         title={`Wallet ${item.publicKey?.slice(0, 8)}... - ${Math.round(item.distance)}m away`}
+                       >
+                         <div style={{
+                           width: '100%',
+                           height: '100%',
+                           display: 'flex',
+                           alignItems: 'center',
+                           justifyContent: 'center',
+                           background: 'linear-gradient(45deg, #4ade80, #22c55e)',
+                           borderRadius: '6px',
+                           fontSize: '10px',
+                           fontWeight: 'bold',
+                           color: 'white'
+                         }}>
+                           💳
+                         </div>
+                       </MiniNFTRadarPoint>
+                     );
+                   }
+                 })}
         </MiniRadarDisplay>
       </MiniRadarDisplayContainer>
       
@@ -327,11 +419,11 @@ const MiniRadar: React.FC<MiniRadarProps> = ({ nearbyNFTs, onFullscreenClick, on
       
       <MiniRadarInfo>
         <NFTCount>
-          {nearbyNFTs.length} NFT{nearbyNFTs.length !== 1 ? 's' : ''} nearby
+          {currentData.length} {radarType === 'nft' ? 'NFT' : 'Wallet'}{currentData.length !== 1 ? 's' : ''} nearby
         </NFTCount>
-        {closestNFT && (
+        {closestItem && (
           <NFTDistance>
-            Closest: {Math.round(closestNFT.distance)}m away
+            Closest: {Math.round(closestItem.distance)}m away
           </NFTDistance>
         )}
       </MiniRadarInfo>

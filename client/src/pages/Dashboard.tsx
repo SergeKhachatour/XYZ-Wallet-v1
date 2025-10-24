@@ -495,8 +495,10 @@ const Dashboard: React.FC = () => {
       <PriceChartContainer>
         <PriceChart 
           nearbyNFTs={nearbyNFTs}
+          nearbyUsers={nearbyUsers}
           onRadarFullscreen={() => setIsRadarOpen(true)}
           onNFTClick={handleNFTClick}
+          onUserClick={handleUserClick}
           userLatitude={currentLocation?.latitude}
           userLongitude={currentLocation?.longitude}
         />

@@ -80,13 +80,15 @@ interface PriceData {
 
 interface PriceChartProps {
   nearbyNFTs?: any[];
+  nearbyUsers?: any[];
   onRadarFullscreen?: () => void;
   onNFTClick?: (nft: any) => void;
+  onUserClick?: (user: any) => void;
   userLatitude?: number;
   userLongitude?: number;
 }
 
-const PriceChart: React.FC<PriceChartProps> = ({ nearbyNFTs = [], onRadarFullscreen, onNFTClick, userLatitude, userLongitude }) => {
+const PriceChart: React.FC<PriceChartProps> = ({ nearbyNFTs = [], nearbyUsers = [], onRadarFullscreen, onNFTClick, onUserClick, userLatitude, userLongitude }) => {
   const [priceData, setPriceData] = useState<PriceData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -248,8 +250,10 @@ const PriceChart: React.FC<PriceChartProps> = ({ nearbyNFTs = [], onRadarFullscr
       <RadarSection>
         <MiniRadar 
           nearbyNFTs={nearbyNFTs}
+          nearbyUsers={nearbyUsers}
           onFullscreenClick={onRadarFullscreen || (() => {})}
           onNFTClick={onNFTClick || (() => {})}
+          onUserClick={onUserClick}
           userLatitude={userLatitude}
           userLongitude={userLongitude}
         />
