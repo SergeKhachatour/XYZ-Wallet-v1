@@ -64,7 +64,7 @@ jobs:
           cp package-lock.json deploy/
           
           # Copy client build
-          cp -r client/build deploy/client-build
+          cp -r client/build deploy/client/build
           
           # Create a simple start script
           cat > deploy/start.sh << 'EOF'
