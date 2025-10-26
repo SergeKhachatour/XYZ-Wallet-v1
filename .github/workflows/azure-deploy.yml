@@ -1,0 +1,165 @@
+name: Simple Deploy to Azure App Service
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '18.x'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js version
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+            client/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd server && npm ci
+          cd ../client && npm ci
+
+      - name: Build React app
+        run: |
+          cd client
+          export REACT_APP_BACKEND_URL="https://xyz-wallet-v1-adh3bjdnguczdmft.westus-01.azurewebsites.net"
+          export REACT_APP_STELLAR_NETWORK="testnet"
+          export REACT_APP_STELLAR_HORIZON_URL="https://horizon-testnet.stellar.org"
+          export REACT_APP_MAPBOX_TOKEN="pk.eyJ1Ijoic2VyZ2UzNjl4MzMiLCJhIjoiY20zZHkzb2xoMDA0eTJxcHU4MTNoYjNlaCJ9.Xl6OxzF9td1IgTTeUp526w"
+          export REACT_APP_GEOLINK_BASE_URL="https://geolink-buavavc6gse5c9fw.westus-01.azurewebsites.net"
+          export REACT_APP_GEOLINK_WALLET_PROVIDER_KEY="ca56b11b4d40523995c101c06a929087e7e55f2811b8e698ddf5a0a7c8177d29"
+          export REACT_APP_GEOLINK_DATA_CONSUMER_KEY="8d6aaf5ce265afed4debbf97252ac4a5beb0853c63573d555617865a413af050"
+          export REACT_APP_VERSION="$(date +%s)"
+          npm run build
+        env:
+          CI: false
+          GENERATE_SOURCEMAP: false
+
+      - name: Create simple deployment package
+        run: |
+          echo "Creating simple deployment package..."
+          
+          # Create a simple directory structure
+          mkdir -p deploy
+          
+          # Copy server files
+          cp -r server deploy/
+          cp package.json deploy/
+          cp package-lock.json deploy/
+          
+          # Copy client build
+          cp -r client/build deploy/client-build
+          
+          # Create a simple start script
+          cat > deploy/start.sh << 'EOF'
+          #!/bin/bash
+          cd server
+          npm install --production
+          node index.js
+          EOF
+          chmod +x deploy/start.sh
+          
+          # Create package.json for Azure
+          cat > deploy/package.json << 'EOF'
+          {
+            "name": "xyz-wallet-v1",
+            "version": "1.0.0",
+            "main": "server/index.js",
+            "scripts": {
+              "start": "cd server && node index.js"
+            },
+            "dependencies": {
+              "express": "^4.18.2",
+              "cors": "^2.8.5",
+              "helmet": "^7.1.0",
+              "dotenv": "^16.3.1",
+              "axios": "^1.6.2",
+              "stellar-sdk": "^11.2.2",
+              "node-fetch": "^3.3.2",
+              "express-rate-limit": "^7.1.5",
+              "morgan": "^1.10.0"
+            }
+          }
+          EOF
+          
+          # Create web.config for Azure
+          cat > deploy/web.config << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <system.webServer>
+              <webSocket enabled="false" />
+              <handlers>
+                <add name="iisnode" path="server/index.js" verb="*" modules="iisnode"/>
+              </handlers>
+              <rewrite>
+                <rules>
+                  <rule name="NodeInspector" patternSyntax="ECMAScript" stopProcessing="true">
+                    <match url="^server/index.js\/debug[\/]?" />
+                  </rule>
+                  <rule name="StaticContent">
+                    <action type="Rewrite" url="public{REQUEST_URI}"/>
+                  </rule>
+                  <rule name="DynamicContent">
+                    <conditions>
+                      <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="True"/>
+                    </conditions>
+                    <action type="Rewrite" url="server/index.js"/>
+                  </rule>
+                </rules>
+              </rewrite>
+              <security>
+                <requestFiltering>
+                  <hiddenSegments>
+                    <remove segment="bin"/>
+                  </hiddenSegments>
+                </requestFiltering>
+              </security>
+              <httpErrors existingResponse="PassThrough" />
+              <iisnode watchedFiles="web.config;*.js"/>
+            </system.webServer>
+          </configuration>
+          EOF
+          
+          # Create zip file
+          echo "Creating zip file..."
+          cd deploy
+          zip -r ../deployment.zip . -q
+          cd ..
+          
+          # Verify zip was created
+          if [ -f "deployment.zip" ]; then
+            echo "✅ deployment.zip created successfully"
+            echo "Size: $(du -h deployment.zip | cut -f1)"
+            ls -la deployment.zip
+          else
+            echo "❌ deployment.zip not created!"
+            exit 1
+          fi
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'xyz-wallet-v1'
+          package: deployment.zip
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
+
+      - name: Verify deployment
+        run: |
+          echo "✅ Simple deployment completed!"
+          echo "🌐 App URL: https://xyz-wallet-v1-adh3bjdnguczdmft.westus-01.azurewebsites.net"
