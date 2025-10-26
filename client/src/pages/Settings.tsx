@@ -161,7 +161,8 @@ const Settings: React.FC = () => {
     secretKey, 
     disconnectAccount,
     balances,
-    transactions 
+    transactions,
+    isPasskeyEnabled
   } = useWallet();
   
   const { 
