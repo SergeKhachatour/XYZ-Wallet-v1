@@ -177,7 +177,16 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   }, [publicKey, isConnected, refreshBalance, refreshTransactions]);
 
   const createAccount = () => {
+    // Prevent multiple wallet creation
+    if (isLoading) {
+      console.log('Wallet creation already in progress, skipping...');
+      return;
+    }
+
     try {
+      setIsLoading(true);
+      console.log('Creating new wallet...');
+      
       const keypair = StellarSdk.Keypair.random();
       const newPublicKey = keypair.publicKey();
       const newSecretKey = keypair.secret();
@@ -202,11 +211,13 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
           detail: { publicKey: newPublicKey } 
         });
         window.dispatchEvent(event);
+        setIsLoading(false);
       }, 1000); // Small delay to ensure wallet is fully loaded
       
     } catch (error) {
       console.error('Error creating account:', error);
       toast.error('Failed to create wallet');
+      setIsLoading(false);
     }
   };
 

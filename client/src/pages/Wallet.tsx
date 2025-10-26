@@ -725,6 +725,14 @@ const Wallet: React.FC = () => {
   useEffect(() => {
     const handlePasskeySetup = (event: CustomEvent) => {
       const { publicKey: newPublicKey } = event.detail;
+      
+      // Prevent multiple modals
+      if (showPasskeySetup) {
+        console.log('Passkey setup modal already open, skipping...');
+        return;
+      }
+      
+      console.log('Opening passkey setup modal for:', newPublicKey);
       setPasskeySetupPublicKey(newPublicKey);
       setShowPasskeySetup(true);
     };
@@ -734,7 +742,7 @@ const Wallet: React.FC = () => {
     return () => {
       window.removeEventListener('showPasskeySetup', handlePasskeySetup as EventListener);
     };
-  }, []);
+  }, [showPasskeySetup]);
 
   const handlePasskeyEnabled = async (credentialId: string) => {
     console.log('Passkey enabled for wallet:', credentialId);
@@ -772,7 +780,7 @@ const Wallet: React.FC = () => {
                 This will generate a new Stellar wallet. Make sure to save your secret key securely!
               </p>
               <Button onClick={createAccount} disabled={isLoading}>
-                Generate New Wallet
+                {isLoading ? 'Creating...' : 'Generate New Wallet'}
               </Button>
             </div>
           )}
