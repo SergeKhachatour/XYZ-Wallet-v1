@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { Settings as SettingsIcon, Trash2, Download, Upload, Key, Globe } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useLocation } from '../contexts/LocationContext';
+import PasskeyAuth from '../components/PasskeyAuth';
 import toast from 'react-hot-toast';
 
 const SettingsContainer = styled.div`
@@ -259,6 +260,29 @@ const Settings: React.FC = () => {
             <InfoValue>{transactions.length}</InfoValue>
           </InfoRow>
         </InfoCard>
+      </Section>
+
+      {/* Passkey Authentication */}
+      <Section>
+        <SectionHeader>
+          <Key size={24} />
+          <SectionTitle>Secure Authentication</SectionTitle>
+        </SectionHeader>
+        
+        <PasskeyAuth 
+          onPasskeyEnabled={(credentialId) => {
+            console.log('Passkey enabled:', credentialId);
+            toast.success('Passkey authentication enabled!');
+          }}
+          onPasskeyDisabled={() => {
+            console.log('Passkey disabled');
+            toast.success('Passkey authentication disabled');
+          }}
+          onAuthenticated={(credentialId) => {
+            console.log('Passkey authenticated:', credentialId);
+            toast.success('Authenticated with passkey!');
+          }}
+        />
       </Section>
 
       {/* Wallet Actions */}

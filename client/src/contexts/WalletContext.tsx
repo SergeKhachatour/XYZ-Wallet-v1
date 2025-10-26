@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import toast from 'react-hot-toast';
 import * as StellarSdk from 'stellar-sdk';
+import { passkeyService, PasskeyCredential } from '../services/passkeyService';
 
 interface WalletContextType {
   // Account state
@@ -10,12 +11,21 @@ interface WalletContextType {
   balances: any[];
   transactions: any[];
   
+  // Passkey state
+  isPasskeyEnabled: boolean;
+  passkeyCredential: PasskeyCredential | null;
+  
   // Wallet actions
   createAccount: () => void;
   connectAccount: (secretKey: string) => void;
+  connectWithPasskey: () => Promise<boolean>;
   disconnectAccount: () => void;
   refreshBalance: () => Promise<void>;
   refreshTransactions: () => Promise<void>;
+  
+  // Passkey actions
+  enablePasskey: () => Promise<boolean>;
+  disablePasskey: () => Promise<void>;
   
   // Transaction actions
   sendPayment: (destination: string, amount: string, asset?: string, memo?: string) => Promise<boolean>;
@@ -47,6 +57,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   const [balances, setBalances] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isPasskeyEnabled, setIsPasskeyEnabled] = useState(false);
+  const [passkeyCredential, setPasskeyCredential] = useState<PasskeyCredential | null>(null);
   const hasLoadedWallet = useRef(false);
 
   // Initialize Stellar server (unused but kept for potential future use)
@@ -117,15 +129,40 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   useEffect(() => {
     if (hasLoadedWallet.current) return;
     
-    const savedPublicKey = localStorage.getItem('wallet_publicKey');
-    const savedSecretKey = localStorage.getItem('wallet_secretKey');
+    const loadWalletData = async () => {
+      // Check if passkey is enabled first
+      const passkeyEnabled = passkeyService.isPasskeyEnabled();
+      setIsPasskeyEnabled(passkeyEnabled);
+      
+      if (passkeyEnabled) {
+        // Try to load passkey data
+        const passkeyData = await passkeyService.getStoredPasskeyData();
+        if (passkeyData) {
+          setPasskeyCredential(passkeyData);
+          // For passkey wallets, we need to derive the public key from the passkey
+          // For now, we'll use a placeholder - in production, this should be derived from the passkey
+          const savedPublicKey = localStorage.getItem('wallet_publicKey');
+          if (savedPublicKey) {
+            setPublicKey(savedPublicKey);
+            setIsConnected(true);
+            hasLoadedWallet.current = true;
+          }
+        }
+      } else {
+        // Fallback to traditional secret key
+        const savedPublicKey = localStorage.getItem('wallet_publicKey');
+        const savedSecretKey = localStorage.getItem('wallet_secretKey');
+        
+        if (savedPublicKey && savedSecretKey) {
+          setPublicKey(savedPublicKey);
+          setSecretKey(savedSecretKey);
+          setIsConnected(true);
+          hasLoadedWallet.current = true;
+        }
+      }
+    };
     
-    if (savedPublicKey && savedSecretKey) {
-      setPublicKey(savedPublicKey);
-      setSecretKey(savedSecretKey);
-      setIsConnected(true);
-      hasLoadedWallet.current = true;
-    }
+    loadWalletData();
   }, []); // Empty dependency array - only run once on mount
 
   // Refresh data when publicKey changes (but not on initial load)
@@ -185,6 +222,88 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('Error connecting account:', error);
       toast.error('Invalid secret key');
+    }
+  };
+
+  const connectWithPasskey = async (): Promise<boolean> => {
+    try {
+      if (!passkeyCredential) {
+        toast.error('No passkey credential found');
+        return false;
+      }
+
+      const auth = await passkeyService.authenticatePasskey(passkeyCredential.id);
+      
+      // For now, we'll use the stored public key
+      // In production, this should be derived from the passkey signature
+      const savedPublicKey = localStorage.getItem('wallet_publicKey');
+      if (savedPublicKey) {
+        setPublicKey(savedPublicKey);
+        setIsConnected(true);
+        toast.success('Authenticated with passkey successfully!');
+        
+        // Refresh data
+        refreshBalance();
+        refreshTransactions();
+        return true;
+      } else {
+        toast.error('No public key found for passkey wallet');
+        return false;
+      }
+    } catch (error) {
+      console.error('Passkey authentication failed:', error);
+      toast.error('Passkey authentication failed');
+      return false;
+    }
+  };
+
+  const enablePasskey = async (): Promise<boolean> => {
+    try {
+      if (!publicKey) {
+        toast.error('Please create or connect a wallet first');
+        return false;
+      }
+
+      const userId = `xyz-user-${publicKey.slice(-8)}`;
+      const registration = await passkeyService.registerPasskey(userId);
+      
+      // Store the passkey data
+      await passkeyService.storePasskeyData(registration.credentialId, registration.publicKey);
+      
+      // Update state
+      setIsPasskeyEnabled(true);
+      setPasskeyCredential({
+        id: registration.credentialId,
+        publicKey: registration.publicKey,
+        counter: 0,
+        deviceType: navigator.userAgent.includes('iPhone') ? 'iOS' : 'Other',
+        createdAt: new Date().toISOString(),
+      });
+      
+      // Remove secret key from localStorage for security
+      localStorage.removeItem('wallet_secretKey');
+      setSecretKey(null);
+      
+      toast.success('Passkey enabled successfully! Your secret key has been removed for security.');
+      return true;
+    } catch (error) {
+      console.error('Failed to enable passkey:', error);
+      toast.error('Failed to enable passkey');
+      return false;
+    }
+  };
+
+  const disablePasskey = async (): Promise<void> => {
+    try {
+      await passkeyService.disablePasskey();
+      
+      setIsPasskeyEnabled(false);
+      setPasskeyCredential(null);
+      
+      toast.success('Passkey disabled. You can now use secret key authentication.');
+    } catch (error) {
+      console.error('Failed to disable passkey:', error);
+      toast.error('Failed to disable passkey');
     }
   };
 
@@ -349,11 +468,16 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     isConnected,
     balances,
     transactions,
+    isPasskeyEnabled,
+    passkeyCredential,
     createAccount,
     connectAccount,
+    connectWithPasskey,
     disconnectAccount,
     refreshBalance,
     refreshTransactions,
+    enablePasskey,
+    disablePasskey,
     sendPayment,
     fundAccount,
     checkUSDCBalance,
