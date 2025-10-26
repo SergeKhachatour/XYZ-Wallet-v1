@@ -100,7 +100,7 @@ export class PasskeyService {
 
       // Extract the credential data
       const response = credential.response as AuthenticatorAttestationResponse;
-      const publicKey = this.arrayBufferToBase64(response.publicKey!);
+      const publicKey = this.arrayBufferToBase64(response.getPublicKey()!);
       const credentialId = this.arrayBufferToBase64(credential.rawId);
 
       return {
