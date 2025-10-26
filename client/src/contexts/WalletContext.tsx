@@ -287,8 +287,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       const userId = `xyz-user-${publicKey.slice(-8)}`;
       const registration = await passkeyService.registerPasskey(userId);
       
-      // Store the passkey data
-      await passkeyService.storePasskeyData(registration.credentialId, registration.publicKey);
+      // Store the passkey data and encrypt the secret key
+      await passkeyService.storePasskeyData(registration.credentialId, registration.publicKey, secretKey);
       
       // Update state
       setIsPasskeyEnabled(true);
@@ -300,11 +300,10 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         createdAt: new Date().toISOString(),
       });
       
-      // Keep secret key in localStorage but mark as passkey-enabled
-      // This allows transactions while maintaining passkey authentication
-      localStorage.setItem('wallet_passkey_enabled', 'true');
+      // Remove secret key from state (it's now encrypted in localStorage)
+      setSecretKey(null);
       
-      toast.success('Passkey enabled successfully! You can now use biometric authentication.');
+      toast.success('Passkey enabled successfully! Your secret key is now encrypted and secured.');
       return true;
     } catch (error) {
       console.error('Failed to enable passkey:', error);
@@ -347,7 +346,22 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       return false;
     }
 
-    if (!secretKey) {
+    // For passkey wallets, we need to decrypt the secret key
+    let tempSecretKey = secretKey;
+    
+    if (isPasskeyEnabled && !secretKey && passkeyCredential) {
+      try {
+        toast('Authenticating with passkey for transaction...');
+        tempSecretKey = await passkeyService.decryptSecretKey(passkeyCredential.id);
+        toast.success('Passkey authentication successful!');
+      } catch (error) {
+        console.error('Failed to decrypt secret key:', error);
+        toast.error('Passkey authentication failed. Please try again.');
+        return false;
+      }
+    }
+
+    if (!tempSecretKey) {
       toast.error('No wallet connected');
       return false;
     }
@@ -362,7 +376,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          sourceSecret: secretKey,
+          sourceSecret: tempSecretKey,
           destination,
           amount,
           asset,

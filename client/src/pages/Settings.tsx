@@ -351,13 +351,13 @@ const Settings: React.FC = () => {
             <InfoRow>
               <InfoLabel>Security Status</InfoLabel>
               <InfoValue style={{ color: '#22c55e', fontWeight: '600' }}>
-                ✅ Enhanced security with biometric authentication
+                ✅ Secret key encrypted and secured
               </InfoValue>
             </InfoRow>
             <InfoRow>
               <InfoLabel>Transaction Security</InfoLabel>
-              <InfoValue style={{ color: '#FFC107', fontWeight: '600' }}>
-                ⚠️ Secret key kept for transaction signing
+              <InfoValue style={{ color: '#22c55e', fontWeight: '600' }}>
+                🔒 Passkey authentication required for transactions
               </InfoValue>
             </InfoRow>
           </InfoCard>

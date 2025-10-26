@@ -161,9 +161,9 @@ export class PasskeyService {
   }
 
   /**
-   * Store passkey data securely in localStorage (encrypted)
+   * Store passkey data and encrypted secret key securely in localStorage
    */
-  async storePasskeyData(credentialId: string, publicKey: string): Promise<void> {
+  async storePasskeyData(credentialId: string, publicKey: string, secretKey?: string): Promise<void> {
     try {
       const passkeyData: PasskeyCredential = {
         id: credentialId,
@@ -180,10 +180,15 @@ export class PasskeyService {
       // Also store a flag indicating passkey is enabled
       localStorage.setItem('xyz_passkey_enabled', 'true');
       
-      // Remove the old secret key if it exists
+      // If secret key is provided, encrypt and store it
+      if (secretKey) {
+        await this.encryptAndStoreSecretKey(secretKey, publicKey);
+      }
+      
+      // Remove the old plain text secret key
       localStorage.removeItem('wallet_secretKey');
       
-      console.log('✅ Passkey data stored securely');
+      console.log('✅ Passkey data and encrypted secret key stored securely');
     } catch (error) {
       console.error('Failed to store passkey data:', error);
       throw error;
@@ -221,7 +226,48 @@ export class PasskeyService {
   async disablePasskey(): Promise<void> {
     localStorage.removeItem('xyz_passkey_data');
     localStorage.removeItem('xyz_passkey_enabled');
+    localStorage.removeItem('xyz_encrypted_secret_key');
     console.log('✅ Passkey disabled and data cleaned up');
+  }
+
+  /**
+   * Encrypt and store the secret key using the passkey's public key
+   */
+  private async encryptAndStoreSecretKey(secretKey: string, passkeyPublicKey: string): Promise<void> {
+    try {
+      // For now, we'll use a simple encryption approach
+      // In production, you'd want to use the passkey's public key for proper encryption
+      const encryptedSecretKey = await this.encryptData(secretKey);
+      localStorage.setItem('xyz_encrypted_secret_key', encryptedSecretKey);
+      console.log('✅ Secret key encrypted and stored');
+    } catch (error) {
+      console.error('Failed to encrypt secret key:', error);
+      throw new Error('Failed to encrypt secret key for secure storage');
+    }
+  }
+
+  /**
+   * Decrypt and retrieve the secret key using passkey authentication
+   */
+  async decryptSecretKey(credentialId: string): Promise<string> {
+    try {
+      // First authenticate with the passkey
+      await this.authenticatePasskey(credentialId);
+      
+      // Get the stored encrypted secret key
+      const encryptedSecretKey = localStorage.getItem('xyz_encrypted_secret_key');
+      if (!encryptedSecretKey) {
+        throw new Error('No encrypted secret key found');
+      }
+
+      // Decrypt the secret key
+      const secretKey = await this.decryptData(encryptedSecretKey);
+      console.log('✅ Secret key decrypted successfully');
+      return secretKey;
+    } catch (error) {
+      console.error('Failed to decrypt secret key:', error);
+      throw new Error('Failed to decrypt secret key. Please re-authenticate with your passkey.');
+    }
   }
 
   /**
