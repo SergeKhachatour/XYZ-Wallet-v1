@@ -284,6 +284,11 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         return false;
       }
 
+      if (!secretKey) {
+        toast.error('No secret key available. Please reconnect your wallet.');
+        return false;
+      }
+
       const userId = `xyz-user-${publicKey.slice(-8)}`;
       const registration = await passkeyService.registerPasskey(userId);
       
