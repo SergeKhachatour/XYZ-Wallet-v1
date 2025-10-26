@@ -122,7 +122,24 @@ jobs:
           echo "Creating deployment package..."
           echo "Contents before zipping:"
           ls -la
-          zip -r -9 ../deployment.zip . -x "*.git*" "*.log" "*.md" "*.txt" "node_modules/.cache/*"
+          echo "Current directory: $(pwd)"
+          echo "Files to zip:"
+          find . -type f | head -20
+          
+          # Create zip file with verbose output
+          echo "Creating zip file..."
+          zip -r -9 ../deployment.zip . -x "*.git*" "*.log" "*.md" "*.txt" "node_modules/.cache/*" || {
+            echo "❌ Zip command failed, trying alternative method..."
+            # Alternative: use tar + gzip if zip fails
+            tar -czf ../deployment.tar.gz . --exclude="*.git*" --exclude="*.log" --exclude="*.md" --exclude="*.txt" --exclude="node_modules/.cache/*"
+            if [ -f "../deployment.tar.gz" ]; then
+              echo "✅ Created deployment.tar.gz instead"
+              mv ../deployment.tar.gz ../deployment.zip
+            else
+              echo "❌ Both zip and tar failed"
+              exit 1
+            fi
+          }
           cd ..
           
           echo "Deployment package created:"
@@ -137,9 +154,22 @@ jobs:
           # Verify deployment.zip exists
           if [ ! -f "deployment.zip" ]; then
             echo "❌ ERROR: deployment.zip was not created!"
+            echo "Available files in current directory:"
+            ls -la
+            echo "Available files in deploy-package directory:"
+            ls -la deploy-package/ || echo "deploy-package directory not found"
             exit 1
           fi
           echo "✅ deployment.zip created successfully"
+          
+          # Additional verification
+          echo "🔍 Verifying deployment package contents:"
+          echo "Package size: $(du -h deployment.zip | cut -f1)"
+          echo "Package file count: $(unzip -l deployment.zip | wc -l)"
+          echo "Package structure:"
+          unzip -l deployment.zip | head -20
+          echo "Largest files in package:"
+          unzip -l deployment.zip | sort -k1 -nr | head -10
 
       - name: Wait for any existing deployments to complete
         run: sleep 10
@@ -151,6 +181,25 @@ jobs:
           # or via Azure CLI with proper authentication
           echo "Environment variables should be configured in Azure Portal"
         continue-on-error: true
+
+      - name: Deploy to Azure Web App
+        run: |
+          echo "🔍 Pre-deployment checks:"
+          echo "Current directory: $(pwd)"
+          echo "Files in current directory:"
+          ls -la
+          echo "Looking for deployment.zip:"
+          if [ -f "deployment.zip" ]; then
+            echo "✅ deployment.zip found"
+            echo "Size: $(du -h deployment.zip | cut -f1)"
+            echo "File type: $(file deployment.zip)"
+          else
+            echo "❌ deployment.zip not found!"
+            echo "Available files:"
+            find . -name "*.zip" -o -name "*.tar.gz" -o -name "deployment*" | head -10
+            exit 1
+          fi
+        continue-on-error: false
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
