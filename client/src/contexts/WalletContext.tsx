@@ -300,11 +300,11 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         createdAt: new Date().toISOString(),
       });
       
-      // Remove secret key from localStorage for security
-      localStorage.removeItem('wallet_secretKey');
-      setSecretKey(null);
+      // Keep secret key in localStorage but mark as passkey-enabled
+      // This allows transactions while maintaining passkey authentication
+      localStorage.setItem('wallet_passkey_enabled', 'true');
       
-      toast.success('Passkey enabled successfully! Your secret key has been removed for security.');
+      toast.success('Passkey enabled successfully! You can now use biometric authentication.');
       return true;
     } catch (error) {
       console.error('Failed to enable passkey:', error);
@@ -342,6 +342,11 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   };
 
   const sendPayment = async (destination: string, amount: string, asset: string = 'XLM', memo?: string): Promise<boolean> => {
+    if (!isConnected || !publicKey) {
+      toast.error('No wallet connected');
+      return false;
+    }
+
     if (!secretKey) {
       toast.error('No wallet connected');
       return false;
