@@ -72,10 +72,28 @@ console.log('Current directory:', __dirname);
 console.log('Looking for React build at:', path.join(__dirname, '../client/build'));
 
 // Always try to serve React app in production environment
-const buildPath = path.join(__dirname, '../client/build');
-console.log('Build path exists:', require('fs').existsSync(buildPath));
+// Check multiple possible build locations
+const possibleBuildPaths = [
+  path.join(__dirname, '../client/build'),      // Local development
+  path.join(__dirname, '../client-build'),      // Azure deployment
+  path.join(__dirname, 'client-build'),         // Alternative Azure path
+  path.join(__dirname, 'client/build')           // Alternative local path
+];
 
-if (require('fs').existsSync(buildPath)) {
+let buildPath = null;
+for (const testPath of possibleBuildPaths) {
+  if (require('fs').existsSync(testPath)) {
+    buildPath = testPath;
+    break;
+  }
+}
+
+console.log('Checking build paths:');
+possibleBuildPaths.forEach(testPath => {
+  console.log(`  ${testPath}: ${require('fs').existsSync(testPath) ? '✅' : '❌'}`);
+});
+
+if (buildPath) {
   console.log('✅ Serving React app from:', buildPath);
   app.use(express.static(buildPath));
   
@@ -85,7 +103,15 @@ if (require('fs').existsSync(buildPath)) {
     res.sendFile(path.join(buildPath, 'index.html'));
   });
 } else {
-  console.warn('⚠️  React build directory not found at:', buildPath);
+  console.warn('⚠️  React build directory not found in any expected location');
+  console.log('Available directories in parent folder:');
+  try {
+    const parentFiles = require('fs').readdirSync(path.join(__dirname, '..'));
+    console.log(parentFiles);
+  } catch (e) {
+    console.log('Could not read parent directory:', e.message);
+  }
+  
   console.log('Available directories in server folder:');
   try {
     const files = require('fs').readdirSync(__dirname);
@@ -97,10 +123,10 @@ if (require('fs').existsSync(buildPath)) {
   // 404 handler for production without build
   app.use('*', (req, res) => {
     res.status(404).json({ 
-      error: 'React app not found', 
-      buildPath: buildPath,
-      exists: require('fs').existsSync(buildPath),
-      currentDir: __dirname
+      error: 'React build not found',
+      message: 'The application build files are missing',
+      checkedPaths: possibleBuildPaths,
+      timestamp: new Date().toISOString()
     });
   });
 }
