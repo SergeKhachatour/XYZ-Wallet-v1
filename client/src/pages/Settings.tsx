@@ -305,20 +305,22 @@ const Settings: React.FC = () => {
           </Button>
         </SettingItem>
 
-        <SettingItem>
-          <SettingInfo>
-            <SettingLabel>Show Secret Key</SettingLabel>
-            <SettingDescription>
-              Display your secret key (keep this private and secure)
-            </SettingDescription>
-          </SettingInfo>
-          <SecondaryButton onClick={() => setShowSecretKey(!showSecretKey)}>
-            <Key size={20} />
-            {showSecretKey ? 'Hide' : 'Show'}
-          </SecondaryButton>
-        </SettingItem>
+        {!isPasskeyEnabled && (
+          <SettingItem>
+            <SettingInfo>
+              <SettingLabel>Show Secret Key</SettingLabel>
+              <SettingDescription>
+                Display your secret key (keep this private and secure)
+              </SettingDescription>
+            </SettingInfo>
+            <SecondaryButton onClick={() => setShowSecretKey(!showSecretKey)}>
+              <Key size={20} />
+              {showSecretKey ? 'Hide' : 'Show'}
+            </SecondaryButton>
+          </SettingItem>
+        )}
 
-        {showSecretKey && secretKey && (
+        {!isPasskeyEnabled && showSecretKey && secretKey && (
           <InfoCard>
             <InfoRow>
               <InfoLabel>Secret Key</InfoLabel>
@@ -333,6 +335,23 @@ const Settings: React.FC = () => {
                   <Upload size={16} />
                 </Button>
               </div>
+            </InfoRow>
+          </InfoCard>
+        )}
+
+        {isPasskeyEnabled && (
+          <InfoCard>
+            <InfoRow>
+              <InfoLabel>Authentication Method</InfoLabel>
+              <InfoValue style={{ color: '#22c55e', fontWeight: '600' }}>
+                🔐 Passkey Authentication Enabled
+              </InfoValue>
+            </InfoRow>
+            <InfoRow>
+              <InfoLabel>Security Status</InfoLabel>
+              <InfoValue style={{ color: '#22c55e', fontWeight: '600' }}>
+                ✅ Secret key removed for security
+              </InfoValue>
             </InfoRow>
           </InfoCard>
         )}

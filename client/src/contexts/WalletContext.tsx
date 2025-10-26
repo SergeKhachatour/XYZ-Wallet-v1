@@ -195,6 +195,15 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       // Refresh data
       refreshBalance();
       refreshTransactions();
+      
+      // Trigger passkey setup modal
+      setTimeout(() => {
+        const event = new CustomEvent('showPasskeySetup', { 
+          detail: { publicKey: newPublicKey } 
+        });
+        window.dispatchEvent(event);
+      }, 1000); // Small delay to ensure wallet is fully loaded
+      
     } catch (error) {
       console.error('Error creating account:', error);
       toast.error('Failed to create wallet');

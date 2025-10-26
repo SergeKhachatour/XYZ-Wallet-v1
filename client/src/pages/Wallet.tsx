@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { Plus, Send, Download, Upload, RefreshCw, QrCode, Copy, Camera, X } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useLocation } from '../contexts/LocationContext';
+import PasskeySetupModal from '../components/PasskeySetupModal';
 import toast from 'react-hot-toast';
 import QRCode from 'qrcode';
 import QrScanner from 'qr-scanner';
@@ -539,7 +540,8 @@ const Wallet: React.FC = () => {
     fundAccount,
     refreshBalance,
     refreshTransactions,
-    isLoading 
+    isLoading,
+    enablePasskey
   } = useWallet();
 
   const { userNFTs, refreshUserNFTs } = useLocation();
@@ -550,6 +552,8 @@ const Wallet: React.FC = () => {
   const [showQRCode, setShowQRCode] = useState(false);
   const [qrCodeDataURL, setQrCodeDataURL] = useState<string>('');
   const [showQRScanner, setShowQRScanner] = useState(false);
+  const [showPasskeySetup, setShowPasskeySetup] = useState(false);
+  const [passkeySetupPublicKey, setPasskeySetupPublicKey] = useState<string>('');
   
   const [connectSecret, setConnectSecret] = useState('');
   const [sendDestination, setSendDestination] = useState('');
@@ -716,6 +720,31 @@ const Wallet: React.FC = () => {
       stopQRScanner();
     }
   }, [showQRScanner]);
+
+  // Listen for passkey setup events
+  useEffect(() => {
+    const handlePasskeySetup = (event: CustomEvent) => {
+      const { publicKey: newPublicKey } = event.detail;
+      setPasskeySetupPublicKey(newPublicKey);
+      setShowPasskeySetup(true);
+    };
+
+    window.addEventListener('showPasskeySetup', handlePasskeySetup as EventListener);
+    
+    return () => {
+      window.removeEventListener('showPasskeySetup', handlePasskeySetup as EventListener);
+    };
+  }, []);
+
+  const handlePasskeyEnabled = async (credentialId: string) => {
+    console.log('Passkey enabled for wallet:', credentialId);
+    toast.success('Passkey authentication enabled!');
+  };
+
+  const handlePasskeySkip = () => {
+    console.log('Passkey setup skipped');
+    toast('You can enable passkey authentication later in Settings');
+  };
 
   if (!isConnected) {
     return (
@@ -1038,6 +1067,15 @@ const Wallet: React.FC = () => {
           </QRScannerContainer>
         </QRScannerModal>
       )}
+
+      {/* Passkey Setup Modal */}
+      <PasskeySetupModal
+        isOpen={showPasskeySetup}
+        onClose={() => setShowPasskeySetup(false)}
+        onPasskeyEnabled={handlePasskeyEnabled}
+        onSkip={handlePasskeySkip}
+        publicKey={passkeySetupPublicKey}
+      />
     </WalletContainer>
   );
 };
