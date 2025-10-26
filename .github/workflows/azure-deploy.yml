@@ -55,6 +55,23 @@ jobs:
         run: |
           echo "Creating simple deployment package..."
           
+          # Verify client build exists
+          if [ ! -d "client/build" ]; then
+            echo "❌ Client build directory not found!"
+            echo "Available directories in client folder:"
+            ls -la client/ || echo "Client directory not found"
+            echo "Checking if build step completed..."
+            if [ -d "client" ]; then
+              echo "Client directory exists, checking contents:"
+              find client -name "*.js" -o -name "*.html" -o -name "*.css" | head -10
+            fi
+            exit 1
+          fi
+          
+          echo "✅ Client build directory found"
+          echo "Build contents:"
+          ls -la client/build/
+          
           # Create a simple directory structure
           mkdir -p deploy
           
@@ -64,7 +81,9 @@ jobs:
           cp package-lock.json deploy/
           
           # Copy client build
+          echo "Copying client build..."
           cp -r client/build deploy/client/build
+          echo "✅ Client build copied successfully"
           
           # Create a simple start script
           cat > deploy/start.sh << 'EOF'
