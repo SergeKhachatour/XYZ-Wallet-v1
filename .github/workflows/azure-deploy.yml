@@ -74,6 +74,7 @@ jobs:
           
           # Create a simple directory structure
           mkdir -p deploy
+          mkdir -p deploy/client/build
           
           # Copy server files
           cp -r server deploy/
@@ -82,7 +83,7 @@ jobs:
           
           # Copy client build
           echo "Copying client build..."
-          cp -r client/build deploy/client/build
+          cp -r client/build/* deploy/client/build/
           echo "✅ Client build copied successfully"
           
           # Create a simple start script
