@@ -99,3 +99,16 @@ Thumbs.db
 
 # Azure deployment files
 deployment.zip
+
+# Environment files with secrets
+*.env
+*.env.local
+*.env.*.local
+geolink-env.example
+contract-addresses.env
+.env.backup
+*.env.backup
+
+# Files that may contain secrets
+AZURE_SETUP.md
+azure-deploy.md

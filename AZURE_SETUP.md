@@ -41,7 +41,7 @@ SOROSWAP_API_KEY=your_soroswap_api_key_here
 REACT_APP_STELLAR_NETWORK=testnet
 REACT_APP_STELLAR_HORIZON_URL=https://horizon-testnet.stellar.org
 REACT_APP_BACKEND_URL=https://xyz-wallet-v1-adh3bjdnguczdmft.westus-01.azurewebsites.net
-REACT_APP_MAPBOX_TOKEN=pk.eyJ1Ijoic2VyZ2UzNjl4MzMiLCJhIjoiY20zZHkzb2xoMDA0eTJxcHU4MTNoYjNlaCJ9.Xl6OxzF9td1IgTTeUp526w
+REACT_APP_MAPBOX_TOKEN=your_mapbox_token_here
 ```
 
 ### Step 5: Deploy!

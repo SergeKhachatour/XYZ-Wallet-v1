@@ -352,7 +352,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose, user }) => {
   // Initialize mini-map
   useEffect(() => {
     if (isOpen && user && miniMapRef.current && !miniMapInstance.current) {
-      const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1Ijoic2VyZ2UzNjl4MzMiLCJhIjoiY20zZHkzb2xoMDA0eTJxcHU4MTNoYjNlaCJ9.Xl6OxzF9td1IgTTeUp526w';
+      const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN;
       
       if (mapboxToken) {
         mapboxgl.accessToken = mapboxToken;

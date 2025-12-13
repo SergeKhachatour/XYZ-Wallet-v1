@@ -98,11 +98,35 @@ possibleBuildPaths.forEach(testPath => {
 
 if (buildPath) {
   console.log('✅ Serving React app from:', buildPath);
-  app.use(express.static(buildPath));
+  
+  // Serve static files with cache control
+  // Cache JS/CSS files for 1 year (they have hashes in filenames)
+  // But don't cache HTML files
+  app.use(express.static(buildPath, {
+    maxAge: '1y',
+    etag: true,
+    lastModified: true,
+    setHeaders: (res, filePath) => {
+      // Don't cache index.html - always fetch fresh
+      if (filePath.endsWith('index.html')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      }
+      // Cache static assets (JS, CSS, images) for 1 year
+      else if (filePath.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      }
+    }
+  }));
   
   // Handle React routing, return all requests to React app
   app.get('*', (req, res) => {
     console.log('📄 Serving React app for route:', req.path);
+    // Set no-cache headers for index.html
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     res.sendFile(path.join(buildPath, 'index.html'));
   });
 } else {

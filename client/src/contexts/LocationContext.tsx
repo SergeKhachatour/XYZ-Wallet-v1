@@ -270,8 +270,8 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
   // Initialize GeoLink integration with environment awareness
   useEffect(() => {
     const initializeGeoLink = async () => {
-    const walletProviderKey = process.env.REACT_APP_GEOLINK_WALLET_PROVIDER_KEY || '8390a5a72db59d0c256498dbb543cd652f991928705161386ab28d73ecf0a8fa';
-    const dataConsumerKey = process.env.REACT_APP_GEOLINK_DATA_CONSUMER_KEY || '54a0688fa6c54fe04ebe62a2678efa9a9f631e49b0a43b325d77e3081194a740';
+    const walletProviderKey = process.env.REACT_APP_GEOLINK_WALLET_PROVIDER_KEY;
+    const dataConsumerKey = process.env.REACT_APP_GEOLINK_DATA_CONSUMER_KEY;
     const baseUrl = process.env.REACT_APP_GEOLINK_BASE_URL || 'http://localhost:4000';
       
       console.log('GeoLink Configuration:', {

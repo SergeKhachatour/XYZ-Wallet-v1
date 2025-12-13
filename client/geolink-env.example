@@ -6,15 +6,16 @@
 REACT_APP_BACKEND_URL=http://localhost:5000
 
 # Mapbox Token
-REACT_APP_MAPBOX_TOKEN=pk.eyJ1Ijoic2VyZ2UzNjl4MzMiLCJhIjoiY20zZHkzb2xoMDA0eTJxcHU4MTNoYjNlaCJ9.Xl6OxzF9td1IgTTeUp526w
+# Get your token from: https://account.mapbox.com/access-tokens/
+REACT_APP_MAPBOX_TOKEN=your_mapbox_token_here
 
 # GeoLink Integration
 # Local development - GeoLink running on localhost
 REACT_APP_GEOLINK_BASE_URL=http://localhost:3000
-REACT_APP_GEOLINK_WALLET_PROVIDER_KEY=8390a5a72db59d0c256498dbb543cd652f991928705161386ab28d73ecf0a8fa
-REACT_APP_GEOLINK_DATA_CONSUMER_KEY=54a0688fa6c54fe04ebe62a2678efa9a9f631e49b0a43b325d77e3081194a740
+REACT_APP_GEOLINK_WALLET_PROVIDER_KEY=your_wallet_provider_key_here
+REACT_APP_GEOLINK_DATA_CONSUMER_KEY=your_data_consumer_key_here
 
 # Azure Production - GeoLink deployed on Azure
 # REACT_APP_GEOLINK_BASE_URL=https://geolink-buavavc6gse5c9fw.westus-01.azurewebsites.net
-# REACT_APP_GEOLINK_WALLET_PROVIDER_KEY=ca56b11b4d40523995c101c06a929087e7e55f2811b8e698ddf5a0a7c8177d29
-# REACT_APP_GEOLINK_DATA_CONSUMER_KEY=8d6aaf5ce265afed4debbf97252ac4a5beb0853c63573d555617865a413af050
+# REACT_APP_GEOLINK_WALLET_PROVIDER_KEY=your_production_wallet_provider_key_here
+# REACT_APP_GEOLINK_DATA_CONSUMER_KEY=your_production_data_consumer_key_here

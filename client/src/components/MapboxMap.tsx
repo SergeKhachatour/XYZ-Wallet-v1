@@ -1126,7 +1126,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
 
   useEffect(() => {
     // Use environment variable or fallback to hardcoded token
-    const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1Ijoic2VyZ2UzNjl4MzMiLCJhIjoiY20zZHkzb2xoMDA0eTJxcHU4MTNoYjNlaCJ9.Xl6OxzF9td1IgTTeUp526w';
+    const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN;
     
     console.log('Mapbox token check:', mapboxToken ? 'Token found' : 'Token not found');
     console.log('Token preview:', mapboxToken ? `${mapboxToken.substring(0, 20)}...` : 'No token');
@@ -1502,7 +1502,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
   // Initialize fullscreen map when fullscreen is opened
   useEffect(() => {
     if (isFullscreen && fullscreenMapContainer.current && !fullscreenMap.current && !isFullscreenMapInitialized) {
-      const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1Ijoic2VyZ2UzNjl4MzMiLCJhIjoiY20zZHkzb2xoMDA0eTJxcHU4MTNoYjNlaCJ9.Xl6OxzF9td1IgTTeUp526w';
+      const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN;
       
       if (!mapboxToken) {
         console.error('Mapbox token not found. Please check your .env file.');
