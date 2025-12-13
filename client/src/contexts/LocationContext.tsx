@@ -192,32 +192,32 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       
       // Send to GeoLink if connected (as wallet provider)
       // Note: Wallet Provider submission is optional and can be disabled if the key is inactive
-      if (geoLink && geoLinkStatus === 'connected') {
-        const userPublicKey = localStorage.getItem('wallet_publicKey');
-        if (userPublicKey) {
-          // Make GeoLink API call non-blocking
-          setTimeout(async () => {
-            try {
-              console.log('📍 Sending location to GeoLink (Wallet Provider):', {
-                latitude: locationData.latitude,
-                longitude: locationData.longitude,
-                walletAddress: userPublicKey,
-                geoLinkStatus
-              });
-              if (geoLink && userPublicKey) {
-                const result = await geoLink.updateUserLocation(userPublicKey, locationData.latitude, locationData.longitude);
-                console.log('📍 Location sent to GeoLink successfully:', result);
-              }
-            } catch (error) {
-              console.error('❌ Failed to send location to GeoLink:', error);
-              setGeoLinkStatus('error');
+      // Submit location to GeoLink if instance exists (instance is ready even if status is still 'connecting')
+      const userPublicKey = localStorage.getItem('wallet_publicKey');
+      if (geoLink && userPublicKey) {
+        // Make GeoLink API call non-blocking
+        setTimeout(async () => {
+          try {
+            console.log('📍 Sending location to GeoLink (Wallet Provider):', {
+              latitude: locationData.latitude,
+              longitude: locationData.longitude,
+              walletAddress: userPublicKey,
+              geoLinkStatus
+            });
+            if (geoLink && userPublicKey) {
+              const result = await geoLink.updateUserLocation(userPublicKey, locationData.latitude, locationData.longitude);
+              console.log('📍 Location sent to GeoLink successfully:', result);
             }
-          }, 100); // Small delay to prevent blocking
-        }
+          } catch (error) {
+            console.error('❌ Failed to send location to GeoLink:', error);
+            setGeoLinkStatus('error');
+          }
+        }, 100); // Small delay to prevent blocking
       } else {
         console.log('⚠️ Skipping GeoLink location submission - not ready:', {
           geoLink: !!geoLink,
-          geoLinkStatus
+          geoLinkStatus,
+          hasUserPublicKey: !!userPublicKey
         });
       }
       

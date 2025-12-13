@@ -1475,8 +1475,15 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     step: 'approve' | 'deposit',
     onStatusUpdate?: (status: string) => void
   ): Promise<boolean> => {
-    if (!publicKey || !process.env.REACT_APP_SMART_WALLET_CONTRACT_ID) {
-      toast.error('No wallet connected');
+    if (!publicKey) {
+      toast.error('No wallet connected. Please connect your wallet first.');
+      return false;
+    }
+    
+    if (!process.env.REACT_APP_SMART_WALLET_CONTRACT_ID) {
+      const errorMsg = 'Smart wallet contract ID not configured. Please set REACT_APP_SMART_WALLET_CONTRACT_ID in your environment variables.';
+      console.error('❌', errorMsg);
+      toast.error('Smart wallet contract not configured. Please contact support.', { duration: 5000 });
       return false;
     }
 
