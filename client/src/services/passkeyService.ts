@@ -116,16 +116,29 @@ export class PasskeyService {
 
   /**
    * Authenticate using an existing passkey
+   * Returns all WebAuthn data needed for production verification
    */
-  async authenticatePasskey(credentialId?: string): Promise<{ credentialId: string; signature: string }> {
+  async authenticatePasskey(credentialId?: string, customChallenge?: Uint8Array): Promise<{ 
+    credentialId: string; 
+    signature: string;
+    authenticatorData: string;
+    clientDataJSON: string;
+  }> {
     if (!this.isSupported()) {
       throw new Error('WebAuthn is not supported in this browser');
     }
 
     try {
-      // Generate a challenge (in production, this should come from your server)
-      const challenge = new Uint8Array(32);
-      crypto.getRandomValues(challenge);
+      // Use custom challenge if provided, otherwise generate a random one
+      const challenge = customChallenge || (() => {
+        const randomChallenge = new Uint8Array(32);
+        crypto.getRandomValues(randomChallenge);
+        return randomChallenge;
+      })();
+      
+      if (challenge.length !== 32) {
+        throw new Error('Challenge must be exactly 32 bytes');
+      }
 
       const publicKeyCredentialRequestOptions: PublicKeyCredentialRequestOptions = {
         challenge,
@@ -149,10 +162,14 @@ export class PasskeyService {
       const response = credential.response as AuthenticatorAssertionResponse;
       const signature = this.arrayBufferToBase64(response.signature);
       const credentialIdBase64 = this.arrayBufferToBase64(credential.rawId);
+      const authenticatorData = this.arrayBufferToBase64(response.authenticatorData);
+      const clientDataJSON = this.arrayBufferToBase64(response.clientDataJSON);
 
       return {
         credentialId: credentialIdBase64,
         signature,
+        authenticatorData,
+        clientDataJSON,
       };
     } catch (error) {
       console.error('Passkey authentication failed:', error);
@@ -231,15 +248,39 @@ export class PasskeyService {
   }
 
   /**
-   * Encrypt and store the secret key using the passkey's public key
+   * Encrypt and store the secret key using WebCrypto API
    */
   private async encryptAndStoreSecretKey(secretKey: string, passkeyPublicKey: string): Promise<void> {
     try {
-      // For now, we'll use a simple encryption approach
-      // In production, you'd want to use the passkey's public key for proper encryption
-      const encryptedSecretKey = await this.encryptData(secretKey);
-      localStorage.setItem('xyz_encrypted_secret_key', encryptedSecretKey);
-      console.log('✅ Secret key encrypted and stored');
+      // Generate a random key for encryption
+      const key = await crypto.subtle.generateKey(
+        { name: 'AES-GCM', length: 256 },
+        true,
+        ['encrypt', 'decrypt']
+      );
+      
+      // Generate random IV
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      
+      // Encrypt the secret key
+      const encryptedData = await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv: iv },
+        key,
+        new TextEncoder().encode(secretKey)
+      );
+      
+      // Export the key for storage
+      const exportedKey = await crypto.subtle.exportKey('raw', key);
+      
+      // Store encrypted data with IV and key
+      const storageData = {
+        encryptedData: this.arrayBufferToBase64(encryptedData),
+        iv: this.arrayBufferToBase64(iv),
+        key: this.arrayBufferToBase64(exportedKey)
+      };
+      
+      localStorage.setItem('xyz_encrypted_secret_key', JSON.stringify(storageData));
+      console.log('✅ Secret key encrypted and stored with AES-GCM');
     } catch (error) {
       console.error('Failed to encrypt secret key:', error);
       throw new Error('Failed to encrypt secret key for secure storage');
@@ -255,14 +296,32 @@ export class PasskeyService {
       await this.authenticatePasskey(credentialId);
       
       // Get the stored encrypted secret key
-      const encryptedSecretKey = localStorage.getItem('xyz_encrypted_secret_key');
-      if (!encryptedSecretKey) {
+      const encryptedSecretKeyData = localStorage.getItem('xyz_encrypted_secret_key');
+      if (!encryptedSecretKeyData) {
         throw new Error('No encrypted secret key found');
       }
 
+      // Parse the stored data
+      const { encryptedData, iv, key } = JSON.parse(encryptedSecretKeyData);
+      
+      // Import the key
+      const importedKey = await crypto.subtle.importKey(
+        'raw',
+        this.base64ToArrayBuffer(key),
+        { name: 'AES-GCM' },
+        false,
+        ['decrypt']
+      );
+      
       // Decrypt the secret key
-      const secretKey = await this.decryptData(encryptedSecretKey);
-      console.log('✅ Secret key decrypted successfully');
+      const decryptedData = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: this.base64ToArrayBuffer(iv) },
+        importedKey,
+        this.base64ToArrayBuffer(encryptedData)
+      );
+      
+      const secretKey = new TextDecoder().decode(decryptedData);
+      console.log('✅ Secret key decrypted successfully with AES-GCM');
       return secretKey;
     } catch (error) {
       console.error('Failed to decrypt secret key:', error);

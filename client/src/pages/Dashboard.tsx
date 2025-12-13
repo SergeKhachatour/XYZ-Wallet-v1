@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { Wallet, MapPin, ArrowLeftRight, TrendingUp, Send, QrCode, Image, ZoomIn } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useLocation } from '../contexts/LocationContext';
+import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import PriceChart from '../components/PriceChart';
 import MapboxMap from '../components/MapboxMap';
@@ -10,6 +11,7 @@ import UserProfile from '../components/UserProfile';
 import ReceiveOverlay from '../components/ReceiveOverlay';
 import SendOverlay from '../components/SendOverlay';
 import { NFTCollectionOverlay } from '../components/NFTCollectionOverlay';
+import { constructImageUrl } from '../services/geoLinkService';
 
 
 const DashboardContainer = styled.div`
@@ -252,7 +254,6 @@ const Dashboard: React.FC = () => {
     balances, 
     transactions, 
     refreshBalance, 
-    checkUSDCBalance,
     isLoading 
   } = useWallet();
   
@@ -545,10 +546,8 @@ const Dashboard: React.FC = () => {
               {nearbyNFTs.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '300px', overflowY: 'auto' }}>
                   {nearbyNFTs.slice(0, 5).map((nft, index) => {
-                    // Construct image URL from server_url + ipfs_hash
-                    const imageUrl = nft.server_url && nft.ipfs_hash 
-                      ? `${nft.server_url}${nft.ipfs_hash}` 
-                      : nft.image_url || 'https://via.placeholder.com/48x48?text=NFT';
+                    // Construct image URL using the new utility function that handles dynamic IPFS server URLs
+                    const imageUrl = constructImageUrl(nft.server_url, nft.ipfs_hash) || nft.image_url || 'https://via.placeholder.com/48x48?text=NFT';
                     
                     return (
                       <div
@@ -848,7 +847,7 @@ const Dashboard: React.FC = () => {
               {isLoading ? 'Refreshing...' : 'Refresh'}
             </ActionButton>
             <ActionButton 
-              onClick={checkUSDCBalance} 
+              onClick={() => toast('USDC balance check not available in passkey-only mode')} 
               disabled={isLoading}
               style={{ 
                 padding: '0.5rem 1rem', 

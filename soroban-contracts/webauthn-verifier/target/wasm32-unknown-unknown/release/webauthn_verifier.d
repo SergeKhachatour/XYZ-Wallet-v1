@@ -1,0 +1,1 @@
+C:\Users\serge\OneDrive\Desktop\NodeJS\XYZ-Wallet-v1\soroban-contracts\webauthn-verifier\target\wasm32-unknown-unknown\release\webauthn_verifier.wasm: C:\Users\serge\OneDrive\Desktop\NodeJS\XYZ-Wallet-v1\soroban-contracts\webauthn-verifier\src\contract.rs C:\Users\serge\OneDrive\Desktop\NodeJS\XYZ-Wallet-v1\soroban-contracts\webauthn-verifier\src\lib.rs

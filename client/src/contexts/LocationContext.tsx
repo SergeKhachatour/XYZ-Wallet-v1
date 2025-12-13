@@ -87,6 +87,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
   const [userNFTs, setUserNFTs] = useState<any[]>([]);
   const [geoLink, setGeoLink] = useState<GeoLinkIntegration | null>(null);
   const [geoLinkStatus, setGeoLinkStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
+  const lastUserNFTsError = useRef<number>(0); // Track when we last got a 400 error
 
   const submitLocationToBackend = useCallback(async (locationData: LocationData) => {
     try {
@@ -189,9 +190,9 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       // Submit location to backend
       await submitLocationToBackend(locationData);
       
-      // Send to GeoLink if connected or connecting (as wallet provider)
-      // TEMPORARILY DISABLED: Wallet Provider key appears to be inactive
-      if (false && geoLink && (geoLinkStatus === 'connected' || geoLinkStatus === 'connecting')) {
+      // Send to GeoLink if connected (as wallet provider)
+      // Note: Wallet Provider submission is optional and can be disabled if the key is inactive
+      if (geoLink && geoLinkStatus === 'connected') {
         const userPublicKey = localStorage.getItem('wallet_publicKey');
         if (userPublicKey) {
           // Make GeoLink API call non-blocking
@@ -709,19 +710,44 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
   };
 
   // Refresh user's NFT collection (as data consumer)
-  const refreshUserNFTs = async () => {
+  const refreshUserNFTs = useCallback(async () => {
+    // Only fetch if GeoLink is connected and we have a valid connection
     if (geoLink && geoLinkStatus === 'connected') {
+      // If we got a 400 error recently (within last 5 minutes), skip the call to avoid repeated failures
+      const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+      if (lastUserNFTsError.current > fiveMinutesAgo) {
+        // Silently skip - we'll retry after 5 minutes
+        // Don't log anything to avoid console noise
+        return;
+      }
+
       try {
-        console.log('📚 Fetching user NFTs via GeoLink Data Consumer API...');
         const response = await geoLink.getUserNFTs();
-        console.log('📚 User NFTs response:', response);
-        setUserNFTs(response.nfts || []);
+        // Only log on success to reduce console noise
         console.log(`📚 Loaded ${response.nfts?.length || 0} user NFTs`);
-      } catch (error) {
-        console.error('❌ Failed to get user NFTs:', error);
+        setUserNFTs(response.nfts || []);
+        // Reset error timestamp on success
+        lastUserNFTsError.current = 0;
+      } catch (error: any) {
+        // Silently handle 400 errors (likely authentication/authorization issues)
+        // Check error status code (most reliable)
+        const statusCode = error?.status || error?.response?.status;
+        const is400Error = statusCode === 400 || error?.message?.includes('400');
+        
+        if (is400Error) {
+          // Record when we got the 400 error to prevent repeated calls
+          lastUserNFTsError.current = Date.now();
+          // Silently handle 400 errors - this is expected when user isn't authenticated with GeoLink
+          // Don't log to console to avoid noise
+          setUserNFTs([]);
+        } else {
+          // Log other errors (network issues, 500 errors, etc.)
+          console.error('❌ Failed to get user NFTs:', error);
+          setUserNFTs([]);
+        }
       }
     }
-  };
+  }, [geoLink, geoLinkStatus]);
 
   const value: LocationContextType = {
     currentLocation,

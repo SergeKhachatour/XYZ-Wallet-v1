@@ -38,10 +38,13 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// Routes
-app.use('/api/wallet', require('./routes/wallet'));
+// Routes - SRP + Passkey authentication
+app.use('/auth', require('./routes/auth'));
 app.use('/api/location', require('./routes/location'));
 app.use('/api/soroswap', require('./routes/soroswap'));
+app.use('/api/smart-wallet', require('./routes/smartWallet'));
+// Keep balance and transaction endpoints for smart wallet
+app.use('/api/wallet', require('./routes/wallet'));
 
 // Health check
 app.get('/health', (req, res) => {

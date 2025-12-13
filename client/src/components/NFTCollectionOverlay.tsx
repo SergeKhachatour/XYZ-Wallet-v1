@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import { constructImageUrl } from '../services/geoLinkService';
 
 interface NFTCollectionOverlayProps {
   nft: any;
@@ -14,10 +15,8 @@ export const NFTCollectionOverlay: React.FC<NFTCollectionOverlayProps> = ({
   onClose,
   onZoomIn
 }) => {
-  // Construct image URL from server_url + ipfs_hash
-  const imageUrl = nft.server_url && nft.ipfs_hash 
-    ? `${nft.server_url}${nft.ipfs_hash}` 
-    : nft.image_url || 'https://via.placeholder.com/200x200?text=NFT';
+  // Construct image URL using the new utility function that handles dynamic IPFS server URLs
+  const imageUrl = constructImageUrl(nft.server_url, nft.ipfs_hash) || nft.image_url || 'https://via.placeholder.com/200x200?text=NFT';
   
   return (
     <Overlay>

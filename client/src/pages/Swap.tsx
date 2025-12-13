@@ -337,7 +337,7 @@ interface Quote {
 }
 
 const Swap: React.FC = () => {
-  const { isConnected, publicKey, balances, refreshBalance, refreshTransactions, secretKey } = useWallet();
+  const { isConnected, publicKey, balances, refreshBalance, refreshTransactions } = useWallet();
   const navigate = useNavigate();
   
   const [tokens, setTokens] = useState<Token[]>([]);
@@ -515,7 +515,7 @@ const Swap: React.FC = () => {
           from: publicKey,
           to: publicKey,
           network: 'testnet',
-          secretKey: secretKey
+          // secretKey not available in passkey-only mode
         }),
       });
 

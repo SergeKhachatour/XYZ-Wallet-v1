@@ -86,6 +86,23 @@ const DetailValue = styled.span`
   font-weight: 600;
   font-family: monospace;
   color: white;
+  word-break: break-all;
+  text-align: right;
+  max-width: 60%;
+`;
+
+const StellarLink = styled.a`
+  color: #4ade80;
+  text-decoration: none;
+  word-break: break-all;
+  max-width: 60%;
+  display: inline-block;
+  text-align: right;
+  
+  &:hover {
+    text-decoration: underline;
+    color: #22c55e;
+  }
 `;
 
 const HashContainer = styled.div`
@@ -174,7 +191,7 @@ const TransactionComplete: React.FC = () => {
   const location = useLocation();
   
   // Get transaction data from route state
-  const { transactionHash, swapDetails, note, isDemo } = location.state || {};
+  const { transactionHash, swapDetails, paymentDetails, note, isDemo } = location.state || {};
   
   // If no transaction data, redirect to dashboard
   if (!transactionHash) {
@@ -187,8 +204,8 @@ const TransactionComplete: React.FC = () => {
     toast.success('Copied to clipboard!');
   };
 
-  const openInStellarLab = () => {
-    const url = `https://laboratory.stellar.org/#explorer?resource=transactions&endpoint=transactions&values=${encodeURIComponent(JSON.stringify({ tx: transactionHash }))}`;
+  const openInStellarExpert = () => {
+    const url = `https://stellar.expert/explorer/testnet/tx/${transactionHash}`;
     window.open(url, '_blank');
   };
 
@@ -199,13 +216,41 @@ const TransactionComplete: React.FC = () => {
           <CheckCircle />
         </SuccessIcon>
         
-        <Title>Swap Completed!</Title>
+        <Title>{paymentDetails ? 'Payment Sent!' : 'Swap Completed!'}</Title>
         <Subtitle>
-          {isDemo 
-            ? 'Your swap transaction has been executed (Demo mode).' 
-            : 'Your token swap has been successfully executed on the Stellar network.'
+          {paymentDetails 
+            ? 'Your payment has been successfully sent on the Stellar network.'
+            : isDemo 
+              ? 'Your swap transaction has been executed (Demo mode).' 
+              : 'Your token swap has been successfully executed on the Stellar network.'
           }
         </Subtitle>
+        
+        {paymentDetails && (
+          <DetailsCard>
+            <DetailRow>
+              <DetailLabel>Recipient</DetailLabel>
+              <StellarLink 
+                href={`https://stellar.expert/explorer/testnet/account/${paymentDetails.recipient}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {paymentDetails.recipient}
+                <ExternalLink size={14} style={{ marginLeft: '0.5rem', display: 'inline-block', verticalAlign: 'middle' }} />
+              </StellarLink>
+            </DetailRow>
+            <DetailRow>
+              <DetailLabel>Amount</DetailLabel>
+              <DetailValue>{paymentDetails.amount} {paymentDetails.asset}</DetailValue>
+            </DetailRow>
+            {paymentDetails.memo && (
+              <DetailRow>
+                <DetailLabel>Memo</DetailLabel>
+                <DetailValue>{paymentDetails.memo}</DetailValue>
+              </DetailRow>
+            )}
+          </DetailsCard>
+        )}
         
         {swapDetails && (
           <DetailsCard>
@@ -248,13 +293,13 @@ const TransactionComplete: React.FC = () => {
         )}
         
         <ButtonGroup>
-          <Button onClick={openInStellarLab}>
+          <Button onClick={openInStellarExpert}>
             <ExternalLink size={20} />
-            View on Stellar Lab
+            View on Stellar Expert
           </Button>
-          <SecondaryButton onClick={() => navigate('/swap')}>
+          <SecondaryButton onClick={() => navigate(paymentDetails ? '/wallet' : '/swap')}>
             <ArrowLeft size={20} />
-            Back to Swap
+            Back to {paymentDetails ? 'Wallet' : 'Swap'}
           </SecondaryButton>
         </ButtonGroup>
       </Card>

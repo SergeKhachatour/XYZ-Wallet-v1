@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
-import { X, MapPin, Clock, Wallet, Eye, EyeOff, Star, Send, DollarSign } from 'lucide-react';
+import { X, MapPin, Clock, Eye, EyeOff, Star, Send, DollarSign } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import mapboxgl from 'mapbox-gl';
 

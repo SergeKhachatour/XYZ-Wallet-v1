@@ -1,0 +1,30 @@
+@echo off
+REM Clean and rebuild the Soroban contract
+REM Based on Stella's recommendation for complete rebuild
+
+echo 🧹 Cleaning previous build...
+cd soroban-contracts
+cargo clean
+
+echo 🔨 Building contract (release mode)...
+cargo build --target wasm32-unknown-unknown --release
+
+if %ERRORLEVEL% EQU 0 (
+    echo ✅ Build successful!
+    echo 📦 WASM file location:
+    echo    target\wasm32-unknown-unknown\release\smart_wallet.wasm
+    echo.
+    echo 📋 Next steps:
+    echo    1. Deploy the contract:
+    echo       stellar contract deploy --wasm target\wasm32-unknown-unknown\release\smart_wallet.wasm --source YOUR_ACCOUNT --network testnet
+    echo.
+    echo    2. Verify the contract signature:
+    echo       stellar contract inspect --id YOUR_CONTRACT_ID --network testnet
+    echo.
+    echo    3. Test via CLI:
+    echo       See test-contract-cli.sh
+) else (
+    echo ❌ Build failed!
+    exit /b 1
+)
+

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Get Passkey Public Key</title>
+</head>
+<body>
+    <h1>Get Passkey Public Key</h1>
+    <button id="getPasskey">Get Passkey Public Key</button>
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('getPasskey').addEventListener('click', async () => {
+            try {
+                // Check if passkey data exists in localStorage
+                const passkeyData = localStorage.getItem('passkey_data');
+                
+                if (passkeyData) {
+                    const data = JSON.parse(passkeyData);
+                    document.getElementById('result').innerHTML = `
+                        <h3>Passkey Public Key Found:</h3>
+                        <p><strong>Public Key:</strong> ${data.publicKey}</p>
+                        <p><strong>Length:</strong> ${data.publicKey.length} characters</p>
+                        <textarea readonly style="width: 100%; height: 100px;">${data.publicKey}</textarea>
+                        <p><em>Copy this value and paste it into the constructor field</em></p>
+                    `;
+                } else {
+                    // Try to create a new passkey
+                    const credential = await navigator.credentials.create({
+                        publicKey: {
+                            challenge: new Uint8Array(32),
+                            rp: { name: "XYZ-Wallet Test" },
+                            user: {
+                                id: new Uint8Array(16),
+                                name: "test@example.com",
+                                displayName: "Test User"
+                            },
+                            pubKeyCredParams: [{ type: "public-key", alg: -7 }],
+                            authenticatorSelection: {
+                                authenticatorAttachment: "platform"
+                            }
+                        }
+                    });
+                    
+                    if (credential && credential.response) {
+                        const publicKey = btoa(String.fromCharCode(...new Uint8Array(credential.response.publicKey)));
+                        document.getElementById('result').innerHTML = `
+                            <h3>New Passkey Created:</h3>
+                            <p><strong>Public Key:</strong> ${publicKey}</p>
+                            <p><strong>Length:</strong> ${publicKey.length} characters</p>
+                            <textarea readonly style="width: 100%; height: 100px;">${publicKey}</textarea>
+                            <p><em>Copy this value and paste it into the constructor field</em></p>
+                        `;
+                    }
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = `
+                    <h3>Error:</h3>
+                    <p>${error.message}</p>
+                    <p><strong>Alternative:</strong> Use this test key for now:</p>
+                    <textarea readonly style="width: 100%; height: 100px;">A1B2C3D4E5F6789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890</textarea>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

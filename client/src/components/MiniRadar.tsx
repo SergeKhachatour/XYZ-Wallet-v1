@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import { Radar, Maximize2, ZoomIn, ZoomOut, RotateCcw, Users, Image } from 'lucide-react';
+import { constructImageUrl } from '../services/geoLinkService';
 
 const MiniRadarContainer = styled.div`
   background: rgba(255, 255, 255, 0.1);
@@ -353,10 +354,8 @@ const MiniRadar: React.FC<MiniRadarProps> = ({
                    const { angle, distance } = calculateRadarPosition(item);
                    
                    if (radarType === 'nft') {
-                     // NFT display logic
-                     const imageUrl = item.server_url && item.ipfs_hash 
-                       ? `${item.server_url}${item.ipfs_hash}` 
-                       : item.image_url || 'https://via.placeholder.com/48x48?text=NFT';
+                     // NFT display logic - Construct image URL using the new utility function that handles dynamic IPFS server URLs
+                     const imageUrl = constructImageUrl(item.server_url, item.ipfs_hash) || item.image_url || 'https://via.placeholder.com/48x48?text=NFT';
                      return (
                        <MiniNFTRadarPoint
                          key={`nft-${index}`}

@@ -1,4 +1,52 @@
 // client/src/services/geoLinkService.ts
+
+/**
+ * Clean server URL by removing existing /ipfs/ path and protocol
+ * @param serverUrl - The server URL from the API response
+ * @returns Cleaned base URL with https:// protocol
+ */
+export function cleanServerUrl(serverUrl: string | null | undefined): string | null {
+  if (!serverUrl) return null;
+  
+  let baseUrl = serverUrl.trim();
+  
+  // Remove any existing /ipfs/ path and everything after it
+  baseUrl = baseUrl.replace(/\/ipfs\/.*$/i, '');
+  
+  // Remove trailing slashes
+  baseUrl = baseUrl.replace(/\/+$/, '');
+  
+  // Remove protocol if present (we'll add https://)
+  baseUrl = baseUrl.replace(/^https?:\/\//i, '');
+  
+  // Add https:// protocol
+  if (baseUrl) {
+    return `https://${baseUrl}`;
+  }
+  
+  return null;
+}
+
+/**
+ * Construct full image URL from server URL and IPFS hash
+ * @param serverUrl - The server URL from the API response
+ * @param ipfsHash - The IPFS hash from the API response
+ * @returns Full image URL or fallback to public IPFS gateway
+ */
+export function constructImageUrl(serverUrl: string | null | undefined, ipfsHash: string | null | undefined): string {
+  if (!ipfsHash) {
+    return 'https://via.placeholder.com/200x200?text=NFT';
+  }
+  
+  const baseUrl = cleanServerUrl(serverUrl);
+  if (!baseUrl) {
+    // Fallback to public IPFS gateway
+    return `https://ipfs.io/ipfs/${ipfsHash}`;
+  }
+  
+  return `${baseUrl}/ipfs/${ipfsHash}`;
+}
+
 export class GeoLinkIntegration {
   private walletProviderKey: string;
   private dataConsumerKey: string;
@@ -165,7 +213,11 @@ export class GeoLinkIntegration {
     });
     
     if (!response.ok) {
-      throw new Error(`GeoLink API error: ${response.status} ${response.statusText}`);
+      // Create error with status code for better error handling
+      const error: any = new Error(`GeoLink API error: ${response.status} ${response.statusText}`);
+      error.status = response.status;
+      error.response = response;
+      throw error;
     }
     
     return response.json();

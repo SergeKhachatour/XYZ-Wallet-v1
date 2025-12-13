@@ -24,7 +24,7 @@ const OverlayCard = styled.div`
   border: none;
   border-radius: 16px;
   padding: 2rem;
-  max-width: 500px;
+  max-width: 700px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
@@ -48,6 +48,10 @@ const OverlayCard = styled.div`
   
   &::-webkit-scrollbar-thumb:hover {
     background: rgba(74, 222, 128, 0.7);
+  }
+  
+  @media (max-width: 1024px) {
+    max-width: 600px;
   }
   
   @media (max-width: 768px) {

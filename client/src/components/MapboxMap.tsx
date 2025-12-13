@@ -1,13 +1,14 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import styled from 'styled-components';
 import { useLocation } from '../contexts/LocationContext';
 import { useWallet } from '../contexts/WalletContext';
-import { Maximize2, Minimize2, User, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import MarkerProfileOverlay from './MarkerProfileOverlay';
 import { NFTCollectionOverlay } from './NFTCollectionOverlay';
 import { GeoLinkStatus } from './GeoLinkStatus';
+import { constructImageUrl } from '../services/geoLinkService';
 
 const MapContainer = styled.div`
   background: rgba(255, 255, 255, 0.1);
@@ -955,10 +956,8 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
     // Add markers for nearby NFTs
     nearbyNFTs.forEach((nft, index) => {
       if (nft.latitude && nft.longitude) {
-        // Construct image URL from server_url + ipfs_hash
-        const imageUrl = nft.server_url && nft.ipfs_hash 
-          ? `${nft.server_url}${nft.ipfs_hash}` 
-          : nft.image_url || 'https://via.placeholder.com/48x48?text=NFT';
+        // Construct image URL using the new utility function that handles dynamic IPFS server URLs
+        const imageUrl = constructImageUrl(nft.server_url, nft.ipfs_hash) || nft.image_url || 'https://via.placeholder.com/48x48?text=NFT';
         
         const el = document.createElement('div');
         el.className = 'nft-marker';

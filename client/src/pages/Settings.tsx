@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { Settings as SettingsIcon, Trash2, Download, Upload, Key, Globe } from 'lucide-react';
+import { Settings as SettingsIcon, Trash2, Download, Key, Globe } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useLocation } from '../contexts/LocationContext';
 import PasskeyAuth from '../components/PasskeyAuth';
+import SmartWalletManager from '../components/SmartWalletManager';
 import toast from 'react-hot-toast';
 
 const SettingsContainer = styled.div`
@@ -82,15 +83,15 @@ const DangerButton = styled(Button)`
   }
 `;
 
-const SecondaryButton = styled(Button)`
-  background: rgba(0, 0, 0, 0.8);
-  border: none;
-  color: #FFFFFF;
-  
-  &:hover {
-    background: rgba(255, 215, 0, 0.1);
-  }
-`;
+// Reserved for future use
+// const SecondaryButton = styled(Button)`
+//   background: rgba(0, 0, 0, 0.8);
+//   border: none;
+//   color: #FFFFFF;
+//   &:hover {
+//     background: rgba(255, 215, 0, 0.1);
+//   }
+// `;
 
 const SettingItem = styled.div`
   display: flex;
@@ -158,11 +159,9 @@ const Settings: React.FC = () => {
   const { 
     isConnected, 
     publicKey, 
-    secretKey, 
     disconnectAccount,
     balances,
-    transactions,
-    isPasskeyEnabled
+    transactions
   } = useWallet();
   
   const { 
@@ -174,14 +173,11 @@ const Settings: React.FC = () => {
     setPrivacyEnabled
   } = useLocation();
 
-  const [showSecretKey, setShowSecretKey] = useState(false);
-
   const exportWalletData = () => {
-    if (!isConnected || !publicKey || !secretKey) return;
+    if (!isConnected || !publicKey) return;
 
     const walletData = {
       publicKey,
-      secretKey,
       balances,
       transactions: transactions.slice(0, 10), // Export last 10 transactions
       locationSettings: {
@@ -217,10 +213,11 @@ const Settings: React.FC = () => {
     }
   };
 
-  const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success(`${label} copied to clipboard`);
-  };
+  // Reserved for future use
+  // const copyToClipboard = (text: string, label: string) => {
+  //   navigator.clipboard.writeText(text);
+  //   toast.success(`${label} copied to clipboard`);
+  // };
 
   if (!isConnected) {
     return (
@@ -286,6 +283,20 @@ const Settings: React.FC = () => {
         />
       </Section>
 
+      {/* Smart Wallet (Phase 2) */}
+      <Section>
+        <SmartWalletManager 
+          onSmartWalletCreated={(walletAddress) => {
+            console.log('Smart wallet created:', walletAddress);
+            toast.success('Smart wallet created successfully!');
+          }}
+          onTransactionExecuted={(transactionId) => {
+            console.log('Transaction executed:', transactionId);
+            toast.success('Transaction executed successfully!');
+          }}
+        />
+      </Section>
+
       {/* Wallet Actions */}
       <Section>
         <SectionHeader>
@@ -306,41 +317,13 @@ const Settings: React.FC = () => {
           </Button>
         </SettingItem>
 
-        {!isPasskeyEnabled && (
-          <SettingItem>
-            <SettingInfo>
-              <SettingLabel>Show Secret Key</SettingLabel>
-              <SettingDescription>
-                Display your secret key (keep this private and secure)
-              </SettingDescription>
-            </SettingInfo>
-            <SecondaryButton onClick={() => setShowSecretKey(!showSecretKey)}>
-              <Key size={20} />
-              {showSecretKey ? 'Hide' : 'Show'}
-            </SecondaryButton>
-          </SettingItem>
-        )}
-
-        {!isPasskeyEnabled && showSecretKey && secretKey && (
-          <InfoCard>
-            <InfoRow>
-              <InfoLabel>Secret Key</InfoLabel>
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                <InfoValue style={{ fontSize: '0.9rem', wordBreak: 'break-all' }}>
-                  {secretKey}
-                </InfoValue>
-                <Button 
-                  onClick={() => copyToClipboard(secretKey, 'Secret key')}
-                  style={{ padding: '0.5rem', minWidth: 'auto' }}
-                >
-                  <Upload size={16} />
-                </Button>
-              </div>
-            </InfoRow>
-          </InfoCard>
-        )}
-
-        {isPasskeyEnabled && (
+        <SettingItem>
+          <SettingInfo>
+            <SettingLabel>Passkey Authentication</SettingLabel>
+            <SettingDescription>
+              Your wallet is secured with passkey authentication. No secret keys are stored.
+            </SettingDescription>
+          </SettingInfo>
           <InfoCard>
             <InfoRow>
               <InfoLabel>Authentication Method</InfoLabel>
@@ -351,7 +334,7 @@ const Settings: React.FC = () => {
             <InfoRow>
               <InfoLabel>Security Status</InfoLabel>
               <InfoValue style={{ color: '#22c55e', fontWeight: '600' }}>
-                ✅ Secret key encrypted and secured
+                ✅ Passwordless & Secure
               </InfoValue>
             </InfoRow>
             <InfoRow>
@@ -361,7 +344,7 @@ const Settings: React.FC = () => {
               </InfoValue>
             </InfoRow>
           </InfoCard>
-        )}
+        </SettingItem>
 
         <SettingItem>
           <SettingInfo>

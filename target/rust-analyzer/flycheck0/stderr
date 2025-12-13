@@ -1,0 +1,39 @@
+   0.159917300s  INFO prepare_target{force=false package_id=smart-wallet v0.1.0 (C:\Users\serge\OneDrive\Desktop\NodeJS\XYZ-Wallet-v1\soroban-contracts) target="smart_wallet"}: cargo::core::compiler::fingerprint: stale: changed "C:\\Users\\serge\\OneDrive\\Desktop\\NodeJS\\XYZ-Wallet-v1\\soroban-contracts\\src\\contract.rs"
+   0.159960200s  INFO prepare_target{force=false package_id=smart-wallet v0.1.0 (C:\Users\serge\OneDrive\Desktop\NodeJS\XYZ-Wallet-v1\soroban-contracts) target="smart_wallet"}: cargo::core::compiler::fingerprint:           (vs) "C:\\Users\\serge\\OneDrive\\Desktop\\NodeJS\\XYZ-Wallet-v1\\soroban-contracts\\target\\debug\\.fingerprint\\smart-wallet-0e6af9667aa5ae31\\dep-lib-smart_wallet"
+   0.159966600s  INFO prepare_target{force=false package_id=smart-wallet v0.1.0 (C:\Users\serge\OneDrive\Desktop\NodeJS\XYZ-Wallet-v1\soroban-contracts) target="smart_wallet"}: cargo::core::compiler::fingerprint:                FileTime { seconds: 13407408776, nanos: 187496700 } < FileTime { seconds: 13407408792, nanos: 197744600 }
+   0.160245700s  INFO prepare_target{force=false package_id=smart-wallet v0.1.0 (C:\Users\serge\OneDrive\Desktop\NodeJS\XYZ-Wallet-v1\soroban-contracts) target="smart_wallet"}: cargo::core::compiler::fingerprint: fingerprint dirty for smart-wallet v0.1.0 (C:\Users\serge\OneDrive\Desktop\NodeJS\XYZ-Wallet-v1\soroban-contracts)/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("smart_wallet", ["cdylib"], "C:\\Users\\serge\\OneDrive\\Desktop\\NodeJS\\XYZ-Wallet-v1\\soroban-contracts\\src\\lib.rs", Edition2021) }
+   0.160281000s  INFO prepare_target{force=false package_id=smart-wallet v0.1.0 (C:\Users\serge\OneDrive\Desktop\NodeJS\XYZ-Wallet-v1\soroban-contracts) target="smart_wallet"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleItem(ChangedFile { reference: "C:\\Users\\serge\\OneDrive\\Desktop\\NodeJS\\XYZ-Wallet-v1\\soroban-contracts\\target\\debug\\.fingerprint\\smart-wallet-0e6af9667aa5ae31\\dep-lib-smart_wallet", reference_mtime: FileTime { seconds: 13407408776, nanos: 187496700 }, stale: "C:\\Users\\serge\\OneDrive\\Desktop\\NodeJS\\XYZ-Wallet-v1\\soroban-contracts\\src\\contract.rs", stale_mtime: FileTime { seconds: 13407408792, nanos: 197744600 } }))
+   0.200411500s  INFO prepare_target{force=false package_id=smart-wallet v0.1.0 (C:\Users\serge\OneDrive\Desktop\NodeJS\XYZ-Wallet-v1\soroban-contracts) target="smart_wallet"}: cargo::core::compiler::fingerprint: fingerprint error for smart-wallet v0.1.0 (C:\Users\serge\OneDrive\Desktop\NodeJS\XYZ-Wallet-v1\soroban-contracts)/Check { test: true }/TargetInner { name_inferred: true, ..: lib_target("smart_wallet", ["cdylib"], "C:\\Users\\serge\\OneDrive\\Desktop\\NodeJS\\XYZ-Wallet-v1\\soroban-contracts\\src\\lib.rs", Edition2021) }
+   0.200439000s  INFO prepare_target{force=false package_id=smart-wallet v0.1.0 (C:\Users\serge\OneDrive\Desktop\NodeJS\XYZ-Wallet-v1\soroban-contracts) target="smart_wallet"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\serge\OneDrive\Desktop\NodeJS\XYZ-Wallet-v1\soroban-contracts\target\debug\.fingerprint\smart-wallet-cc857ecd2cbdca29\test-lib-smart_wallet`
+
+Caused by:
+    The system cannot find the file specified. (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+             at /rustc/1159e78c4747b02ef996e55082b704c09b970588/library\std\src\..\..\backtrace\src\backtrace/win64.rs:85:14
+   1: std::backtrace::Backtrace::capture
+             at /rustc/1159e78c4747b02ef996e55082b704c09b970588/library\std\src/backtrace.rs:296:9
+   2: <std::io::error::Error as anyhow::context::ext::StdError>::ext_context::<alloc::string::String>
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::prepare_target
+   5: cargo::core::compiler::compile
+   6: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   7: cargo::ops::cargo_compile::compile_ws
+   8: cargo::ops::cargo_compile::compile_with_exec
+   9: cargo::ops::cargo_compile::compile
+  10: cargo::commands::check::exec
+  11: <cargo::cli::Exec>::exec
+  12: cargo::cli::main
+  13: cargo::main
+  14: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  15: std::rt::lang_start::<()>::{closure#0}
+  16: std::rt::lang_start_internal
+             at /rustc/1159e78c4747b02ef996e55082b704c09b970588/library\core\src\ops/function.rs:290:21
+  17: main
+  18: __tmainCRTStartup
+  19: mainCRTStartup
+  20: <unknown>
+  21: <unknown>
+    Checking smart-wallet v0.1.0 (C:\Users\serge\OneDrive\Desktop\NodeJS\XYZ-Wallet-v1\soroban-contracts)
+error: could not compile `smart-wallet` (lib test) due to 4 previous errors; 17 warnings emitted

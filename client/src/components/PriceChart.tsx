@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { TrendingUp, TrendingDown } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, ChevronDown, ChevronUp, Radar } from 'lucide-react';
 import MiniRadar from './MiniRadar';
+import { useWallet } from '../contexts/WalletContext';
 
 const ChartContainer = styled.div`
   background: rgba(255, 255, 255, 0.1);
@@ -50,10 +51,10 @@ const PriceChange = styled.div<{ $positive: boolean }>`
 `;
 
 const ChartArea = styled.div`
-  height: 120px;
+  min-height: 200px;
   background: rgba(255, 215, 0, 0.1);
   border-radius: 8px;
-  padding: 1rem;
+  padding: 1.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -70,6 +71,62 @@ const Separator = styled.div`
 
 const RadarSection = styled.div`
   margin-top: 1rem;
+`;
+
+const RadarSectionHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 0.5rem;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+`;
+
+const RadarSectionTitle = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+`;
+
+const RadarToggleButton = styled.button`
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0.25rem;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    color: rgba(255, 255, 255, 1);
+    transform: scale(1.1);
+  }
+`;
+
+const RadarContent = styled.div<{ $isExpanded: boolean }>`
+  max-height: ${props => props.$isExpanded ? '1000px' : '0'};
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+  opacity: ${props => props.$isExpanded ? '1' : '0'};
+  transition: max-height 0.3s ease-out, opacity 0.2s ease-out;
+`;
+
+const MinimizedRadarPreview = styled.div`
+  padding: 0.5rem 1rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.8rem;
 `;
 
 interface PriceData {
@@ -92,6 +149,8 @@ const PriceChart: React.FC<PriceChartProps> = ({ nearbyNFTs = [], nearbyUsers = 
   const [priceData, setPriceData] = useState<PriceData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRadarExpanded, setIsRadarExpanded] = useState(false);
+  const { contractBalance, userStake, getContractBalance, isConnected } = useWallet();
 
   useEffect(() => {
     const fetchPriceData = async () => {
@@ -152,6 +211,15 @@ const PriceChart: React.FC<PriceChartProps> = ({ nearbyNFTs = [], nearbyUsers = 
     
     return () => clearInterval(interval);
   }, []);
+
+  // Fetch contract balance when component mounts and wallet is connected
+  useEffect(() => {
+    if (isConnected) {
+      getContractBalance().catch(err => {
+        console.error('Error fetching contract balance:', err);
+      });
+    }
+  }, [isConnected, getContractBalance]);
 
   if (isLoading) {
     return (
@@ -216,47 +284,117 @@ const PriceChart: React.FC<PriceChartProps> = ({ nearbyNFTs = [], nearbyUsers = 
       </ChartHeader>
       <ChartArea>
         <div style={{ textAlign: 'center', width: '100%' }}>
-          <div style={{ 
-            fontSize: '2rem', 
-            fontWeight: 'bold', 
-            marginBottom: '0.5rem',
-            background: 'linear-gradient(45deg, #FFD700, #FFA500)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text'
-          }}>
-            ${priceData.price.toFixed(7)}
-          </div>
-          <div style={{ 
-            fontSize: '1rem', 
-            color: isPositive ? '#00FF00' : '#FF0000',
-            marginBottom: '0.5rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.25rem'
-          }}>
-            {isPositive ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
-            {Math.abs(priceData.changePercent24h).toFixed(2)}% (24h)
-          </div>
-          <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.8)' }}>
-            Real-time data from Soroswap
-          </div>
+          {isConnected && contractBalance !== null && (
+            <div style={{ 
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '1rem',
+              width: '100%'
+            }}>
+              {/* User's Personal Stake */}
+              {userStake !== null && (
+                <div style={{ 
+                  width: '100%',
+                  padding: '0.75rem',
+                  background: 'rgba(59, 130, 246, 0.1)',
+                  border: '1px solid rgba(59, 130, 246, 0.3)',
+                  borderRadius: '8px'
+                }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.8rem',
+                    color: 'rgba(255, 255, 255, 0.8)',
+                    marginBottom: '0.5rem'
+                  }}>
+                    <Wallet size={14} />
+                    <span>Your Stake:</span>
+                  </div>
+                  <div style={{ 
+                    fontSize: '1.1rem', 
+                    fontWeight: '600',
+                    fontFamily: 'monospace',
+                    color: '#60a5fa'
+                  }}>
+                    {parseFloat(userStake).toFixed(7)} XLM
+                  </div>
+                </div>
+              )}
+
+              {/* Total Vault Balance */}
+              <div style={{ 
+                width: '100%',
+                padding: '0.75rem',
+                background: 'rgba(16, 185, 129, 0.1)',
+                border: '1px solid rgba(16, 185, 129, 0.3)',
+                borderRadius: '8px'
+              }}>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.8rem',
+                  color: 'rgba(255, 255, 255, 0.8)',
+                  marginBottom: '0.5rem'
+                }}>
+                  <Wallet size={14} />
+                  <span>Total Vault Balance:</span>
+                </div>
+                <div style={{ 
+                  fontSize: '1.1rem', 
+                  fontWeight: '600',
+                  fontFamily: 'monospace',
+                  color: '#10b981'
+                }}>
+                  {parseFloat(contractBalance).toFixed(7)} XLM
+                </div>
+                <div style={{ 
+                  fontSize: '0.7rem',
+                  color: 'rgba(255, 255, 255, 0.6)',
+                  marginTop: '0.25rem'
+                }}>
+                  Sum of all deposits from all users
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </ChartArea>
       
       <Separator />
       
       <RadarSection>
-        <MiniRadar 
-          nearbyNFTs={nearbyNFTs}
-          nearbyUsers={nearbyUsers}
-          onFullscreenClick={onRadarFullscreen || (() => {})}
-          onNFTClick={onNFTClick || (() => {})}
-          onUserClick={onUserClick}
-          userLatitude={userLatitude}
-          userLongitude={userLongitude}
-        />
+        <RadarSectionHeader onClick={() => setIsRadarExpanded(!isRadarExpanded)}>
+          <RadarSectionTitle>
+            <Radar size={16} />
+            Wallet Radar
+          </RadarSectionTitle>
+          <RadarToggleButton onClick={(e) => { e.stopPropagation(); setIsRadarExpanded(!isRadarExpanded); }}>
+            {isRadarExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+          </RadarToggleButton>
+        </RadarSectionHeader>
+        
+        {!isRadarExpanded && (
+          <MinimizedRadarPreview>
+            {nearbyNFTs.length + (nearbyUsers?.length || 0)} items nearby • Click to expand
+          </MinimizedRadarPreview>
+        )}
+        
+        <RadarContent $isExpanded={isRadarExpanded}>
+          <MiniRadar 
+            nearbyNFTs={nearbyNFTs}
+            nearbyUsers={nearbyUsers}
+            onFullscreenClick={onRadarFullscreen || (() => {})}
+            onNFTClick={onNFTClick || (() => {})}
+            onUserClick={onUserClick}
+            userLatitude={userLatitude}
+            userLongitude={userLongitude}
+          />
+        </RadarContent>
       </RadarSection>
     </ChartContainer>
   );

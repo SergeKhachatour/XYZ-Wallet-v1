@@ -1,12 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
-import { Plus, Send, Download, Upload, RefreshCw, QrCode, Copy, Camera, X } from 'lucide-react';
+import { Plus, Send, Download, RefreshCw, QrCode, Copy, Camera, X, Shield, LogIn, ArrowDownCircle, ExternalLink, Info, Code, Wallet as WalletIcon } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useLocation } from '../contexts/LocationContext';
-import PasskeySetupModal from '../components/PasskeySetupModal';
+import AuthModal from '../components/AuthModal';
+import DepositOverlay from '../components/DepositOverlay';
+import SendOverlay from '../components/SendOverlay';
+import ReceiveOverlay from '../components/ReceiveOverlay';
 import toast from 'react-hot-toast';
 import QRCode from 'qrcode';
-import QrScanner from 'qr-scanner';
 
 const WalletContainer = styled.div`
   max-width: 800px;
@@ -183,142 +185,6 @@ const CopyButton = styled.button`
   }
 `;
 
-const QRScannerModal = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.9);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-`;
-
-const QRScannerContainer = styled.div`
-  position: relative;
-  width: 90%;
-  max-width: 500px;
-  height: 400px;
-  background: white;
-  border-radius: 12px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  
-  @media (max-width: 768px) {
-    width: 95%;
-    height: 350px;
-  }
-  
-  @media (max-width: 480px) {
-    width: 98%;
-    height: 300px;
-  }
-`;
-
-const QRScannerHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  background: #1a1a1a;
-  color: white;
-`;
-
-const QRScannerTitle = styled.h3`
-  margin: 0;
-  font-size: 1.2rem;
-`;
-
-const CloseButton = styled.button`
-  background: none;
-  border: none;
-  color: white;
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 6px;
-  transition: background 0.2s ease;
-  
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
-  }
-`;
-
-const QRScannerVideo = styled.video`
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-`;
-
-const QRScannerOverlay = styled.div`
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 200px;
-  height: 200px;
-  border: 2px solid #4ade80;
-  border-radius: 12px;
-  pointer-events: none;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    border: 2px solid rgba(74, 222, 128, 0.3);
-    border-radius: 12px;
-    animation: pulse 2s infinite;
-  }
-  
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-  }
-`;
-
-const QRScannerInstructions = styled.div`
-  position: absolute;
-  bottom: 1rem;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  text-align: center;
-`;
-
-const InputGroup = styled.div`
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-`;
-
-const ScanButton = styled.button`
-  background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
-  border: none;
-  color: white;
-  padding: 0.5rem;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 40px;
-  
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(74, 222, 128, 0.3);
-  }
-`;
 
 const Form = styled.form`
   display: flex;
@@ -528,62 +394,107 @@ const NFTDistance = styled.div`
   font-size: 0.8rem;
 `;
 
+const TopRightIcons = styled.div`
+  position: fixed;
+  top: 2rem;
+  right: 2rem;
+  display: flex;
+  gap: 0.5rem;
+  z-index: 100;
+  
+  @media (max-width: 768px) {
+    top: 1rem;
+    right: 5rem;
+    z-index: 9998;
+    pointer-events: auto;
+  }
+  
+  @media (max-width: 480px) {
+    right: 4.5rem;
+    gap: 0.25rem;
+  }
+`;
+
+const IconButton = styled.button`
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: none;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #FFFFFF;
+  transition: all 0.2s ease;
+  position: relative;
+  z-index: 1;
+  
+  &:hover {
+    background: rgba(255, 215, 0, 0.2);
+    transform: scale(1.1);
+    box-shadow: 0 8px 24px rgba(255, 215, 0, 0.3);
+  }
+  
+  &:active {
+    transform: scale(0.95);
+  }
+  
+  @media (max-width: 768px) {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  
+  @media (max-width: 480px) {
+    width: 36px;
+    height: 36px;
+  }
+`;
+
+const ReceiveIcon = styled(IconButton)`
+  &:hover {
+    color: #00FF00;
+  }
+`;
+
+const SendIcon = styled(IconButton)`
+  &:hover {
+    color: #FFD700;
+  }
+`;
+
 const Wallet: React.FC = () => {
   const { 
     isConnected, 
     publicKey, 
     balances, 
     transactions, 
-    createAccount, 
-    connectAccount, 
     sendPayment,
     fundAccount,
     refreshBalance,
     refreshTransactions,
     isLoading,
-    enablePasskey
+    // connectWithPasskey, // Reserved for future use
+    createWalletWithPasskey,
+    createWalletWithZKProof, // Added ZK proof wallet creation
+    contractBalance,
+    userStake,
+    getContractBalance,
+    depositToContract
   } = useWallet();
 
   const { userNFTs, refreshUserNFTs } = useLocation();
 
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [showConnectForm, setShowConnectForm] = useState(false);
-  const [showSendForm, setShowSendForm] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
   const [qrCodeDataURL, setQrCodeDataURL] = useState<string>('');
-  const [showQRScanner, setShowQRScanner] = useState(false);
-  const [showPasskeySetup, setShowPasskeySetup] = useState(false);
-  const [passkeySetupPublicKey, setPasskeySetupPublicKey] = useState<string>('');
-  
-  const [connectSecret, setConnectSecret] = useState('');
-  const [sendDestination, setSendDestination] = useState('');
-  const [sendAmount, setSendAmount] = useState('');
-  const [sendMemo, setSendMemo] = useState('');
-  
-  const qrScannerRef = useRef<QrScanner | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  const handleConnect = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (connectSecret.trim()) {
-      connectAccount(connectSecret.trim());
-      setConnectSecret('');
-      setShowConnectForm(false);
-    }
-  };
-
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (sendDestination.trim() && sendAmount.trim()) {
-      const success = await sendPayment(sendDestination.trim(), sendAmount.trim(), 'XLM', sendMemo.trim() || undefined);
-      if (success) {
-        setSendDestination('');
-        setSendAmount('');
-        setSendMemo('');
-        setShowSendForm(false);
-      }
-    }
-  };
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showDepositOverlay, setShowDepositOverlay] = useState(false);
+  const [isReceiveOpen, setIsReceiveOpen] = useState(false);
+  const [isSendOpen, setIsSendOpen] = useState(false);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -611,210 +522,75 @@ const Wallet: React.FC = () => {
     }
   };
 
-  // Start QR scanner
-  const startQRScanner = async () => {
-    console.log('Starting QR scanner...');
-    
-    try {
-      // Check if camera is available
-      const hasCamera = await QrScanner.hasCamera();
-      console.log('Camera available:', hasCamera);
-      if (!hasCamera) {
-        toast.error('No camera found on this device');
-        return;
-      }
-
-      // Open the modal first
-      setShowQRScanner(true);
-      toast('Requesting camera access...');
-
-      // Wait for modal to render, then start scanner
-      setTimeout(async () => {
-        try {
-          console.log('Video ref:', videoRef.current);
-          if (videoRef.current) {
-            console.log('Creating QrScanner instance...');
-            
-            // Check if we're on HTTPS or localhost
-            const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
-            if (!isSecure) {
-              toast.error('Camera access requires HTTPS. Please use the secure version of the site.');
-              setShowQRScanner(false);
-              return;
-            }
-            
-            const scanner = new QrScanner(
-              videoRef.current,
-              (result) => {
-                console.log('QR Code detected:', result);
-                setSendDestination(result.data);
-                setShowQRScanner(false);
-                stopQRScanner();
-                toast.success('Address scanned successfully!');
-              },
-              {
-                highlightScanRegion: true,
-                highlightCodeOutline: true,
-                preferredCamera: 'environment', // Use back camera on mobile
-                maxScansPerSecond: 5,
-              }
-            );
-            
-            qrScannerRef.current = scanner;
-            console.log('Starting scanner...');
-            await scanner.start();
-            console.log('Scanner started successfully');
-            toast.success('Camera started - position QR code in frame');
-          } else {
-            console.error('Video ref is null');
-            toast.error('Video element not found');
-            setShowQRScanner(false);
-          }
-        } catch (scannerError) {
-          console.error('Scanner error:', scannerError);
-          const errorMessage = scannerError instanceof Error ? scannerError.message : String(scannerError);
-          
-          if (errorMessage.includes('Permission denied') || errorMessage.includes('NotAllowedError')) {
-            toast.error('Camera permission denied. Please allow camera access and try again.');
-          } else if (errorMessage.includes('NotFoundError')) {
-            toast.error('No camera found on this device.');
-          } else {
-            toast.error('Failed to start camera scanner: ' + errorMessage);
-          }
-          setShowQRScanner(false);
-        }
-      }, 500); // Increased timeout to ensure modal is rendered
-    } catch (error) {
-      console.error('Error starting QR scanner:', error);
-      toast.error('Failed to start camera. Please check permissions.');
-      setShowQRScanner(false);
-    }
-  };
-
-  // Stop QR scanner
-  const stopQRScanner = () => {
-    if (qrScannerRef.current) {
-      qrScannerRef.current.stop();
-      qrScannerRef.current.destroy();
-      qrScannerRef.current = null;
-    }
-  };
-
-  // Cleanup QR scanner on unmount
+  // Load contract balance when wallet is connected
   useEffect(() => {
-    return () => {
-      stopQRScanner();
-    };
-  }, []);
-
-  // Refresh user NFTs when component mounts
-  useEffect(() => {
-    if (isConnected) {
-      refreshUserNFTs();
+    if (publicKey && isConnected) {
+      getContractBalance();
     }
-  }, [isConnected, refreshUserNFTs]);
+  }, [publicKey, isConnected]);
 
-  // Handle scanner cleanup when modal closes
-  useEffect(() => {
-    if (!showQRScanner) {
-      stopQRScanner();
-    }
-  }, [showQRScanner]);
+  // Note: We don't automatically fetch userNFTs on mount since the API call
+  // may fail with 400 (expected when GeoLink auth isn't configured).
+  // Users can manually refresh using the "Refresh" button in the NFT section.
 
   // Listen for passkey setup events
-  useEffect(() => {
-    const handlePasskeySetup = (event: CustomEvent) => {
-      const { publicKey: newPublicKey } = event.detail;
-      
-      // Prevent multiple modals
-      if (showPasskeySetup) {
-        console.log('Passkey setup modal already open, skipping...');
-        return;
-      }
-      
-      console.log('Opening passkey setup modal for:', newPublicKey);
-      setPasskeySetupPublicKey(newPublicKey);
-      setShowPasskeySetup(true);
-    };
+  // Passkey setup is now handled automatically in the wallet context
 
-    window.addEventListener('showPasskeySetup', handlePasskeySetup as EventListener);
-    
-    return () => {
-      window.removeEventListener('showPasskeySetup', handlePasskeySetup as EventListener);
-    };
-  }, [showPasskeySetup]);
-
-  const handlePasskeyEnabled = async (credentialId: string) => {
-    console.log('Passkey enabled for wallet:', credentialId);
-    toast.success('Passkey authentication enabled!');
-  };
-
-  const handlePasskeySkip = () => {
-    console.log('Passkey setup skipped');
-    toast('You can enable passkey authentication later in Settings');
-  };
+  // Passkey functions are now handled in the wallet context
 
   if (!isConnected) {
     return (
-      <WalletContainer>
+      <>
+        <WalletContainer>
         <Section>
           <SectionHeader>
             <SectionTitle>Connect Your Wallet</SectionTitle>
           </SectionHeader>
           
-          <ButtonGroup>
-            <Button onClick={() => setShowCreateForm(true)}>
-              <Plus size={20} />
-              Create New Wallet
-            </Button>
-            <SecondaryButton onClick={() => setShowConnectForm(true)}>
-              <Upload size={20} />
-              Connect Existing Wallet
-            </SecondaryButton>
-          </ButtonGroup>
-
-          {showCreateForm && (
-            <div style={{ marginTop: '2rem' }}>
-              <h3>Create New Wallet</h3>
-              <p style={{ color: 'rgba(255, 255, 255, 0.7)', marginBottom: '1rem' }}>
-                This will generate a new Stellar wallet. Make sure to save your secret key securely!
-              </p>
-              <Button onClick={createAccount} disabled={isLoading}>
-                {isLoading ? 'Creating...' : 'Generate New Wallet'}
+          <div style={{ textAlign: 'center', padding: '2rem' }}>
+            <h2 style={{ marginBottom: '1rem' }}>XYZ-Wallet</h2>
+            <p style={{ color: 'rgba(255, 255, 255, 0.7)', marginBottom: '2rem' }}>
+              Secure, zero-knowledge authentication with SRP-6a and passkey support.
+            </p>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '300px', margin: '0 auto' }}>
+              <Button onClick={createWalletWithZKProof} disabled={isLoading} style={{ background: 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)' }}>
+                <Shield size={20} />
+                {isLoading ? 'Creating...' : 'Create ZK Proof Wallet'}
+              </Button>
+              
+              <Button onClick={createWalletWithPasskey} disabled={isLoading} style={{ background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.3)' }}>
+                <Shield size={20} />
+                {isLoading ? 'Creating...' : 'Create Passkey Wallet'}
+              </Button>
+              
+              <Button onClick={() => setShowAuthModal(true)} disabled={isLoading} style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+                <LogIn size={20} />
+                {isLoading ? 'Loading...' : 'Advanced Authentication'}
               </Button>
             </div>
-          )}
-
-          {showConnectForm && (
-            <Form onSubmit={handleConnect} style={{ marginTop: '2rem' }}>
-              <h3>Connect Existing Wallet</h3>
-              <FormGroup>
-                <Label>Secret Key</Label>
-                <Input
-                  type="password"
-                  placeholder="Enter your secret key"
-                  value={connectSecret}
-                  onChange={(e) => setConnectSecret(e.target.value)}
-                  required
-                />
-              </FormGroup>
-              <ButtonGroup>
-                <Button type="submit" disabled={isLoading}>
-                  Connect Wallet
-                </Button>
-                <SecondaryButton onClick={() => setShowConnectForm(false)}>
-                  Cancel
-                </SecondaryButton>
-              </ButtonGroup>
-            </Form>
-          )}
+          </div>
         </Section>
       </WalletContainer>
+      </>
     );
   }
 
   return (
-    <WalletContainer>
+    <>
+      {/* Top Right Icons - Send/Receive */}
+      {isConnected && (
+        <TopRightIcons>
+          <ReceiveIcon onClick={() => setIsReceiveOpen(true)} title="Receive XLM">
+            <QrCode size={20} />
+          </ReceiveIcon>
+          <SendIcon onClick={() => setIsSendOpen(true)} title="Send Payment">
+            <Send size={20} />
+          </SendIcon>
+        </TopRightIcons>
+      )}
+
+      <WalletContainer>
       {/* Wallet Info */}
       <Section>
         <SectionHeader>
@@ -883,9 +659,17 @@ const Wallet: React.FC = () => {
         <SectionHeader>
           <SectionTitle>Balances</SectionTitle>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <Button onClick={() => setShowSendForm(true)}>
+            <Button onClick={() => setShowDepositOverlay(true)} style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' }}>
+              <ArrowDownCircle size={20} />
+              Deposit
+            </Button>
+            <Button onClick={() => setIsReceiveOpen(true)} style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}>
+              <QrCode size={20} />
+              Receive
+            </Button>
+            <Button onClick={() => setIsSendOpen(true)}>
               <Send size={20} />
-              Send Payment
+              Send
             </Button>
           </div>
         </SectionHeader>
@@ -909,65 +693,240 @@ const Wallet: React.FC = () => {
         )}
       </Section>
 
-      {/* Send Payment Form */}
-      {showSendForm && (
+      {/* Smart Wallet Vault & Stake */}
+      {(contractBalance !== null || userStake !== null) && (
         <Section>
           <SectionHeader>
-            <SectionTitle>Send Payment</SectionTitle>
+            <SectionTitle>Smart Wallet Vault</SectionTitle>
           </SectionHeader>
           
-          <Form onSubmit={handleSend}>
-            <FormGroup>
-              <Label>Destination Address</Label>
-              <InputGroup>
-                <Input
-                  type="text"
-                  placeholder="Enter Stellar address"
-                  value={sendDestination}
-                  onChange={(e) => setSendDestination(e.target.value)}
-                  required
-                  style={{ flex: 1 }}
-                />
-                <ScanButton
-                  type="button"
-                  onClick={startQRScanner}
-                  title="Scan QR Code"
-                >
-                  <Camera size={20} />
-                </ScanButton>
-              </InputGroup>
-            </FormGroup>
-            
-            <FormGroup>
-              <Label>Amount (XLM)</Label>
-              <Input
-                type="number"
-                step="0.0000001"
-                placeholder="Enter amount"
-                value={sendAmount}
-                onChange={(e) => setSendAmount(e.target.value)}
-                required
-              />
-            </FormGroup>
-            
-            <FormGroup>
-              <Label>Memo (Optional)</Label>
-              <TextArea
-                placeholder="Enter memo"
-                value={sendMemo}
-                onChange={(e) => setSendMemo(e.target.value)}
-              />
-            </FormGroup>
-            
-            <ButtonGroup>
-              <Button type="submit" disabled={isLoading}>
-                Send Payment
-              </Button>
-              <SecondaryButton onClick={() => setShowSendForm(false)}>
-                Cancel
-              </SecondaryButton>
-            </ButtonGroup>
-          </Form>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {/* User's Personal Stake */}
+            {userStake !== null && (
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.15) 100%)',
+                border: '2px solid rgba(59, 130, 246, 0.4)',
+                borderRadius: '12px',
+                padding: '1.5rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.75rem',
+                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.2)'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  marginBottom: '0.5rem'
+                }}>
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    background: 'rgba(59, 130, 246, 0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '2px solid rgba(59, 130, 246, 0.4)'
+                  }}>
+                    <WalletIcon size={20} style={{ color: '#60a5fa' }} />
+                  </div>
+                  <div>
+                    <div style={{
+                      fontSize: '0.85rem',
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      fontWeight: '500'
+                    }}>
+                      Your Stake
+                    </div>
+                    <div style={{
+                      fontSize: '0.75rem',
+                      color: 'rgba(255, 255, 255, 0.5)'
+                    }}>
+                      Your total deposits in the contract
+                    </div>
+                  </div>
+                </div>
+                <div style={{
+                  fontSize: '1.75rem',
+                  fontWeight: '700',
+                  fontFamily: 'monospace',
+                  color: '#60a5fa',
+                  letterSpacing: '0.5px'
+                }}>
+                  {parseFloat(userStake).toFixed(7)} XLM
+                </div>
+              </div>
+            )}
+
+            {/* Total Vault Balance */}
+            {contractBalance !== null && (
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%)',
+                border: '2px solid rgba(16, 185, 129, 0.4)',
+                borderRadius: '12px',
+                padding: '1.5rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.75rem',
+                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  marginBottom: '0.5rem'
+                }}>
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    background: 'rgba(16, 185, 129, 0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '2px solid rgba(16, 185, 129, 0.4)'
+                  }}>
+                    <WalletIcon size={20} style={{ color: '#10b981' }} />
+                  </div>
+                  <div>
+                    <div style={{
+                      fontSize: '0.85rem',
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      fontWeight: '500'
+                    }}>
+                      Total Vault Balance
+                    </div>
+                    <div style={{
+                      fontSize: '0.75rem',
+                      color: 'rgba(255, 255, 255, 0.5)'
+                    }}>
+                      Sum of all deposits from all users
+                    </div>
+                  </div>
+                </div>
+                <div style={{
+                  fontSize: '1.75rem',
+                  fontWeight: '700',
+                  fontFamily: 'monospace',
+                  color: '#10b981',
+                  letterSpacing: '0.5px'
+                }}>
+                  {parseFloat(contractBalance).toFixed(7)} XLM
+                </div>
+                {userStake !== null && contractBalance !== null && (
+                  <div style={{
+                    marginTop: '0.5rem',
+                    paddingTop: '0.75rem',
+                    borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                    fontSize: '0.8rem',
+                    color: 'rgba(255, 255, 255, 0.6)'
+                  }}>
+                    Other users' stake: {(parseFloat(contractBalance) - parseFloat(userStake)).toFixed(7)} XLM
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </Section>
+      )}
+
+      {/* Smart Wallet Contract Information */}
+      {contractBalance !== null && (
+        <Section>
+          <SectionHeader>
+            <SectionTitle>Smart Wallet Contract</SectionTitle>
+          </SectionHeader>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            {/* Contract Address */}
+            <div>
+              <Label style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Code size={16} />
+                Contract Address
+              </Label>
+              <AddressDisplay>
+                <span style={{ flex: 1, wordBreak: 'break-all', fontFamily: 'monospace', fontSize: '0.9rem' }}>
+                  {process.env.REACT_APP_SMART_WALLET_CONTRACT_ID || 'Not configured'}
+                </span>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <Button
+                    onClick={() => {
+                      const contractId = process.env.REACT_APP_SMART_WALLET_CONTRACT_ID;
+                      if (contractId) {
+                        // Stellar Lab URL with proper query parameters
+                        const labUrl = `https://lab.stellar.org/smart-contracts/contract-explorer?$=network$id=testnet&label=Testnet&horizonUrl=https:////horizon-testnet.stellar.org&rpcUrl=https:////soroban-testnet.stellar.org&passphrase=Test%20SDF%20Network%20/;%20September%202015;&smartContracts$explorer$contractId=${contractId};;`;
+                        window.open(labUrl, '_blank');
+                      }
+                    }}
+                    style={{ padding: '0.5rem', minWidth: 'auto', fontSize: '0.8rem' }}
+                    title="View on Stellar Laboratory"
+                  >
+                    <ExternalLink size={14} />
+                    Lab
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      const contractId = process.env.REACT_APP_SMART_WALLET_CONTRACT_ID;
+                      if (contractId) {
+                        window.open(`https://stellar.expert/explorer/testnet/contract/${contractId}`, '_blank');
+                      }
+                    }}
+                    style={{ padding: '0.5rem', minWidth: 'auto', fontSize: '0.8rem' }}
+                    title="View on Stellar Expert"
+                  >
+                    <ExternalLink size={14} />
+                    Expert
+                  </Button>
+                </div>
+              </AddressDisplay>
+            </div>
+
+            {/* Contract Description */}
+            <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '8px', padding: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', color: '#93c5fd' }}>
+                <Info size={16} />
+                <strong style={{ fontSize: '0.9rem' }}>About This Contract</strong>
+              </div>
+              <p style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.85rem', margin: 0, lineHeight: '1.5' }}>
+                This smart wallet contract enables secure, passkey-authenticated transactions on the Stellar network. 
+                Tokens are held in the contract and can be transferred using WebAuthn passkey authentication, providing 
+                enhanced security without requiring traditional private key management.
+              </p>
+            </div>
+
+            {/* Available Contract Functions */}
+            <div>
+              <Label style={{ marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Code size={16} />
+                Available Contract Functions
+              </Label>
+              <div style={{ background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '8px', padding: '1rem' }}>
+                <ul style={{ margin: 0, paddingLeft: '1.5rem', color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.85rem', lineHeight: '1.8' }}>
+                  <li>
+                    <code style={{ background: 'rgba(255, 255, 255, 0.1)', padding: '0.2rem 0.4rem', borderRadius: '4px', fontSize: '0.8rem' }}>execute_payment</code>
+                    {' '}- Send payment from smart wallet (requires passkey authentication)
+                  </li>
+                  <li>
+                    <code style={{ background: 'rgba(255, 255, 255, 0.1)', padding: '0.2rem 0.4rem', borderRadius: '4px', fontSize: '0.8rem' }}>get_balance</code>
+                    {' '}- Get user's balance in the contract
+                  </li>
+                  <li>
+                    <code style={{ background: 'rgba(255, 255, 255, 0.1)', padding: '0.2rem 0.4rem', borderRadius: '4px', fontSize: '0.8rem' }}>deposit</code>
+                    {' '}- Deposit tokens to smart wallet
+                  </li>
+                  <li>
+                    <code style={{ background: 'rgba(255, 255, 255, 0.1)', padding: '0.2rem 0.4rem', borderRadius: '4px', fontSize: '0.8rem' }}>register_signer</code>
+                    {' '}- Register passkey signer (automatically called on first use)
+                  </li>
+                  <li>
+                    <code style={{ background: 'rgba(255, 255, 255, 0.1)', padding: '0.2rem 0.4rem', borderRadius: '4px', fontSize: '0.8rem' }}>is_signer_registered</code>
+                    {' '}- Check if a signer is registered for an address
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
         </Section>
       )}
 
@@ -1051,40 +1010,47 @@ const Wallet: React.FC = () => {
         )}
       </Section>
 
-      {/* QR Scanner Modal */}
-      {showQRScanner && (
-        <QRScannerModal>
-          <QRScannerContainer>
-            <QRScannerHeader>
-              <QRScannerTitle>Scan QR Code</QRScannerTitle>
-              <CloseButton onClick={() => {
-                console.log('Closing QR scanner modal');
-                stopQRScanner();
-                setShowQRScanner(false);
-              }}>
-                <X size={20} />
-              </CloseButton>
-            </QRScannerHeader>
-            <div style={{ position: 'relative', flex: 1 }}>
-              <QRScannerVideo ref={videoRef} />
-              <QRScannerOverlay />
-              <QRScannerInstructions>
-                Position the QR code within the frame
-              </QRScannerInstructions>
-            </div>
-          </QRScannerContainer>
-        </QRScannerModal>
-      )}
+      {/* Authentication Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={(authData) => {
+          console.log('Authentication successful:', authData);
+          toast.success('Authentication successful!');
+          setShowAuthModal(false);
+          // Handle different auth types
+          if (authData.type === 'srp') {
+            // Handle SRP authentication
+            console.log('SRP auth data:', authData);
+          } else if (authData.type === 'passkey') {
+            // Handle passkey authentication
+            console.log('Passkey auth data:', authData);
+          }
+        }}
+      />
 
-      {/* Passkey Setup Modal */}
-      <PasskeySetupModal
-        isOpen={showPasskeySetup}
-        onClose={() => setShowPasskeySetup(false)}
-        onPasskeyEnabled={handlePasskeyEnabled}
-        onSkip={handlePasskeySkip}
-        publicKey={passkeySetupPublicKey}
+      {/* Deposit Overlay */}
+      <DepositOverlay
+        isOpen={showDepositOverlay}
+        onClose={() => {
+          setShowDepositOverlay(false);
+          getContractBalance(); // Refresh balance when closing
+        }}
+      />
+
+      {/* Receive Overlay */}
+      <ReceiveOverlay
+        isOpen={isReceiveOpen}
+        onClose={() => setIsReceiveOpen(false)}
+      />
+
+      {/* Send Overlay */}
+      <SendOverlay
+        isOpen={isSendOpen}
+        onClose={() => setIsSendOpen(false)}
       />
     </WalletContainer>
+    </>
   );
 };
 

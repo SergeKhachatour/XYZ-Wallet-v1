@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate Passkey Public Key</title>
+</head>
+<body>
+    <h1>Generate Passkey Public Key</h1>
+    <button id="generatePasskey">Generate New Passkey</button>
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('generatePasskey').addEventListener('click', async () => {
+            try {
+                // Create a new passkey credential
+                const credential = await navigator.credentials.create({
+                    publicKey: {
+                        challenge: new Uint8Array(32),
+                        rp: { 
+                            name: "XYZ-Wallet Test",
+                            id: window.location.hostname
+                        },
+                        user: {
+                            id: new Uint8Array(16),
+                            name: "test@example.com",
+                            displayName: "Test User"
+                        },
+                        pubKeyCredParams: [
+                            { type: "public-key", alg: -7 } // ES256
+                        ],
+                        authenticatorSelection: {
+                            authenticatorAttachment: "platform",
+                            userVerification: "preferred"
+                        },
+                        timeout: 60000
+                    }
+                });
+                
+                if (credential && credential.response) {
+                    // Extract the public key
+                    const publicKey = btoa(String.fromCharCode(...new Uint8Array(credential.response.publicKey)));
+                    
+                    // Store in localStorage for consistency
+                    const passkeyData = {
+                        credentialId: btoa(String.fromCharCode(...new Uint8Array(credential.rawId))),
+                        publicKey: publicKey,
+                        counter: 0,
+                        deviceType: navigator.userAgent.includes('iPhone') ? 'iOS' : 'Other',
+                        createdAt: new Date().toISOString()
+                    };
+                    
+                    localStorage.setItem('passkey_data', JSON.stringify(passkeyData));
+                    
+                    document.getElementById('result').innerHTML = `
+                        <h3>✅ Passkey Generated Successfully!</h3>
+                        <p><strong>Public Key:</strong></p>
+                        <textarea readonly style="width: 100%; height: 100px; font-family: monospace;">${publicKey}</textarea>
+                        <p><strong>Length:</strong> ${publicKey.length} characters</p>
+                        <p><strong>Credential ID:</strong> ${passkeyData.credentialId}</p>
+                        <p><em>✅ This public key has been stored in localStorage</em></p>
+                        <p><em>📋 Copy the public key above and use it in the smart wallet constructor</em></p>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = `
+                    <h3>❌ Error Generating Passkey:</h3>
+                    <p>${error.message}</p>
+                    <p><strong>Alternative:</strong> Use this test key for now:</p>
+                    <textarea readonly style="width: 100%; height: 100px;">AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</textarea>
+                    <p><em>This is a 65-byte test key (all zeros)</em></p>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

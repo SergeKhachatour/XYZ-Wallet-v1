@@ -1,0 +1,1 @@
+C:\Users\serge\OneDrive\Desktop\NodeJS\XYZ-Wallet-v1\soroban-contracts\target\wasm32-unknown-unknown\release\smart_wallet.wasm: C:\Users\serge\OneDrive\Desktop\NodeJS\XYZ-Wallet-v1\soroban-contracts\src\contract.rs C:\Users\serge\OneDrive\Desktop\NodeJS\XYZ-Wallet-v1\soroban-contracts\src\lib.rs

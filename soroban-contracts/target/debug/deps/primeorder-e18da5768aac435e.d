@@ -1,0 +1,10 @@
+C:\Users\serge\OneDrive\Desktop\NodeJS\XYZ-Wallet-v1\soroban-contracts\target\debug\deps\primeorder-e18da5768aac435e.d: C:\Users\serge\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\primeorder-0.13.6\src\lib.rs C:\Users\serge\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\primeorder-0.13.6\src\point_arithmetic.rs C:\Users\serge\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\primeorder-0.13.6\src\affine.rs C:\Users\serge\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\primeorder-0.13.6\src\field.rs C:\Users\serge\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\primeorder-0.13.6\src\projective.rs C:\Users\serge\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\primeorder-0.13.6\src\../README.md
+
+C:\Users\serge\OneDrive\Desktop\NodeJS\XYZ-Wallet-v1\soroban-contracts\target\debug\deps\libprimeorder-e18da5768aac435e.rmeta: C:\Users\serge\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\primeorder-0.13.6\src\lib.rs C:\Users\serge\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\primeorder-0.13.6\src\point_arithmetic.rs C:\Users\serge\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\primeorder-0.13.6\src\affine.rs C:\Users\serge\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\primeorder-0.13.6\src\field.rs C:\Users\serge\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\primeorder-0.13.6\src\projective.rs C:\Users\serge\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\primeorder-0.13.6\src\../README.md
+
+C:\Users\serge\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\primeorder-0.13.6\src\lib.rs:
+C:\Users\serge\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\primeorder-0.13.6\src\point_arithmetic.rs:
+C:\Users\serge\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\primeorder-0.13.6\src\affine.rs:
+C:\Users\serge\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\primeorder-0.13.6\src\field.rs:
+C:\Users\serge\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\primeorder-0.13.6\src\projective.rs:
+C:\Users\serge\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\primeorder-0.13.6\src\../README.md:

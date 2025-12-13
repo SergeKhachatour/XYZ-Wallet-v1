@@ -313,7 +313,7 @@ router.post('/build', async (req, res) => {
         
         let sendResponse;
         try {
-          const StellarSdk = require('stellar-sdk');
+          const StellarSdk = require('@stellar/stellar-sdk');
           const { Keypair, Networks } = StellarSdk;
           const Server = StellarSdk.Horizon.Server;
           

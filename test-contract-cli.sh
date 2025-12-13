@@ -1,0 +1,29 @@
+#!/bin/bash
+# Test contract via Stellar CLI
+# Based on Stella's recommendation to test parameter deserialization
+
+CONTRACT_ID="${1:-CCAWVYMDQ6RD427S4TQ4F7D6FYIDKJRD7DLLNI634ZP7SWIV65MOP5QZ}"
+SOURCE_ACCOUNT="${2:-YOUR_ACCOUNT}"
+
+echo "🧪 Testing contract via CLI..."
+echo "Contract ID: $CONTRACT_ID"
+echo "Source Account: $SOURCE_ACCOUNT"
+echo ""
+
+# Test the test function first
+echo "Testing test_execute_payment_signature function..."
+stellar contract invoke \
+  --id "$CONTRACT_ID" \
+  --source "$SOURCE_ACCOUNT" \
+  --network testnet \
+  -- \
+  test_execute_payment_signature \
+  --signer_address "GXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" \
+  --destination "GYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY" \
+  --amount 1000 \
+  --asset "CZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ" \
+  --signature_payload "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20" \
+  --webauthn_signature "0a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20212223242526272829303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f60" \
+  --webauthn_authenticator_data "1a1b1c1d1e1f20212223242526272829303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f60" \
+  --webauthn_client_data "2a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f80"
+
