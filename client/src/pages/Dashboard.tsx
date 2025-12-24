@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { Wallet, MapPin, ArrowLeftRight, TrendingUp, Send, QrCode, Image, ZoomIn } from 'lucide-react';
+import { Wallet, MapPin, ArrowLeftRight, TrendingUp, Send, QrCode, Image, ZoomIn, ArrowDownCircle } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useLocation } from '../contexts/LocationContext';
 import toast from 'react-hot-toast';
@@ -10,6 +10,7 @@ import MapboxMap from '../components/MapboxMap';
 import UserProfile from '../components/UserProfile';
 import ReceiveOverlay from '../components/ReceiveOverlay';
 import SendOverlay from '../components/SendOverlay';
+import DepositOverlay from '../components/DepositOverlay';
 import { NFTCollectionOverlay } from '../components/NFTCollectionOverlay';
 import { constructImageUrl } from '../services/geoLinkService';
 
@@ -254,7 +255,10 @@ const Dashboard: React.FC = () => {
     balances, 
     transactions, 
     refreshBalance, 
-    isLoading 
+    isLoading,
+    contractBalance,
+    userStake,
+    getContractBalance
   } = useWallet();
   
   const { 
@@ -284,6 +288,7 @@ const Dashboard: React.FC = () => {
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
   const [isNFTCollectionOpen, setIsNFTCollectionOpen] = useState(false);
   const [isRadarOpen, setIsRadarOpen] = useState(false);
+  const [showDepositOverlay, setShowDepositOverlay] = useState(false);
 
   const handleUserClick = (user: any) => {
     setSelectedUser(user);
@@ -383,6 +388,12 @@ const Dashboard: React.FC = () => {
       getNearbyUsers(searchRadius, showAllUsers);
     }
   }, [isConnected, isLocationEnabled, serverStatus, getNearbyUsers, searchRadius, showAllUsers]);
+
+  useEffect(() => {
+    if (isConnected) {
+      getContractBalance();
+    }
+  }, [isConnected, getContractBalance]);
 
   // Clear nftToZoomTo when fullscreen map closes
   useEffect(() => {
@@ -502,6 +513,7 @@ const Dashboard: React.FC = () => {
           onUserClick={handleUserClick}
           userLatitude={currentLocation?.latitude}
           userLongitude={currentLocation?.longitude}
+          onDepositClick={() => setShowDepositOverlay(true)}
         />
       </PriceChartContainer>
 
@@ -802,6 +814,62 @@ const Dashboard: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* Total Vault Balance */}
+      {contractBalance !== null && (
+        <Card style={{
+          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%)',
+          border: '2px solid rgba(16, 185, 129, 0.4)'
+        }}>
+          <CardHeader>
+            <Wallet size={24} style={{ color: '#10b981' }} />
+            <CardTitle style={{ color: '#10b981' }}>Total Vault Balance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div style={{
+              fontSize: '1.5rem',
+              fontWeight: '700',
+              fontFamily: 'monospace',
+              color: '#10b981',
+              letterSpacing: '0.5px',
+              marginBottom: '0.5rem'
+            }}>
+              {parseFloat(contractBalance).toFixed(7)} XLM
+            </div>
+            <div style={{
+              fontSize: '0.8rem',
+              color: 'rgba(255, 255, 255, 0.6)',
+              marginBottom: '1rem'
+            }}>
+              Sum of all deposits from all users
+            </div>
+            {userStake !== null && (
+              <div style={{
+                fontSize: '0.75rem',
+                color: 'rgba(255, 255, 255, 0.5)',
+                marginBottom: '1rem',
+                paddingTop: '0.75rem',
+                borderTop: '1px solid rgba(255, 255, 255, 0.1)'
+              }}>
+                Your stake: {parseFloat(userStake).toFixed(7)} XLM
+              </div>
+            )}
+            <ActionButton 
+              onClick={() => setShowDepositOverlay(true)} 
+              disabled={isLoading}
+              style={{ 
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                fontSize: '0.875rem',
+                padding: '0.625rem 1.25rem',
+                marginTop: '0.5rem'
+              }}
+            >
+              <ArrowDownCircle size={16} style={{ marginRight: '0.5rem', display: 'inline' }} />
+              Deposit
+            </ActionButton>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Recent Transactions */}
       <Card>
         <CardHeader>
@@ -1075,6 +1143,12 @@ const Dashboard: React.FC = () => {
       <SendOverlay
         isOpen={isSendOpen}
         onClose={() => setIsSendOpen(false)}
+      />
+
+      {/* Deposit Overlay */}
+      <DepositOverlay
+        isOpen={showDepositOverlay}
+        onClose={() => setShowDepositOverlay(false)}
       />
 
       {/* NFT Collection Overlay */}

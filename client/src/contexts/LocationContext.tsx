@@ -209,8 +209,18 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
               console.log('📍 Location sent to GeoLink successfully:', result);
             }
           } catch (error) {
-            console.error('❌ Failed to send location to GeoLink:', error);
-            setGeoLinkStatus('error');
+            // Don't treat API key errors as critical - GeoLink is optional
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            if (errorMessage.includes('401') || errorMessage.includes('Unauthorized') || errorMessage.includes('Invalid or inactive API key')) {
+              console.warn('⚠️ GeoLink API key invalid. Location not sent to GeoLink (this is non-critical).');
+              // Don't set status to error for API key issues - just mark as disconnected
+              if (geoLinkStatus === 'connecting') {
+                setGeoLinkStatus('disconnected');
+              }
+            } else {
+              console.error('❌ Failed to send location to GeoLink:', error);
+              setGeoLinkStatus('error');
+            }
           }
         }, 100); // Small delay to prevent blocking
       } else {
@@ -295,8 +305,16 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
           setGeoLinkStatus('connected');
           console.log('✅ GeoLink connected successfully');
         } catch (error) {
-          console.error('❌ Failed to connect to GeoLink:', error);
-          setGeoLinkStatus('error');
+          // Don't treat API key errors as critical - GeoLink is optional
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          if (errorMessage.includes('401') || errorMessage.includes('Unauthorized') || errorMessage.includes('Invalid or inactive API key')) {
+            console.warn('⚠️ GeoLink API keys not valid for this instance. GeoLink features will be disabled.');
+            console.warn('   To enable GeoLink, register your API keys in the GeoLink service or use valid keys.');
+            setGeoLinkStatus('disconnected');
+          } else {
+            console.error('❌ Failed to connect to GeoLink:', error);
+            setGeoLinkStatus('error');
+          }
         }
       } else {
         console.warn('⚠️ GeoLink API keys not configured');
@@ -409,6 +427,13 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
   const syncVisibilityWithBackend = async (visible: boolean) => {
     try {
       const publicKey = localStorage.getItem('wallet_publicKey');
+      
+      // Skip sync if no wallet is connected
+      if (!publicKey) {
+        console.log('Skipping visibility sync - no wallet connected');
+        return;
+      }
+      
       const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001';
       
       console.log('Syncing visibility with backend:', { publicKey, visible, backendUrl });
@@ -584,11 +609,16 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
           // Don't clear existing NFTs if no new ones found - this prevents flickering
         }
       } catch (error) {
-        console.error('❌ Failed to get nearby NFTs from GeoLink:', error);
-        // Only clear NFTs if it's a real error, not a temporary network issue
-        if (error instanceof Error && error.message && error.message.includes('Failed to fetch')) {
+        // Handle different error types gracefully
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        
+        if (errorMessage.includes('401') || errorMessage.includes('Unauthorized') || errorMessage.includes('Invalid or inactive API key')) {
+          console.warn('⚠️ GeoLink API key invalid. NFT features disabled (this is non-critical).');
+          setNearbyNFTs([]);
+        } else if (errorMessage.includes('Failed to fetch')) {
           console.log('🔄 Network error - keeping existing NFTs');
         } else {
+          console.error('❌ Failed to get nearby NFTs from GeoLink:', error);
           console.log('🧹 Clearing NFTs due to error:', error);
           setNearbyNFTs([]);
         }

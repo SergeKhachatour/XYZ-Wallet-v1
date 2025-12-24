@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { TrendingUp, TrendingDown, Wallet, ChevronDown, ChevronUp, Radar } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, ChevronDown, ChevronUp, Radar, ArrowDownCircle } from 'lucide-react';
 import MiniRadar from './MiniRadar';
 import { useWallet } from '../contexts/WalletContext';
 
@@ -143,9 +143,10 @@ interface PriceChartProps {
   onUserClick?: (user: any) => void;
   userLatitude?: number;
   userLongitude?: number;
+  onDepositClick?: () => void;
 }
 
-const PriceChart: React.FC<PriceChartProps> = ({ nearbyNFTs = [], nearbyUsers = [], onRadarFullscreen, onNFTClick, onUserClick, userLatitude, userLongitude }) => {
+const PriceChart: React.FC<PriceChartProps> = ({ nearbyNFTs = [], nearbyUsers = [], onRadarFullscreen, onNFTClick, onUserClick, userLatitude, userLongitude, onDepositClick }) => {
   const [priceData, setPriceData] = useState<PriceData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -348,10 +349,49 @@ const PriceChart: React.FC<PriceChartProps> = ({ nearbyNFTs = [], nearbyUsers = 
                   fontSize: '1.1rem', 
                   fontWeight: '600',
                   fontFamily: 'monospace',
-                  color: '#10b981'
+                  color: '#10b981',
+                  marginBottom: '0.125rem'
                 }}>
                   {parseFloat(contractBalance).toFixed(7)} XLM
                 </div>
+                {onDepositClick && (
+                  <div style={{ 
+                    display: 'flex',
+                    justifyContent: 'center',
+                    marginTop: '0.125rem'
+                  }}>
+                    <button
+                      onClick={onDepositClick}
+                      style={{
+                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '0.375rem 0.625rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.25rem',
+                        fontSize: '0.7rem',
+                        color: 'white',
+                        fontWeight: '500',
+                        transition: 'all 0.2s ease',
+                        boxShadow: '0 2px 4px rgba(16, 185, 129, 0.3)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.05)';
+                        e.currentTarget.style.boxShadow = '0 4px 8px rgba(16, 185, 129, 0.4)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)';
+                        e.currentTarget.style.boxShadow = '0 2px 4px rgba(16, 185, 129, 0.3)';
+                      }}
+                      title="Deposit to Smart Wallet"
+                    >
+                      <ArrowDownCircle size={12} />
+                      <span>Deposit</span>
+                    </button>
+                  </div>
+                )}
                 <div style={{ 
                   fontSize: '0.7rem',
                   color: 'rgba(255, 255, 255, 0.6)',

@@ -33,6 +33,7 @@ interface WalletContextType {
   connectWithPasskey: () => Promise<boolean>;
   createWalletWithPasskey: () => Promise<boolean>;
   createWalletWithZKProof: () => Promise<boolean>; // New ZK proof wallet creation
+  importWalletFromSecretKey: (secretKey: string) => Promise<boolean>; // Import existing wallet from secret key
   disconnectAccount: () => void;
   refreshBalance: () => Promise<void>;
   refreshTransactions: () => Promise<void>;
@@ -215,7 +216,10 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
               getContractBalance();
             }, 100);
           } else {
-            console.warn('⚠️ Passkey data found but no public key in storage');
+            console.warn('⚠️ Passkey data found but no public key in storage - clearing orphaned passkey data');
+            // Clear orphaned passkey data since there's no associated wallet
+            setPasskeyCredential(null);
+            await passkeyService.disablePasskey();
           }
         } else {
           console.log('ℹ️ No passkey data found in storage');
@@ -370,6 +374,126 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('ZK wallet creation failed:', error);
       toast.error(`ZK wallet creation failed: ${error instanceof Error ? error.message : String(error)}`);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const importWalletFromSecretKey = async (secretKey: string): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      toast('Importing wallet...');
+      
+      // Validate and create keypair from secret key
+      let keypair: StellarSdk.Keypair;
+      try {
+        keypair = StellarSdk.Keypair.fromSecret(secretKey);
+      } catch (error) {
+        console.error('Failed to create keypair from secret key:', error);
+        toast.error('Invalid secret key format');
+        return false;
+      }
+      
+      const publicKey = keypair.publicKey();
+      
+      // Check if wallet already exists in localStorage
+      const existingPublicKey = localStorage.getItem('wallet_publicKey');
+      if (existingPublicKey && existingPublicKey !== publicKey) {
+        const confirm = window.confirm(
+          'A different wallet is already connected. Importing this wallet will disconnect the current one. Continue?'
+        );
+        if (!confirm) {
+          return false;
+        }
+        // Clear existing wallet state
+        setPublicKey(null);
+        setIsConnected(false);
+        setBalances([]);
+        setTransactions([]);
+        setPasskeyCredential(null);
+        localStorage.removeItem('wallet_publicKey');
+        localStorage.removeItem('passkey_credential');
+      }
+      
+      // Register passkey for this imported wallet
+      const passkeyResult = await passkeyService.registerPasskey(publicKey);
+      
+      if (passkeyResult && passkeyResult.credentialId && passkeyResult.publicKey) {
+        // Store public key immediately
+        localStorage.setItem('wallet_publicKey', publicKey);
+        
+        // Create passkey credential object
+        const passkeyCredentialData: PasskeyCredential = {
+          id: passkeyResult.credentialId,
+          publicKey: passkeyResult.publicKey,
+          counter: 0,
+          deviceType: navigator.userAgent.includes('iPhone') ? 'iOS' : 'Other',
+          createdAt: new Date().toISOString(),
+        };
+        
+        // Store passkey credential in state
+        setPasskeyCredential(passkeyCredentialData);
+        
+        // Store passkey credential to localStorage
+        await passkeyService.storePasskeyData(
+          passkeyResult.credentialId,
+          passkeyResult.publicKey
+        );
+        
+        // Encrypt and store the secret key
+        const sessionSecret = passkeyCredentialData.id || publicKey;
+        const kekParams: KEKDerivationParams = {
+          srpSecret: sessionSecret,
+          salt: btoa(publicKey)
+        };
+        
+        const encryptedData = await encryptionService.encryptAndStoreSecretKey(
+          secretKey,
+          kekParams
+        );
+        
+        // Store encrypted data
+        encryptionService.storeEncryptedWalletData(encryptedData);
+        
+        setPublicKey(publicKey);
+        setIsConnected(true);
+        
+        toast.success('Wallet imported successfully!');
+        
+        // Register signer on smart wallet contract (required for deposits)
+        // This happens automatically during first deposit, but we do it here proactively
+        try {
+          console.log('🔧 Registering signer on smart wallet contract...');
+          const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001';
+          const contractId = process.env.REACT_APP_SMART_WALLET_CONTRACT_ID;
+          
+          if (contractId) {
+            // The registration will happen automatically on first deposit attempt
+            // We don't need to do it here since it requires WebAuthn authentication
+            // which happens during the deposit flow
+            console.log('ℹ️ Signer registration will happen automatically on first deposit');
+          }
+        } catch (regError) {
+          console.warn('⚠️ Could not pre-register signer (will happen on first deposit):', regError);
+          // This is non-critical - registration will happen on first deposit
+        }
+        
+        // Refresh balance and transactions
+        setTimeout(() => {
+          refreshBalance();
+          refreshTransactions();
+          getContractBalance();
+        }, 100);
+        
+        return true;
+      } else {
+        toast.error('Failed to register passkey for imported wallet');
+        return false;
+      }
+    } catch (error) {
+      console.error('Wallet import failed:', error);
+      toast.error(`Failed to import wallet: ${error instanceof Error ? error.message : String(error)}`);
       return false;
     } finally {
       setIsLoading(false);
@@ -1806,11 +1930,24 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
           body: JSON.stringify(requestBody),
         });
 
-        const data = await response.json();
+        let data;
+        try {
+          data = await response.json();
+        } catch (jsonError) {
+          // If response is not JSON, read as text
+          const text = await response.text();
+          console.error('❌ Deposit request failed - non-JSON response:', {
+            status: response.status,
+            statusText: response.statusText,
+            responseText: text.substring(0, 500)
+          });
+          toast.error(`Deposit failed: ${response.statusText || 'Server error'}. Check server logs for details.`);
+          return false;
+        }
         
         if (!response.ok) {
           const errorMessage = data.error || data.message || 'Deposit failed';
-          const errorDetails = data.details || data.note || data.message;
+          const errorDetails = data.details || data.note || data.message || JSON.stringify(data);
           const explorerUrl = data.explorerUrl;
           
           console.error('❌ Deposit request failed:', {
@@ -1818,7 +1955,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
             statusText: response.statusText,
             error: errorMessage,
             details: errorDetails,
-            explorerUrl: explorerUrl
+            explorerUrl: explorerUrl,
+            fullResponse: data
           });
           
           // Build error message with Stellar Explorer link if available
@@ -2004,6 +2142,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     connectWithPasskey,
     createWalletWithPasskey,
     createWalletWithZKProof,
+    importWalletFromSecretKey,
     disconnectAccount,
     refreshBalance,
     refreshTransactions,

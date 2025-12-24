@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
-import { Plus, Send, Download, RefreshCw, QrCode, Copy, Camera, X, Shield, LogIn, ArrowDownCircle, ExternalLink, Info, Code, Wallet as WalletIcon } from 'lucide-react';
+import { Plus, Send, Download, RefreshCw, QrCode, Copy, Camera, X, Shield, ArrowDownCircle, ExternalLink, Info, Code, Wallet as WalletIcon, Key, LogOut } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useLocation } from '../contexts/LocationContext';
-import AuthModal from '../components/AuthModal';
 import DepositOverlay from '../components/DepositOverlay';
+import ImportWalletModal from '../components/ImportWalletModal';
 import SendOverlay from '../components/SendOverlay';
 import ReceiveOverlay from '../components/ReceiveOverlay';
 import toast from 'react-hot-toast';
@@ -481,6 +481,8 @@ const Wallet: React.FC = () => {
     // connectWithPasskey, // Reserved for future use
     createWalletWithPasskey,
     createWalletWithZKProof, // Added ZK proof wallet creation
+    importWalletFromSecretKey, // Import existing wallet from secret key
+    disconnectAccount, // Disconnect current wallet
     contractBalance,
     userStake,
     getContractBalance,
@@ -491,8 +493,8 @@ const Wallet: React.FC = () => {
 
   const [showQRCode, setShowQRCode] = useState(false);
   const [qrCodeDataURL, setQrCodeDataURL] = useState<string>('');
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [showDepositOverlay, setShowDepositOverlay] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [isReceiveOpen, setIsReceiveOpen] = useState(false);
   const [isSendOpen, setIsSendOpen] = useState(false);
 
@@ -550,28 +552,35 @@ const Wallet: React.FC = () => {
           <div style={{ textAlign: 'center', padding: '2rem' }}>
             <h2 style={{ marginBottom: '1rem' }}>XYZ-Wallet</h2>
             <p style={{ color: 'rgba(255, 255, 255, 0.7)', marginBottom: '2rem' }}>
-              Secure, zero-knowledge authentication with SRP-6a and passkey support.
+              Secure wallet with passkey and zero-knowledge proof authentication.
             </p>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '300px', margin: '0 auto' }}>
-              <Button onClick={createWalletWithZKProof} disabled={isLoading} style={{ background: 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)' }}>
-                <Shield size={20} />
-                {isLoading ? 'Creating...' : 'Create ZK Proof Wallet'}
-              </Button>
-              
-              <Button onClick={createWalletWithPasskey} disabled={isLoading} style={{ background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.3)' }}>
+              <Button onClick={createWalletWithPasskey} disabled={isLoading} style={{ background: 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)' }}>
                 <Shield size={20} />
                 {isLoading ? 'Creating...' : 'Create Passkey Wallet'}
               </Button>
               
-              <Button onClick={() => setShowAuthModal(true)} disabled={isLoading} style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-                <LogIn size={20} />
-                {isLoading ? 'Loading...' : 'Advanced Authentication'}
+              <Button onClick={createWalletWithZKProof} disabled={isLoading} style={{ background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.3)' }}>
+                <Shield size={20} />
+                {isLoading ? 'Creating...' : 'Create ZK Proof Wallet'}
+              </Button>
+              
+              <Button onClick={() => setShowImportModal(true)} disabled={isLoading} style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+                <Key size={20} />
+                {isLoading ? 'Importing...' : 'Import Existing Wallet'}
               </Button>
             </div>
           </div>
         </Section>
       </WalletContainer>
+      
+      {/* Import Wallet Modal - must be here to render when not connected */}
+      <ImportWalletModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImport={importWalletFromSecretKey}
+      />
       </>
     );
   }
@@ -603,6 +612,19 @@ const Wallet: React.FC = () => {
             <Button onClick={refreshBalance} disabled={isLoading}>
               <RefreshCw size={20} />
               Refresh
+            </Button>
+            <Button 
+              onClick={() => {
+                if (window.confirm('This will disconnect your current wallet. You can then import or create a different wallet. Continue?')) {
+                  disconnectAccount();
+                }
+              }} 
+              disabled={isLoading}
+              style={{ background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.4)' }}
+              title="Disconnect current wallet"
+            >
+              <LogOut size={20} />
+              Disconnect
             </Button>
           </div>
         </SectionHeader>
@@ -654,10 +676,10 @@ const Wallet: React.FC = () => {
         </div>
       </Section>
 
-      {/* Balances */}
+      {/* Balances & Smart Wallet */}
       <Section>
         <SectionHeader>
-          <SectionTitle>Balances</SectionTitle>
+          <SectionTitle>Balances & Smart Wallet</SectionTitle>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             <Button onClick={() => setShowDepositOverlay(true)} style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' }}>
               <ArrowDownCircle size={20} />
@@ -674,162 +696,202 @@ const Wallet: React.FC = () => {
           </div>
         </SectionHeader>
         
-        {balances.length > 0 ? (
-          <BalanceList>
-            {balances.map((balance, index) => (
-              <BalanceItem key={index}>
-                <AssetInfo>
-                  <AssetCode>{balance.asset}</AssetCode>
-                  <AssetType>{balance.assetType}</AssetType>
-                </AssetInfo>
-                <AssetBalance>{balance.balance}</AssetBalance>
-              </BalanceItem>
-            ))}
-          </BalanceList>
-        ) : (
-          <EmptyState>
-            No balances found. Your wallet might be new or not funded.
-          </EmptyState>
-        )}
-      </Section>
-
-      {/* Smart Wallet Vault & Stake */}
-      {(contractBalance !== null || userStake !== null) && (
-        <Section>
-          <SectionHeader>
-            <SectionTitle>Smart Wallet Vault</SectionTitle>
-          </SectionHeader>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {/* User's Personal Stake */}
-            {userStake !== null && (
-              <div style={{
-                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.15) 100%)',
-                border: '2px solid rgba(59, 130, 246, 0.4)',
-                borderRadius: '12px',
-                padding: '1.5rem',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.75rem',
-                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.2)'
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {/* Wallet Balances */}
+          {balances.length > 0 ? (
+            <div>
+              <div style={{ 
+                fontSize: '0.9rem', 
+                color: 'rgba(255, 255, 255, 0.7)', 
+                fontWeight: '500',
+                marginBottom: '0.75rem'
               }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  marginBottom: '0.5rem'
-                }}>
-                  <div style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '50%',
-                    background: 'rgba(59, 130, 246, 0.2)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    border: '2px solid rgba(59, 130, 246, 0.4)'
-                  }}>
-                    <WalletIcon size={20} style={{ color: '#60a5fa' }} />
-                  </div>
-                  <div>
-                    <div style={{
-                      fontSize: '0.85rem',
-                      color: 'rgba(255, 255, 255, 0.7)',
-                      fontWeight: '500'
-                    }}>
-                      Your Stake
-                    </div>
-                    <div style={{
-                      fontSize: '0.75rem',
-                      color: 'rgba(255, 255, 255, 0.5)'
-                    }}>
-                      Your total deposits in the contract
-                    </div>
-                  </div>
-                </div>
-                <div style={{
-                  fontSize: '1.75rem',
-                  fontWeight: '700',
-                  fontFamily: 'monospace',
-                  color: '#60a5fa',
-                  letterSpacing: '0.5px'
-                }}>
-                  {parseFloat(userStake).toFixed(7)} XLM
-                </div>
+                Wallet Balances
               </div>
-            )}
-
-            {/* Total Vault Balance */}
-            {contractBalance !== null && (
-              <div style={{
-                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%)',
-                border: '2px solid rgba(16, 185, 129, 0.4)',
-                borderRadius: '12px',
-                padding: '1.5rem',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.75rem',
-                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)'
+              <BalanceList>
+                {balances.map((balance, index) => (
+                  <BalanceItem key={index}>
+                    <AssetInfo>
+                      <AssetCode>{balance.asset}</AssetCode>
+                      <AssetType>{balance.assetType}</AssetType>
+                    </AssetInfo>
+                    <AssetBalance>{balance.balance}</AssetBalance>
+                  </BalanceItem>
+                ))}
+              </BalanceList>
+            </div>
+          ) : (
+            <div>
+              <div style={{ 
+                fontSize: '0.9rem', 
+                color: 'rgba(255, 255, 255, 0.7)', 
+                fontWeight: '500',
+                marginBottom: '0.75rem'
               }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  marginBottom: '0.5rem'
-                }}>
+                Wallet Balances
+              </div>
+              <EmptyState>
+                No balances found. Your wallet might be new or not funded.
+              </EmptyState>
+            </div>
+          )}
+
+          {/* Smart Wallet Vault & Stake */}
+          {(contractBalance !== null || userStake !== null) && (
+            <div>
+              <div style={{ 
+                fontSize: '0.9rem', 
+                color: 'rgba(255, 255, 255, 0.7)', 
+                fontWeight: '500',
+                marginBottom: '0.75rem'
+              }}>
+                Smart Wallet
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {/* User's Personal Stake */}
+                {userStake !== null && (
                   <div style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '50%',
-                    background: 'rgba(16, 185, 129, 0.2)',
+                    background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.15) 100%)',
+                    border: '2px solid rgba(59, 130, 246, 0.4)',
+                    borderRadius: '12px',
+                    padding: '1.5rem',
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    border: '2px solid rgba(16, 185, 129, 0.4)'
+                    flexDirection: 'column',
+                    gap: '0.75rem',
+                    boxShadow: '0 4px 12px rgba(59, 130, 246, 0.2)'
                   }}>
-                    <WalletIcon size={20} style={{ color: '#10b981' }} />
-                  </div>
-                  <div>
                     <div style={{
-                      fontSize: '0.85rem',
-                      color: 'rgba(255, 255, 255, 0.7)',
-                      fontWeight: '500'
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      marginBottom: '0.5rem'
                     }}>
-                      Total Vault Balance
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        background: 'rgba(59, 130, 246, 0.2)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: '2px solid rgba(59, 130, 246, 0.4)'
+                      }}>
+                        <WalletIcon size={20} style={{ color: '#60a5fa' }} />
+                      </div>
+                      <div>
+                        <div style={{
+                          fontSize: '0.85rem',
+                          color: 'rgba(255, 255, 255, 0.7)',
+                          fontWeight: '500'
+                        }}>
+                          Your Stake
+                        </div>
+                        <div style={{
+                          fontSize: '0.75rem',
+                          color: 'rgba(255, 255, 255, 0.5)'
+                        }}>
+                          Your total deposits in the contract
+                        </div>
+                      </div>
                     </div>
                     <div style={{
-                      fontSize: '0.75rem',
-                      color: 'rgba(255, 255, 255, 0.5)'
+                      fontSize: '1.75rem',
+                      fontWeight: '700',
+                      fontFamily: 'monospace',
+                      color: '#60a5fa',
+                      letterSpacing: '0.5px'
                     }}>
-                      Sum of all deposits from all users
+                      {parseFloat(userStake).toFixed(7)} XLM
                     </div>
                   </div>
-                </div>
-                <div style={{
-                  fontSize: '1.75rem',
-                  fontWeight: '700',
-                  fontFamily: 'monospace',
-                  color: '#10b981',
-                  letterSpacing: '0.5px'
-                }}>
-                  {parseFloat(contractBalance).toFixed(7)} XLM
-                </div>
-                {userStake !== null && contractBalance !== null && (
+                )}
+
+                {/* Total Vault Balance */}
+                {contractBalance !== null && (
                   <div style={{
-                    marginTop: '0.5rem',
-                    paddingTop: '0.75rem',
-                    borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-                    fontSize: '0.8rem',
-                    color: 'rgba(255, 255, 255, 0.6)'
+                    background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%)',
+                    border: '2px solid rgba(16, 185, 129, 0.4)',
+                    borderRadius: '12px',
+                    padding: '1.5rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.75rem',
+                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)'
                   }}>
-                    Other users' stake: {(parseFloat(contractBalance) - parseFloat(userStake)).toFixed(7)} XLM
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      marginBottom: '0.5rem'
+                    }}>
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        background: 'rgba(16, 185, 129, 0.2)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: '2px solid rgba(16, 185, 129, 0.4)'
+                      }}>
+                        <WalletIcon size={20} style={{ color: '#10b981' }} />
+                      </div>
+                      <div>
+                        <div style={{
+                          fontSize: '0.85rem',
+                          color: 'rgba(255, 255, 255, 0.7)',
+                          fontWeight: '500'
+                        }}>
+                          Total Vault Balance
+                        </div>
+                        <div style={{
+                          fontSize: '0.75rem',
+                          color: 'rgba(255, 255, 255, 0.5)'
+                        }}>
+                          Sum of all deposits from all users
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{
+                      fontSize: '1.75rem',
+                      fontWeight: '700',
+                      fontFamily: 'monospace',
+                      color: '#10b981',
+                      letterSpacing: '0.5px'
+                    }}>
+                      {parseFloat(contractBalance).toFixed(7)} XLM
+                    </div>
+                    {userStake !== null && contractBalance !== null && (
+                      <div style={{
+                        marginTop: '0.5rem',
+                        paddingTop: '0.75rem',
+                        borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                        fontSize: '0.8rem',
+                        color: 'rgba(255, 255, 255, 0.6)'
+                      }}>
+                        Other users' stake: {(parseFloat(contractBalance) - parseFloat(userStake)).toFixed(7)} XLM
+                      </div>
+                    )}
+                    <Button 
+                      onClick={() => setShowDepositOverlay(true)} 
+                      disabled={isLoading}
+                      style={{ 
+                        marginTop: '1rem',
+                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                        fontSize: '0.875rem',
+                        padding: '0.625rem 1.25rem'
+                      }}
+                    >
+                      <ArrowDownCircle size={16} style={{ marginRight: '0.5rem' }} />
+                      Deposit
+                    </Button>
                   </div>
                 )}
               </div>
-            )}
-          </div>
-        </Section>
-      )}
+            </div>
+          )}
+        </div>
+      </Section>
 
       {/* Smart Wallet Contract Information */}
       {contractBalance !== null && (
@@ -1010,24 +1072,7 @@ const Wallet: React.FC = () => {
         )}
       </Section>
 
-      {/* Authentication Modal */}
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        onSuccess={(authData) => {
-          console.log('Authentication successful:', authData);
-          toast.success('Authentication successful!');
-          setShowAuthModal(false);
-          // Handle different auth types
-          if (authData.type === 'srp') {
-            // Handle SRP authentication
-            console.log('SRP auth data:', authData);
-          } else if (authData.type === 'passkey') {
-            // Handle passkey authentication
-            console.log('Passkey auth data:', authData);
-          }
-        }}
-      />
+      {/* Authentication Modal - Removed: Email/password SRP authentication no longer needed */}
 
       {/* Deposit Overlay */}
       <DepositOverlay
@@ -1049,7 +1094,15 @@ const Wallet: React.FC = () => {
         isOpen={isSendOpen}
         onClose={() => setIsSendOpen(false)}
       />
+
     </WalletContainer>
+    
+    {/* Import Wallet Modal - rendered outside container for proper z-index */}
+      <ImportWalletModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImport={importWalletFromSecretKey}
+      />
     </>
   );
 };

@@ -288,7 +288,7 @@ impl SmartWalletContract {
 
         // Get the WebAuthn verifier contract address
         let verifier_address = e.storage().instance().get(&Symbol::new(e, "verifier"))
-            .unwrap_or(Address::from_string(&String::from_str(e, "CBPGL7FWVKVQKRYRU32ZRH7RYKJ3T5UBI4KF2RVLT3BP2UXY7HPAVCWL")));
+            .unwrap_or(Address::from_string(&String::from_str(e, "CARLXTWOUIRQVQILCBSA3CNG6QIVO3PIPKF66LDHQXGQGUAAWPFLND3L")));
 
         // Validate signature length
         let sig_len = webauthn_signature.len();
@@ -467,7 +467,7 @@ impl SmartWalletContract {
 
         // Get the WebAuthn verifier contract address
         let verifier_address = e.storage().instance().get(&Symbol::new(e, "verifier"))
-            .unwrap_or(Address::from_string(&String::from_str(e, "CBPGL7FWVKVQKRYRU32ZRH7RYKJ3T5UBI4KF2RVLT3BP2UXY7HPAVCWL")));
+            .unwrap_or(Address::from_string(&String::from_str(e, "CARLXTWOUIRQVQILCBSA3CNG6QIVO3PIPKF66LDHQXGQGUAAWPFLND3L")));
 
         // Validate signature length
         let sig_len = webauthn_signature.len();
@@ -618,6 +618,6 @@ impl SmartWalletContract {
     /// Get the WebAuthn verifier contract address
     pub fn get_verifier_address(e: &Env) -> Address {
         e.storage().instance().get(&Symbol::new(e, "verifier"))
-            .unwrap_or(Address::from_string(&String::from_str(e, "CBPGL7FWVKVQKRYRU32ZRH7RYKJ3T5UBI4KF2RVLT3BP2UXY7HPAVCWL")))
+            .unwrap_or(Address::from_string(&String::from_str(e, "CARLXTWOUIRQVQILCBSA3CNG6QIVO3PIPKF66LDHQXGQGUAAWPFLND3L")))
     }
 }

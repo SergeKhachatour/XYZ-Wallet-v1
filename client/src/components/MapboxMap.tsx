@@ -2083,10 +2083,6 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
     <>
       <MapContainer>
         <MapHeader>
-          <MapTitle>
-            🌍 <span>Global Map</span>
-          </MapTitle>
-          <GeoLinkStatus />
           <ViewControls>
             {/* Map Style and View Controls */}
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -2103,22 +2099,13 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
                 <option value="satellite-streets">🛰️ Satellite Streets</option>
               </StyleSelect>
               
-              <div style={{ display: 'flex', gap: '0.25rem' }}>
-                <ViewButton 
-                  $active={currentView === 'globe'} 
-                  onClick={() => handleViewChange('globe')}
-                  style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}
-                >
-                  🌍
-                </ViewButton>
-                <ViewButton 
-                  $active={currentView === 'flat'} 
-                  onClick={() => handleViewChange('flat')}
-                  style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}
-                >
-                  📐
-                </ViewButton>
-              </div>
+              <ViewButton 
+                $active={currentView === 'globe'} 
+                onClick={() => handleViewChange('globe')}
+                style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}
+              >
+                🌍
+              </ViewButton>
               
               <ZoomToMeButton 
                 onClick={handleZoomToMe} 
@@ -2131,6 +2118,8 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
               <FullscreenButton onClick={handleFullscreenToggle} title="Expand to fullscreen">
                 <Maximize2 size={16} />
               </FullscreenButton>
+              
+              <GeoLinkStatus />
             </div>
             {!isLocationEnabled && (
               <LocationButton onClick={enableLocation}>
@@ -2208,25 +2197,25 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
             {isLocationEnabled && (latitude && longitude) && (
               <div style={{ 
                 display: 'flex', 
-                gap: '0.5rem', 
+                gap: '0.25rem', 
                 alignItems: 'center', 
                 flexWrap: 'wrap',
-                marginTop: '0.5rem',
-                padding: '0.5rem',
+                marginTop: '0.25rem',
+                padding: '0.25rem 0.375rem',
                 background: 'rgba(255, 255, 255, 0.05)',
-                borderRadius: '8px',
+                borderRadius: '6px',
                 border: '1px solid rgba(255, 255, 255, 0.1)'
               }}>
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                  <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: '0.125rem', alignItems: 'center' }}>
                     <input
                       type="checkbox"
                       id="mapShowAllUsers"
                       checked={showAllUsers}
                       onChange={(e) => setShowAllUsers(e.target.checked)}
-                      style={{ marginRight: '0.25rem', transform: 'scale(0.8)' }}
+                      style={{ marginRight: '0.125rem', transform: 'scale(0.7)' }}
                     />
-                    <label htmlFor="mapShowAllUsers" style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.8)' }}>
+                    <label htmlFor="mapShowAllUsers" style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.8)' }}>
                       Global
                     </label>
                   </div>
@@ -2239,27 +2228,27 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
                         background: 'rgba(255, 255, 255, 0.1)',
                         border: '1px solid rgba(255, 255, 255, 0.3)',
                         borderRadius: '4px',
-                        padding: '0.25rem 0.5rem',
+                        padding: '0.2rem 0.4rem',
                         color: 'white',
-                        fontSize: '0.7rem',
-                        minWidth: '80px'
+                        fontSize: '0.65rem',
+                        minWidth: '70px'
                       }}
                     >
-                      <option value={1}>1km</option>
-                      <option value={5}>5km</option>
-                      <option value={10}>10km</option>
-                      <option value={25}>25km</option>
-                      <option value={50}>50km</option>
-                      <option value={100}>100km</option>
-                      <option value={250}>250km</option>
-                      <option value={500}>500km</option>
-                      <option value={1000}>1000km</option>
+                      <option value={1} style={{ background: '#000000', color: '#FFFFFF' }}>1km</option>
+                      <option value={5} style={{ background: '#000000', color: '#FFFFFF' }}>5km</option>
+                      <option value={10} style={{ background: '#000000', color: '#FFFFFF' }}>10km</option>
+                      <option value={25} style={{ background: '#000000', color: '#FFFFFF' }}>25km</option>
+                      <option value={50} style={{ background: '#000000', color: '#FFFFFF' }}>50km</option>
+                      <option value={100} style={{ background: '#000000', color: '#FFFFFF' }}>100km</option>
+                      <option value={250} style={{ background: '#000000', color: '#FFFFFF' }}>250km</option>
+                      <option value={500} style={{ background: '#000000', color: '#FFFFFF' }}>500km</option>
+                      <option value={1000} style={{ background: '#000000', color: '#FFFFFF' }}>1000km</option>
                     </select>
                   )}
                   
                   <LocationButton 
                     onClick={() => getNearbyUsers(searchRadius, showAllUsers)}
-                    style={{ fontSize: '0.7rem', padding: '0.25rem 0.5rem' }}
+                    style={{ fontSize: '0.65rem', padding: '0.2rem 0.4rem' }}
                   >
                     {showAllUsers ? '🌍 All' : `🔍 ${searchRadius}km`}
                   </LocationButton>
@@ -2329,7 +2318,6 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
       <FullscreenOverlay $isOpen={isFullscreen}>
         <FullscreenHeader>
           <FullscreenTitle>
-            🌍 Global Map
           </FullscreenTitle>
           <FullscreenControls>
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -2354,22 +2342,13 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
                 <option value="satellite-streets">🛰️ Satellite Streets</option>
               </StyleSelect>
               
-              <div style={{ display: 'flex', gap: '0.25rem' }}>
-                <ViewButton 
-                  $active={currentView === 'globe'} 
-                  onClick={() => handleViewChange('globe')}
-                  style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}
-                >
-                  🌍
-                </ViewButton>
-                <ViewButton 
-                  $active={currentView === 'flat'} 
-                  onClick={() => handleViewChange('flat')}
-                  style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}
-                >
-                  📐
-                </ViewButton>
-              </div>
+              <ViewButton 
+                $active={currentView === 'globe'} 
+                onClick={() => handleViewChange('globe')}
+                style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}
+              >
+                🌍
+              </ViewButton>
               
               <CloseButton onClick={handleCloseFullscreen} title="Close fullscreen">
                 <Minimize2 size={16} />
@@ -2380,25 +2359,25 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
             {isLocationEnabled && (latitude && longitude) && (
               <div style={{ 
                 display: 'flex', 
-                gap: '0.5rem', 
+                gap: '0.25rem', 
                 alignItems: 'center', 
                 flexWrap: 'wrap',
-                marginTop: '0.5rem',
-                padding: '0.5rem',
+                marginTop: '0.25rem',
+                padding: '0.25rem 0.375rem',
                 background: 'rgba(255, 255, 255, 0.05)',
-                borderRadius: '8px',
+                borderRadius: '6px',
                 border: '1px solid rgba(255, 255, 255, 0.1)'
               }}>
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                  <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: '0.125rem', alignItems: 'center' }}>
                     <input
                       type="checkbox"
                       id="fullscreenShowAllUsers"
                       checked={showAllUsers}
                       onChange={(e) => setShowAllUsers(e.target.checked)}
-                      style={{ marginRight: '0.25rem', transform: 'scale(0.8)' }}
+                      style={{ marginRight: '0.125rem', transform: 'scale(0.7)' }}
                     />
-                    <label htmlFor="fullscreenShowAllUsers" style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.8)' }}>
+                    <label htmlFor="fullscreenShowAllUsers" style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.8)' }}>
                       Global
                     </label>
                   </div>
@@ -2411,27 +2390,27 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
                         background: 'rgba(255, 255, 255, 0.1)',
                         border: '1px solid rgba(255, 255, 255, 0.3)',
                         borderRadius: '4px',
-                        padding: '0.25rem 0.5rem',
+                        padding: '0.2rem 0.4rem',
                         color: 'white',
-                        fontSize: '0.7rem',
-                        minWidth: '80px'
+                        fontSize: '0.65rem',
+                        minWidth: '70px'
                       }}
                     >
-                      <option value={1}>1km</option>
-                      <option value={5}>5km</option>
-                      <option value={10}>10km</option>
-                      <option value={25}>25km</option>
-                      <option value={50}>50km</option>
-                      <option value={100}>100km</option>
-                      <option value={250}>250km</option>
-                      <option value={500}>500km</option>
-                      <option value={1000}>1000km</option>
+                      <option value={1} style={{ background: '#000000', color: '#FFFFFF' }}>1km</option>
+                      <option value={5} style={{ background: '#000000', color: '#FFFFFF' }}>5km</option>
+                      <option value={10} style={{ background: '#000000', color: '#FFFFFF' }}>10km</option>
+                      <option value={25} style={{ background: '#000000', color: '#FFFFFF' }}>25km</option>
+                      <option value={50} style={{ background: '#000000', color: '#FFFFFF' }}>50km</option>
+                      <option value={100} style={{ background: '#000000', color: '#FFFFFF' }}>100km</option>
+                      <option value={250} style={{ background: '#000000', color: '#FFFFFF' }}>250km</option>
+                      <option value={500} style={{ background: '#000000', color: '#FFFFFF' }}>500km</option>
+                      <option value={1000} style={{ background: '#000000', color: '#FFFFFF' }}>1000km</option>
                     </select>
                   )}
                   
                   <LocationButton 
                     onClick={() => getNearbyUsers(searchRadius, showAllUsers)}
-                    style={{ fontSize: '0.7rem', padding: '0.25rem 0.5rem' }}
+                    style={{ fontSize: '0.65rem', padding: '0.2rem 0.4rem' }}
                   >
                     {showAllUsers ? '🌍 All' : `🔍 ${searchRadius}km`}
                   </LocationButton>

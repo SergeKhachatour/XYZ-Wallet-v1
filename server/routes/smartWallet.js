@@ -1135,6 +1135,19 @@ router.post('/execute-transaction', async (req, res) => {
           }
         }
         
+        // Validate public key format before storing (same validation as deposit route)
+        if (passkeyPubkeyBytes.length !== 65) {
+          throw new Error(`Passkey public key must be exactly 65 bytes, got ${passkeyPubkeyBytes.length}`);
+        }
+        if (passkeyPubkeyBytes[0] !== 0x04) {
+          throw new Error(`Passkey public key must start with 0x04 (uncompressed format), got 0x${passkeyPubkeyBytes[0].toString(16)}`);
+        }
+        console.log('✅ Passkey public key validated (execute-payment):', {
+          length: passkeyPubkeyBytes.length,
+          firstByte: `0x${passkeyPubkeyBytes[0].toString(16)}`,
+          preview: passkeyPubkeyBytes.slice(0, 8).toString('hex') + '...'
+        });
+        
         const passkeyPubkeyScVal = StellarSdk.xdr.ScVal.scvBytes(passkeyPubkeyBytes);
         const rpIdHashScVal = StellarSdk.xdr.ScVal.scvBytes(rpIdHash);
         
@@ -3610,6 +3623,69 @@ router.post('/deposit', async (req, res) => {
                 if (isRegistered === true || isRegistered === 1) {
                   signerAlreadyRegistered = true;
                   console.log('✅ Signer is already registered!');
+                  
+                  // Check if the stored public key matches the current passkey public key
+                  // If not, we need to re-register with the new public key
+                  try {
+                    const getPubkeyOp = contract.call('get_passkey_pubkey', userScVal);
+                    const getPubkeyTx = new StellarSdk.TransactionBuilder(
+                      new StellarSdk.Account(userPublicKey, accountSequence),
+                      {
+                        fee: StellarSdk.BASE_FEE,
+                        networkPassphrase: networkPassphrase
+                      }
+                    )
+                      .addOperation(getPubkeyOp)
+                      .setTimeout(30)
+                      .build();
+                    
+                    const preparedGetPubkeyTx = await sorobanServer.prepareTransaction(getPubkeyTx);
+                    const getPubkeyResult = await sorobanServer.simulateTransaction(preparedGetPubkeyTx);
+                    
+                    if (getPubkeyResult && getPubkeyResult.result) {
+                      let storedPubkeyScVal;
+                      if (getPubkeyResult.result.retval && typeof getPubkeyResult.result.retval === 'string') {
+                        storedPubkeyScVal = StellarSdk.xdr.ScVal.fromXDR(getPubkeyResult.result.retval, 'base64');
+                      } else if (getPubkeyResult.result.retval && typeof getPubkeyResult.result.retval === 'object') {
+                        storedPubkeyScVal = getPubkeyResult.result.retval;
+                      }
+                      
+                      if (storedPubkeyScVal && storedPubkeyScVal.switch && storedPubkeyScVal.switch().name === 'scvBytes') {
+                        const storedPubkeyBytes = storedPubkeyScVal.bytes();
+                        const storedPubkeyHex = Buffer.from(storedPubkeyBytes).toString('hex');
+                        
+                        // Extract current passkey public key
+                        const spkiBytes = Buffer.from(passkeyPublicKey, 'base64');
+                        let currentPubkeyBytes;
+                        if (spkiBytes.length === 65 && spkiBytes[0] === 0x04) {
+                          currentPubkeyBytes = spkiBytes;
+                        } else {
+                          currentPubkeyBytes = extractPublicKeyFromSPKI(spkiBytes);
+                        }
+                        const currentPubkeyHex = Buffer.from(currentPubkeyBytes).toString('hex');
+                        
+                        console.log('🔍 Comparing stored vs current passkey public key:', {
+                          storedLength: storedPubkeyBytes.length,
+                          currentLength: currentPubkeyBytes.length,
+                          storedPreview: storedPubkeyHex.substring(0, 16) + '...',
+                          currentPreview: currentPubkeyHex.substring(0, 16) + '...',
+                          match: storedPubkeyHex === currentPubkeyHex
+                        });
+                        
+                        if (storedPubkeyHex !== currentPubkeyHex) {
+                          console.log('⚠️ Stored passkey public key does not match current passkey!');
+                          console.log('⚠️ This can happen when importing a wallet with a new passkey.');
+                          console.log('⚠️ Re-registering signer with new passkey public key...');
+                          signerAlreadyRegistered = false; // Force re-registration
+                        } else {
+                          console.log('✅ Stored passkey public key matches current passkey');
+                        }
+                      }
+                    }
+                  } catch (pubkeyCheckError) {
+                    console.log('⚠️ Could not verify stored public key, will attempt re-registration:', pubkeyCheckError.message);
+                    signerAlreadyRegistered = false; // Force re-registration to be safe
+                  }
                 } else {
                   console.log('ℹ️ Signer is not registered (is_signer_registered returned false)');
                 }
@@ -3676,6 +3752,38 @@ router.post('/deposit', async (req, res) => {
                 if (resultScVal && resultScVal.switch && resultScVal.switch().name !== 'scvVoid') {
                   signerAlreadyRegistered = true;
                   console.log('✅ Signer is already registered! (verified via get_passkey_pubkey)');
+                  
+                  // Check if the stored public key matches the current passkey public key
+                  if (resultScVal.switch().name === 'scvBytes') {
+                    const storedPubkeyBytes = resultScVal.bytes();
+                    const storedPubkeyHex = Buffer.from(storedPubkeyBytes).toString('hex');
+                    
+                    // Extract current passkey public key
+                    const spkiBytes = Buffer.from(passkeyPublicKey, 'base64');
+                    let currentPubkeyBytes;
+                    if (spkiBytes.length === 65 && spkiBytes[0] === 0x04) {
+                      currentPubkeyBytes = spkiBytes;
+                    } else {
+                      currentPubkeyBytes = extractPublicKeyFromSPKI(spkiBytes);
+                    }
+                    const currentPubkeyHex = Buffer.from(currentPubkeyBytes).toString('hex');
+                    
+                    console.log('🔍 Comparing stored vs current passkey public key (fallback check):', {
+                      storedLength: storedPubkeyBytes.length,
+                      currentLength: currentPubkeyBytes.length,
+                      storedPreview: storedPubkeyHex.substring(0, 16) + '...',
+                      currentPreview: currentPubkeyHex.substring(0, 16) + '...',
+                      match: storedPubkeyHex === currentPubkeyHex
+                    });
+                    
+                    if (storedPubkeyHex !== currentPubkeyHex) {
+                      console.log('⚠️ Stored passkey public key does not match current passkey!');
+                      console.log('⚠️ Re-registering signer with new passkey public key...');
+                      signerAlreadyRegistered = false; // Force re-registration
+                    } else {
+                      console.log('✅ Stored passkey public key matches current passkey');
+                    }
+                  }
                 } else {
                   console.log('ℹ️ get_passkey_pubkey returned void/None - signer not registered');
                 }
@@ -3744,6 +3852,19 @@ router.post('/deposit', async (req, res) => {
             }
           }
         }
+        
+        // Validate public key format before storing
+        if (passkeyPubkeyBytes.length !== 65) {
+          throw new Error(`Passkey public key must be exactly 65 bytes, got ${passkeyPubkeyBytes.length}`);
+        }
+        if (passkeyPubkeyBytes[0] !== 0x04) {
+          throw new Error(`Passkey public key must start with 0x04 (uncompressed format), got 0x${passkeyPubkeyBytes[0].toString(16)}`);
+        }
+        console.log('✅ Passkey public key validated:', {
+          length: passkeyPubkeyBytes.length,
+          firstByte: `0x${passkeyPubkeyBytes[0].toString(16)}`,
+          preview: passkeyPubkeyBytes.slice(0, 8).toString('hex') + '...'
+        });
         
         const passkeyPubkeyScVal = StellarSdk.xdr.ScVal.scvBytes(passkeyPubkeyBytes);
         const rpIdHashScVal = StellarSdk.xdr.ScVal.scvBytes(rpIdHash);
@@ -4176,6 +4297,17 @@ router.post('/deposit', async (req, res) => {
     }
     
     console.log('✅ Challenge verification passed in backend - matches frontend verification');
+
+    // Log signature and public key details for debugging
+    console.log('🔍 WebAuthn signature details:', {
+      signatureLength: rawSignatureBytes.length,
+      signatureHex: rawSignatureBytes.toString('hex').substring(0, 32) + '...',
+      signatureR: rawSignatureBytes.slice(0, 32).toString('hex'),
+      signatureS: rawSignatureBytes.slice(32, 64).toString('hex'),
+      authenticatorDataLength: authenticatorDataBytes.length,
+      clientDataLength: clientDataBytes.length,
+      signaturePayloadLength: signaturePayloadBuffer.length
+    });
 
     // Create ScVal objects for WebAuthn parameters
     const signatureBytesScVal = StellarSdk.xdr.ScVal.scvBytes(rawSignatureBytes);
@@ -5209,10 +5341,57 @@ router.post('/deposit', async (req, res) => {
 
   } catch (error) {
     console.error('❌ Failed to deposit tokens:', error);
+    console.error('❌ Error stack:', error.stack);
+    console.error('❌ Error details:', {
+      message: error.message,
+      name: error.name,
+      response: error.response ? JSON.stringify(error.response, null, 2) : undefined,
+      code: error.code,
+      cause: error.cause
+    });
+    
+    // Check if error is related to contract not being initialized
+    const errorMessage = error.message || '';
+    const isContractNotInitialized = 
+      errorMessage.includes('verifier') ||
+      errorMessage.includes('not initialized') ||
+      errorMessage.includes('__constructor') ||
+      (errorMessage.includes('HostError') && errorMessage.includes('MissingValue'));
+    
+    // Check for specific error types
+    const isNetworkError = errorMessage.includes('ECONNREFUSED') || errorMessage.includes('ENOTFOUND') || errorMessage.includes('timeout');
+    const isRpcError = errorMessage.includes('RPC') || errorMessage.includes('soroban') || errorMessage.includes('Stellar');
+    const isAuthError = errorMessage.includes('authorization') || errorMessage.includes('signature') || errorMessage.includes('WebAuthn');
+    
+    // Build detailed error response
+    let errorDetails = error.message;
+    let suggestion = undefined;
+    
+    if (isContractNotInitialized) {
+      errorDetails = 'The smart wallet contract may not be initialized with the WebAuthn verifier address.';
+      suggestion = 'Please run: node initialize-smart-wallet.js';
+    } else if (isNetworkError) {
+      errorDetails = `Network error: ${error.message}. Cannot connect to Stellar RPC server.`;
+      suggestion = 'Check your internet connection and RPC URL. The RPC server may be down.';
+    } else if (isRpcError) {
+      errorDetails = `RPC error: ${error.message}`;
+      suggestion = 'The Stellar RPC server may be experiencing issues. Try again in a few moments.';
+    } else if (isAuthError) {
+      errorDetails = `Authentication error: ${error.message}`;
+      suggestion = 'WebAuthn signature verification may have failed. Try the deposit again.';
+    }
+    
     res.status(500).json({
       success: false,
       error: 'Failed to deposit tokens',
-      details: error.message
+      details: errorDetails,
+      hint: suggestion,
+      errorType: isContractNotInitialized ? 'CONTRACT_NOT_INITIALIZED' : 
+                 isNetworkError ? 'NETWORK_ERROR' :
+                 isRpcError ? 'RPC_ERROR' :
+                 isAuthError ? 'AUTH_ERROR' : 'UNKNOWN_ERROR',
+      originalError: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });
