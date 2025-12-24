@@ -36,6 +36,7 @@ jobs:
           cd ../client && npm ci
 
       - name: Build React app
+        # Using GitHub Secrets for sensitive values
         run: |
           cd client
           export REACT_APP_BACKEND_URL="https://xyz-wallet-v1-adh3bjdnguczdmft.westus-01.azurewebsites.net"
