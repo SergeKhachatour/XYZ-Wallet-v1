@@ -34,7 +34,7 @@ interface LocationContextType {
   getNearbyUsers: (radius?: number, showAll?: boolean) => Promise<void>;
   setSearchRadius: (radius: number) => void;
   setShowAllUsers: (showAll: boolean) => void;
-  setPrivacyEnabled: (enabled: boolean) => void;
+  setPrivacyEnabled: (enabled: boolean) => Promise<void>;
   
   // NFT actions
   updateNearbyNFTs: () => Promise<void>;
@@ -402,6 +402,27 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       // Submit location to backend
       await submitLocationToBackend(locationData);
       
+      // Sync privacy and visibility settings to GeoLink when location is enabled
+      const publicKey = localStorage.getItem('wallet_publicKey');
+      if (geoLink && geoLinkStatus === 'connected' && publicKey) {
+        try {
+          console.log('📍 Syncing privacy and visibility settings to GeoLink...');
+          await Promise.all([
+            geoLink.updatePrivacySettings(publicKey, privacyEnabled),
+            geoLink.updateVisibilitySettings(publicKey, isVisible)
+          ]);
+          console.log('✅ Privacy and visibility settings synced to GeoLink');
+        } catch (geoLinkError) {
+          // Don't treat GeoLink errors as critical - it's optional
+          const errorMessage = geoLinkError instanceof Error ? geoLinkError.message : String(geoLinkError);
+          if (errorMessage.includes('401') || errorMessage.includes('Unauthorized') || errorMessage.includes('Invalid or inactive API key')) {
+            console.warn('⚠️ GeoLink API key invalid. Settings not synced to GeoLink (this is non-critical).');
+          } else {
+            console.warn('⚠️ Failed to sync settings to GeoLink (non-critical):', geoLinkError);
+          }
+        }
+      }
+      
       toast.success('Location services enabled');
     } catch (error) {
       console.error('Error enabling location:', error);
@@ -473,6 +494,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       
       console.log('Toggling visibility:', { publicKey, visible, backendUrl });
       
+      // Update backend
       const response = await fetch(`${backendUrl}/api/location/toggle-visibility`, {
         method: 'POST',
         headers: {
@@ -491,6 +513,24 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
         console.log('Visibility response data:', data);
         setIsVisible(visible);
         localStorage.setItem('location_visible', visible.toString());
+        
+        // Also update GeoLink if connected
+        if (geoLink && geoLinkStatus === 'connected' && publicKey) {
+          try {
+            console.log('📍 Updating visibility settings in GeoLink...');
+            await geoLink.updateVisibilitySettings(publicKey, visible);
+            console.log('✅ Visibility settings updated in GeoLink');
+          } catch (geoLinkError) {
+            // Don't treat GeoLink errors as critical - it's optional
+            const errorMessage = geoLinkError instanceof Error ? geoLinkError.message : String(geoLinkError);
+            if (errorMessage.includes('401') || errorMessage.includes('Unauthorized') || errorMessage.includes('Invalid or inactive API key')) {
+              console.warn('⚠️ GeoLink API key invalid. Visibility not synced to GeoLink (this is non-critical).');
+            } else {
+              console.warn('⚠️ Failed to sync visibility to GeoLink (non-critical):', geoLinkError);
+            }
+          }
+        }
+        
         toast.success(`Visibility ${visible ? 'enabled' : 'disabled'}`);
       } else {
         const errorData = await response.json();
@@ -695,9 +735,32 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     // Note: NFT update is handled by useEffect when showAllUsers changes
   };
 
-  const setPrivacyEnabledHandler = (enabled: boolean) => {
-    setPrivacyEnabled(enabled);
-    localStorage.setItem('location_privacyEnabled', enabled.toString());
+  const setPrivacyEnabledHandler = async (enabled: boolean) => {
+    try {
+      setPrivacyEnabled(enabled);
+      localStorage.setItem('location_privacyEnabled', enabled.toString());
+      
+      // Update GeoLink if connected
+      const publicKey = localStorage.getItem('wallet_publicKey');
+      if (geoLink && geoLinkStatus === 'connected' && publicKey) {
+        try {
+          console.log('🔒 Updating privacy settings in GeoLink...');
+          await geoLink.updatePrivacySettings(publicKey, enabled);
+          console.log('✅ Privacy settings updated in GeoLink');
+        } catch (geoLinkError) {
+          // Don't treat GeoLink errors as critical - it's optional
+          const errorMessage = geoLinkError instanceof Error ? geoLinkError.message : String(geoLinkError);
+          if (errorMessage.includes('401') || errorMessage.includes('Unauthorized') || errorMessage.includes('Invalid or inactive API key')) {
+            console.warn('⚠️ GeoLink API key invalid. Privacy settings not synced to GeoLink (this is non-critical).');
+          } else {
+            console.warn('⚠️ Failed to sync privacy settings to GeoLink (non-critical):', geoLinkError);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error updating privacy settings:', error);
+      // Still update local state even if GeoLink fails
+    }
   };
 
 

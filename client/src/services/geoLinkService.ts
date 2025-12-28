@@ -222,4 +222,130 @@ export class GeoLinkIntegration {
     
     return response.json();
   }
+
+  // Update privacy settings (as wallet provider)
+  async updatePrivacySettings(publicKey: string, privacyEnabled: boolean) {
+    if (!this.walletProviderKey) {
+      throw new Error('Wallet Provider API key is not configured');
+    }
+    
+    if (!publicKey) {
+      throw new Error('Public key is required');
+    }
+    
+    // Convert boolean to privacy_level string
+    // privacyEnabled = true means "public" (location can be shared)
+    // privacyEnabled = false means "private" (location is private)
+    const privacyLevel = privacyEnabled ? 'public' : 'private';
+    
+    const requestBody = {
+      public_key: publicKey,
+      privacy_level: privacyLevel,
+      location_sharing: privacyEnabled
+    };
+    
+    console.log('🔑 GeoLink Privacy Settings API call:', {
+      url: `${this.baseUrl}/api/wallet-provider/privacy-settings`,
+      method: 'POST',
+      headers: {
+        'X-API-Key': `${this.walletProviderKey.substring(0, 8)}...`,
+        'Content-Type': 'application/json'
+      },
+      body: requestBody,
+      fullApiKey: this.walletProviderKey // For debugging
+    });
+    
+    const response = await fetch(`${this.baseUrl}/api/wallet-provider/privacy-settings`, {
+      method: 'POST',
+      headers: {
+        'X-API-Key': this.walletProviderKey,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestBody)
+    });
+    
+    console.log('🔑 GeoLink Privacy Settings API response:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('GeoLink Privacy Settings API error details:', {
+        status: response.status,
+        statusText: response.statusText,
+        errorBody: errorText
+      });
+      throw new Error(`GeoLink API error: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+    
+    return response.json();
+  }
+
+  // Update visibility settings (as wallet provider)
+  async updateVisibilitySettings(publicKey: string, isVisible: boolean) {
+    if (!this.walletProviderKey) {
+      throw new Error('Wallet Provider API key is not configured');
+    }
+    
+    if (!publicKey) {
+      throw new Error('Public key is required');
+    }
+    
+    // Convert boolean to visibility_level string
+    // isVisible = true means "public" (wallet is visible in searches)
+    // isVisible = false means "private" (wallet is hidden from searches)
+    const visibilityLevel = isVisible ? 'public' : 'private';
+    
+    const requestBody = {
+      public_key: publicKey,
+      visibility_level: visibilityLevel,
+      show_location: isVisible
+    };
+    
+    const requestBodyString = JSON.stringify(requestBody);
+    
+    console.log('🔑 GeoLink Visibility Settings API call:', {
+      url: `${this.baseUrl}/api/wallet-provider/visibility-settings`,
+      method: 'POST',
+      headers: {
+        'X-API-Key': `${this.walletProviderKey.substring(0, 8)}...`,
+        'Content-Type': 'application/json'
+      },
+      body: requestBody,
+      bodyString: requestBodyString,
+      publicKey: publicKey,
+      visibilityLevel: visibilityLevel,
+      isVisible: isVisible,
+      fullApiKey: this.walletProviderKey // For debugging
+    });
+    
+    const response = await fetch(`${this.baseUrl}/api/wallet-provider/visibility-settings`, {
+      method: 'POST',
+      headers: {
+        'X-API-Key': this.walletProviderKey,
+        'Content-Type': 'application/json'
+      },
+      body: requestBodyString
+    });
+    
+    console.log('🔑 GeoLink Visibility Settings API response:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('GeoLink Visibility Settings API error details:', {
+        status: response.status,
+        statusText: response.statusText,
+        errorBody: errorText
+      });
+      throw new Error(`GeoLink API error: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+    
+    return response.json();
+  }
 }
