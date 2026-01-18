@@ -7,6 +7,7 @@ import { useWallet } from '../contexts/WalletContext';
 import { Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import MarkerProfileOverlay from './MarkerProfileOverlay';
 import { NFTCollectionOverlay } from './NFTCollectionOverlay';
+import { ContractInfoOverlay } from './ContractInfoOverlay';
 import { GeoLinkStatus } from './GeoLinkStatus';
 import { constructImageUrl } from '../services/geoLinkService';
 
@@ -726,6 +727,8 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
   const [selectedNFT, setSelectedNFT] = useState<any>(null);
   const [isNFTCollectionOpen, setIsNFTCollectionOpen] = useState(false);
   const [nftToZoomTo, setNftToZoomTo] = useState<any>(null);
+  const [selectedContract, setSelectedContract] = useState<any>(null);
+  const [isContractInfoOpen, setIsContractInfoOpen] = useState(false);
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fullscreenUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const styleChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -735,12 +738,16 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
   const nftMarkersRef = useRef<mapboxgl.Marker[]>([]);
   const fullscreenNFTMarkersRef = useRef<mapboxgl.Marker[]>([]);
   const stableNFTsRef = useRef<any[]>([]);
+  const contractMarkersRef = useRef<mapboxgl.Marker[]>([]);
+  const fullscreenContractMarkersRef = useRef<mapboxgl.Marker[]>([]);
+  const contractCirclesRef = useRef<string[]>([]);
   const { 
     currentLocation, 
     isLocationEnabled, 
     enableLocation, 
     nearbyUsers,
     nearbyNFTs,
+    nearbyContracts,
     collectNFT,
     searchRadius,
     showAllUsers,
@@ -987,6 +994,112 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
         });
         
         markersRef.current.push(nftMarker);
+      }
+    });
+  };
+
+  // Function to render smart contract markers
+  const renderContractMarkers = (mapInstance: mapboxgl.Map, markersRef: React.MutableRefObject<mapboxgl.Marker[]>, circlesRef: React.MutableRefObject<string[]>) => {
+    console.log('⚡ renderContractMarkers called with', nearbyContracts.length, 'contracts');
+    
+    // Clear existing contract markers
+    markersRef.current.forEach(marker => marker.remove());
+    markersRef.current = [];
+    
+    // Clear existing contract radius circles
+    circlesRef.current.forEach((sourceId) => {
+      const layerId = `${sourceId}-layer`;
+      if (mapInstance.getLayer(layerId)) {
+        mapInstance.removeLayer(layerId);
+      }
+      if (mapInstance.getSource(sourceId)) {
+        mapInstance.removeSource(sourceId);
+      }
+    });
+    circlesRef.current = [];
+    
+    // Add markers for nearby contracts
+    nearbyContracts.forEach((contract, index) => {
+      if (contract.latitude && contract.longitude) {
+        // Create contract marker element with different styling (blue/purple) - square shape
+        const el = document.createElement('div');
+        el.className = 'contract-marker';
+        el.style.cssText = `
+          width: 64px;
+          height: 64px;
+          background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+          border-radius: 8px;
+          border: 3px solid #a78bfa;
+          cursor: pointer;
+          box-shadow: 0 4px 12px rgba(139, 92, 246, 0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 36px;
+          color: white;
+        `;
+        el.innerHTML = '🧮';
+
+        const contractMarker = new mapboxgl.Marker(el)
+          .setLngLat([contract.longitude, contract.latitude])
+          .addTo(mapInstance);
+        
+        // Add click event to show contract info
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          console.log('Contract marker clicked:', contract);
+          setSelectedContract(contract);
+          setIsContractInfoOpen(true);
+        });
+        
+        markersRef.current.push(contractMarker);
+        
+        // Add radius circle for contract
+        if (contract.radius_meters) {
+          const sourceId = `contract-radius-${index}`;
+          const layerId = `${sourceId}-layer`;
+          
+          // Convert radius from meters to degrees (approximate)
+          const radiusInDegrees = contract.radius_meters / 111000;
+          const circlePoints: [number, number][] = Array.from({ length: 32 }, (_, i) => {
+            const angle = (i / 32) * 2 * Math.PI;
+            const x = contract.longitude + radiusInDegrees * Math.cos(angle);
+            const y = contract.latitude + radiusInDegrees * Math.sin(angle);
+            return [x, y] as [number, number];
+          });
+          
+          const circle: GeoJSON.Feature<GeoJSON.Polygon> = {
+            type: 'Feature',
+            geometry: {
+              type: 'Polygon',
+              coordinates: [circlePoints]
+            },
+            properties: {}
+          };
+          
+          try {
+            mapInstance.addSource(sourceId, {
+              type: 'geojson',
+              data: circle
+            });
+            
+            mapInstance.addLayer({
+              id: layerId,
+              type: 'line',
+              source: sourceId,
+              paint: {
+                'line-color': '#8b5cf6',
+                'line-width': 2,
+                'line-opacity': 0.6
+              }
+            });
+            
+            circlesRef.current.push(sourceId);
+            console.log(`Contract radius circle added for contract ${index}`);
+          } catch (error) {
+            console.error(`Error adding contract radius circle for contract ${index}:`, error);
+          }
+        }
       }
     });
   };
@@ -1453,6 +1566,25 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
     }, 50); // Small delay to prevent blocking
   }, [nearbyNFTs]);
 
+  // Update contract markers when nearbyContracts changes
+  useEffect(() => {
+    console.log('⚡ Contract markers useEffect triggered, nearbyContracts count:', nearbyContracts.length);
+    
+    // Update contract markers with small delay to prevent blocking
+    setTimeout(() => {
+      if (map.current) {
+        console.log('⚡ Updating main map contract markers');
+        renderContractMarkers(map.current, contractMarkersRef, contractCirclesRef);
+      }
+      
+      // Also update fullscreen map if it exists
+      if (fullscreenMap.current) {
+        console.log('⚡ Updating fullscreen map contract markers');
+        renderContractMarkers(fullscreenMap.current, fullscreenContractMarkersRef, contractCirclesRef);
+      }
+    }, 50); // Small delay to prevent blocking
+  }, [nearbyContracts]);
+
   // Update user's own marker when location changes
   useEffect(() => {
     if (map.current && latitude && longitude && publicKey) {
@@ -1650,6 +1782,10 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
       // Always update NFT markers immediately for faster loading
       console.log('Fullscreen map initialized, immediately updating NFT markers');
       renderNFTMarkers(fullscreenMap.current!, fullscreenNFTMarkersRef);
+      
+      // Always update contract markers immediately for faster loading
+      console.log('Fullscreen map initialized, immediately updating contract markers');
+      renderContractMarkers(fullscreenMap.current!, fullscreenContractMarkersRef, contractCirclesRef);
     }
 
     return () => {
@@ -1657,6 +1793,10 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
         // Clear NFT markers before removing the map
         fullscreenNFTMarkersRef.current.forEach(marker => marker.remove());
         fullscreenNFTMarkersRef.current = [];
+        
+        // Clear contract markers before removing the map
+        fullscreenContractMarkersRef.current.forEach(marker => marker.remove());
+        fullscreenContractMarkersRef.current = [];
         
         fullscreenMap.current.remove();
         fullscreenMap.current = null;
@@ -1666,31 +1806,31 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
     };
   }, [isFullscreen, currentView]); // Only reinitialize on fullscreen/view changes, not style changes
 
-  // Handle zooming to selected NFT when fullscreen map opens
+  // Handle zooming to selected NFT or Contract when fullscreen map opens
   useEffect(() => {
     if (isFullscreen && fullscreenMap.current && nftToZoomTo && nftToZoomTo.latitude && nftToZoomTo.longitude) {
-      console.log('Zooming to selected NFT:', nftToZoomTo);
+      console.log('Zooming to selected item:', nftToZoomTo);
       
-      // Wait for the map to be ready, then zoom to the NFT location
-      const zoomToNFT = () => {
+      // Wait for the map to be ready, then zoom to the location
+      const zoomToItem = () => {
         if (fullscreenMap.current) {
           fullscreenMap.current.flyTo({
             center: [nftToZoomTo.longitude, nftToZoomTo.latitude],
             zoom: 18,
             duration: 1000
           });
-          // Clear the NFT to zoom to after zooming
+          // Clear the item to zoom to after zooming
           setNftToZoomTo(null);
         }
       };
       
       // If map is already loaded, zoom immediately
       if (fullscreenMap.current.isStyleLoaded()) {
-        setTimeout(zoomToNFT, 500); // Small delay to ensure map is ready
+        setTimeout(zoomToItem, 500); // Small delay to ensure map is ready
       } else {
         // Wait for map to load, then zoom
         fullscreenMap.current.on('load', () => {
-          setTimeout(zoomToNFT, 500);
+          setTimeout(zoomToItem, 500);
         });
       }
     }
@@ -1805,6 +1945,11 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
             renderNFTMarkers(fullscreenMap.current, fullscreenNFTMarkersRef);
           }
           
+          // Update fullscreen contract markers
+          if (nearbyContracts.length > 0) {
+            renderContractMarkers(fullscreenMap.current, fullscreenContractMarkersRef, contractCirclesRef);
+          }
+          
           // Update fullscreen user marker
           if (fullscreenMarker.current) {
             fullscreenMarker.current.remove();
@@ -1911,6 +2056,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
           // Update markers
           updateNearbyMarkers(fullscreenMap.current, nearbyMarkers);
           renderNFTMarkers(fullscreenMap.current, fullscreenNFTMarkersRef);
+          renderContractMarkers(fullscreenMap.current, fullscreenContractMarkersRef, contractCirclesRef);
         }
       }, 500); // Short delay to ensure map is ready
     }
@@ -1988,6 +2134,8 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
       
       // Update markers
       updateNearbyMarkers(map.current!, nearbyMarkers);
+      renderNFTMarkers(map.current!, nftMarkersRef);
+      renderContractMarkers(map.current!, contractMarkersRef, contractCirclesRef);
     }
   }, [isFullscreen, nearbyUsers, currentStyle]);
 
@@ -2504,6 +2652,27 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ onFullscreenChange, selectedNFTFo
               onFullscreenChange?.(true);
               setSelectedNFT(null);
               setIsNFTCollectionOpen(false);
+            }
+          }}
+        />
+      )}
+
+      {/* Contract Info Overlay */}
+      {selectedContract && (
+        <ContractInfoOverlay
+          contract={selectedContract}
+          onClose={() => {
+            setSelectedContract(null);
+            setIsContractInfoOpen(false);
+          }}
+          onZoomIn={() => {
+            if (selectedContract.latitude && selectedContract.longitude) {
+              // Set the contract to zoom to and open fullscreen map
+              setNftToZoomTo(selectedContract); // Reuse the same state for zooming
+              setIsFullscreen(true);
+              onFullscreenChange?.(true);
+              setSelectedContract(null);
+              setIsContractInfoOpen(false);
             }
           }}
         />

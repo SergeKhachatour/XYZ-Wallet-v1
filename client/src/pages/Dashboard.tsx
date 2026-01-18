@@ -12,6 +12,7 @@ import ReceiveOverlay from '../components/ReceiveOverlay';
 import SendOverlay from '../components/SendOverlay';
 import DepositOverlay from '../components/DepositOverlay';
 import { NFTCollectionOverlay } from '../components/NFTCollectionOverlay';
+import { ContractInfoOverlay } from '../components/ContractInfoOverlay';
 import { constructImageUrl } from '../services/geoLinkService';
 
 
@@ -267,13 +268,15 @@ const Dashboard: React.FC = () => {
     currentLocation, 
     nearbyUsers,
     nearbyNFTs,
+    nearbyContracts,
     searchRadius,
     showAllUsers,
     getNearbyUsers,
     setSearchRadius,
     setShowAllUsers,
     collectNFT,
-    refreshNFTs
+    refreshNFTs,
+    refreshContracts
   } = useLocation();
   
   const navigate = useNavigate();
@@ -289,6 +292,8 @@ const Dashboard: React.FC = () => {
   const [isNFTCollectionOpen, setIsNFTCollectionOpen] = useState(false);
   const [isRadarOpen, setIsRadarOpen] = useState(false);
   const [showDepositOverlay, setShowDepositOverlay] = useState(false);
+  const [selectedContract, setSelectedContract] = useState<any>(null);
+  const [isContractInfoOpen, setIsContractInfoOpen] = useState(false);
 
   const handleUserClick = (user: any) => {
     setSelectedUser(user);
@@ -1162,6 +1167,25 @@ const Dashboard: React.FC = () => {
           }}
           onClose={handleCloseNFT}
           onZoomIn={handleNFTZoomIn}
+        />
+      )}
+
+      {/* Contract Info Overlay */}
+      {selectedContract && (
+        <ContractInfoOverlay
+          contract={selectedContract}
+          onClose={() => {
+            setSelectedContract(null);
+            setIsContractInfoOpen(false);
+          }}
+          onZoomIn={() => {
+            if (selectedContract.latitude && selectedContract.longitude) {
+              setNftToZoomTo(selectedContract);
+              setIsMapFullscreen(true);
+              setSelectedContract(null);
+              setIsContractInfoOpen(false);
+            }
+          }}
         />
       )}
     </>

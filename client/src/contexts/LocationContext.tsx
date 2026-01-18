@@ -26,6 +26,9 @@ interface LocationContextType {
   geoLink: GeoLinkIntegration | null;
   geoLinkStatus: 'disconnected' | 'connecting' | 'connected' | 'error';
   
+  // Smart Contract state
+  nearbyContracts: any[];
+  
   // Location actions
   enableLocation: () => Promise<void>;
   disableLocation: () => void;
@@ -41,6 +44,10 @@ interface LocationContextType {
   refreshNFTs: () => void;
   collectNFT: (nft: any) => Promise<void>;
   refreshUserNFTs: () => Promise<void>;
+  
+  // Smart Contract actions
+  updateNearbyContracts: () => Promise<void>;
+  refreshContracts: () => void;
   
   // Loading states
   isLocationLoading: boolean;
@@ -88,6 +95,10 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
   const [geoLink, setGeoLink] = useState<GeoLinkIntegration | null>(null);
   const [geoLinkStatus, setGeoLinkStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
   const lastUserNFTsError = useRef<number>(0); // Track when we last got a 400 error
+  
+  // Smart Contract state
+  const [nearbyContracts, setNearbyContracts] = useState<any[]>([]);
+  const lastContractUpdateTime = useRef(0);
 
   const submitLocationToBackend = useCallback(async (locationData: LocationData) => {
     try {
@@ -235,13 +246,17 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       if (geoLink && geoLinkStatus === 'connected') {
         console.log('🔄 Calling updateNearbyNFTs from updateLocation...');
         await updateNearbyNFTs();
+        console.log('⚡ Calling updateNearbyContracts from updateLocation...');
+        await updateNearbyContracts();
       } else if (geoLinkStatus === 'connecting') {
-        console.log('⏳ GeoLink still connecting, will retry NFT update in 2 seconds...');
-        // Retry NFT update after a short delay when GeoLink finishes connecting
+        console.log('⏳ GeoLink still connecting, will retry NFT and contract update in 2 seconds...');
+        // Retry NFT and contract update after a short delay when GeoLink finishes connecting
         setTimeout(async () => {
           if (geoLink && (geoLinkStatus as string) === 'connected') {
             console.log('🔄 Retrying updateNearbyNFTs after GeoLink connection...');
             await updateNearbyNFTs();
+            console.log('⚡ Retrying updateNearbyContracts after GeoLink connection...');
+            await updateNearbyContracts();
           }
         }, 2000);
       } else {
@@ -694,6 +709,14 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     }
   }, [geoLinkStatus, geoLink]); // Removed currentLocation dependency
 
+  // Update contracts when GeoLink status changes to connected (only once)
+  useEffect(() => {
+    if (geoLinkStatus === 'connected' && currentLocation && geoLink) {
+      console.log('⚡ GeoLink connected, fetching contracts for current location...');
+      updateNearbyContracts();
+    }
+  }, [geoLinkStatus, geoLink]); // Removed currentLocation dependency
+
   // Manual NFT refresh function
   const refreshNFTs = useCallback(() => {
     if (geoLinkStatus === 'connected' && currentLocation && geoLink) {
@@ -707,14 +730,18 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     if (geoLinkStatus === 'connected' && currentLocation && geoLink) {
       console.log('🔄 Global setting changed, updating NFTs...');
       updateNearbyNFTs();
+      console.log('⚡ Global setting changed, updating contracts...');
+      updateNearbyContracts();
     }
   }, [showAllUsers]); // Only trigger when Global setting changes
 
-  // Trigger NFT fetch on initial load if Global is already enabled
+  // Trigger NFT and contract fetch on initial load if Global is already enabled
   useEffect(() => {
     if (geoLinkStatus === 'connected' && currentLocation && geoLink && showAllUsers) {
       console.log('🔄 Initial load with Global enabled, fetching NFTs...');
       updateNearbyNFTs();
+      console.log('⚡ Initial load with Global enabled, fetching contracts...');
+      updateNearbyContracts();
     }
   }, [geoLinkStatus, currentLocation, geoLink]); // Trigger when GeoLink becomes ready
 
@@ -842,6 +869,85 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     }
   }, [geoLink, geoLinkStatus]);
 
+  // Get nearby smart contracts from GeoLink with debouncing (as data consumer)
+  const updateNearbyContracts = useCallback(async () => {
+    const now = Date.now();
+    const timeSinceLastUpdate = now - lastContractUpdateTime.current;
+    
+    // Debounce: only update if at least 5 seconds have passed since last update
+    if (timeSinceLastUpdate < 5000) {
+      console.log('⏳ Debouncing contract update - too soon since last update', {
+        timeSinceLastUpdate,
+        lastUpdate: new Date(lastContractUpdateTime.current).toISOString(),
+        now: new Date(now).toISOString()
+      });
+      return;
+    }
+    
+    console.log('🔍 updateNearbyContracts called (Data Consumer):', {
+      hasGeoLink: !!geoLink,
+      geoLinkStatus,
+      hasCurrentLocation: !!currentLocation,
+      latitude: currentLocation?.latitude,
+      longitude: currentLocation?.longitude,
+      showAllUsers,
+      searchRadius,
+      timeSinceLastUpdate
+    });
+    
+    if (geoLink && geoLinkStatus === 'connected' && currentLocation) {
+      try {
+        lastContractUpdateTime.current = now; // Update the timestamp
+        console.log('⚡ Fetching contracts from GeoLink (Data Consumer API)...');
+        
+        // Use a much larger radius when "Global" is enabled
+        const contractRadius = showAllUsers ? 20000000 : 1000; // 20,000km for global, 1km for local
+        console.log(`⚡ Using contract search radius: ${contractRadius}m (${showAllUsers ? 'Global' : 'Local'} mode)`);
+        
+        const response = await geoLink.getNearbyContracts(currentLocation.latitude, currentLocation.longitude, contractRadius);
+        console.log('⚡ GeoLink Contracts API response:', response);
+        
+        // Handle the expected response format
+        if (response && response.contracts && response.contracts.length > 0) {
+          console.log('⚡ Setting contracts:', response.contracts.length, 'items');
+          setNearbyContracts(response.contracts);
+          console.log(`⚡ Found ${response.contracts.length} nearby contracts`);
+        } else {
+          console.log('⚡ No contracts found in response - keeping existing contracts');
+          // Don't clear existing contracts if no new ones found - this prevents flickering
+        }
+      } catch (error) {
+        // Handle different error types gracefully
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        
+        if (errorMessage.includes('401') || errorMessage.includes('Unauthorized') || errorMessage.includes('Invalid or inactive API key')) {
+          console.warn('⚠️ GeoLink API key invalid. Contract features disabled (this is non-critical).');
+          setNearbyContracts([]);
+        } else if (errorMessage.includes('Failed to fetch')) {
+          console.log('🔄 Network error - keeping existing contracts');
+        } else {
+          console.error('❌ Failed to get nearby contracts from GeoLink:', error);
+          console.log('🧹 Clearing contracts due to error:', error);
+          setNearbyContracts([]);
+        }
+      }
+    } else {
+      console.log('⚠️ Cannot fetch contracts - missing requirements:', {
+        geoLink: !!geoLink,
+        geoLinkStatus,
+        currentLocation: !!currentLocation
+      });
+    }
+  }, [geoLink, geoLinkStatus, currentLocation, showAllUsers, searchRadius]);
+
+  // Manual contract refresh function
+  const refreshContracts = useCallback(() => {
+    if (geoLinkStatus === 'connected' && currentLocation && geoLink) {
+      lastContractUpdateTime.current = 0; // Reset timestamp to force update
+      updateNearbyContracts();
+    }
+  }, [geoLinkStatus, currentLocation, geoLink, updateNearbyContracts]);
+
   const value: LocationContextType = {
     currentLocation,
     isLocationEnabled,
@@ -855,6 +961,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     userNFTs,
     geoLink,
     geoLinkStatus,
+    nearbyContracts,
     enableLocation,
     disableLocation,
     updateLocation,
@@ -867,6 +974,8 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     refreshNFTs,
     collectNFT,
     refreshUserNFTs,
+    updateNearbyContracts,
+    refreshContracts,
     isLocationLoading
   };
 

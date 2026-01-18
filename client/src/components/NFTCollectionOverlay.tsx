@@ -1,6 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
 import { constructImageUrl } from '../services/geoLinkService';
+import { DistanceMap } from './DistanceMap';
+import { useLocation } from '../contexts/LocationContext';
 
 interface NFTCollectionOverlayProps {
   nft: any;
@@ -15,6 +17,7 @@ export const NFTCollectionOverlay: React.FC<NFTCollectionOverlayProps> = ({
   onClose,
   onZoomIn
 }) => {
+  const { currentLocation } = useLocation();
   // Construct image URL using the new utility function that handles dynamic IPFS server URLs
   const imageUrl = constructImageUrl(nft.server_url, nft.ipfs_hash) || nft.image_url || 'https://via.placeholder.com/200x200?text=NFT';
   
@@ -53,6 +56,20 @@ export const NFTCollectionOverlay: React.FC<NFTCollectionOverlayProps> = ({
             </DetailRow>
           )}
         </NFTDetails>
+
+        {/* Distance Map */}
+        {nft.latitude && nft.longitude && currentLocation && (
+          <MapSection>
+            <MapTitle>Distance to NFT</MapTitle>
+            <DistanceMap
+              targetLatitude={nft.latitude}
+              targetLongitude={nft.longitude}
+              radiusMeters={nft.radius_meters}
+              showRadius={true}
+              height="200px"
+            />
+          </MapSection>
+        )}
         
         <ButtonContainer>
           <CollectButton onClick={onCollect}>
@@ -240,4 +257,18 @@ const CloseButton = styled.button`
 const CloseButtonText = styled.div`
   color: #FFFFFF;
   font-weight: bold;
+`;
+
+const MapSection = styled.div`
+  margin-bottom: 25px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+`;
+
+const MapTitle = styled.div`
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
 `;

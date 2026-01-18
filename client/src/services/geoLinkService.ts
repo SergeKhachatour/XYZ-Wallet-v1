@@ -348,4 +348,171 @@ export class GeoLinkIntegration {
     
     return response.json();
   }
+
+  // Get nearby smart contracts (as data consumer)
+  async getNearbyContracts(latitude: number, longitude: number, radius = 1000) {
+    const url = `${this.baseUrl}/api/contracts/nearby?latitude=${latitude}&longitude=${longitude}&radius=${radius}`;
+    console.log('⚡ GeoLink Contracts API call:', {
+      url,
+      latitude,
+      longitude,
+      radius,
+      baseUrl: this.baseUrl,
+      hasApiKey: !!this.dataConsumerKey
+    });
+    
+    const response = await fetch(url, {
+      headers: {
+        'X-API-Key': this.dataConsumerKey,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    console.log('⚡ GeoLink Contracts API response status:', response.status);
+    
+    if (!response.ok) {
+      throw new Error(`GeoLink API error: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    console.log('⚡ GeoLink Contracts API response data:', data);
+    return data;
+  }
+
+  // Execute a smart contract function
+  async executeContract(
+    contractId: number,
+    functionName: string,
+    parameters: Record<string, any>,
+    userPublicKey: string,
+    webauthnData?: {
+      signature: string;
+      authenticatorData: string;
+      clientData: string;
+      signaturePayload: string;
+    }
+  ) {
+    const url = `${this.baseUrl}/api/contracts/${contractId}/execute`;
+    console.log('⚡ GeoLink Execute Contract API call:', {
+      url,
+      contractId,
+      functionName,
+      parameters,
+      userPublicKey: userPublicKey.substring(0, 8) + '...',
+      hasWebAuthn: !!webauthnData
+    });
+    
+    const requestBody: any = {
+      function_name: functionName,
+      parameters,
+      user_public_key: userPublicKey
+    };
+    
+    if (webauthnData) {
+      requestBody.webauthn_signature = webauthnData.signature;
+      requestBody.webauthn_authenticator_data = webauthnData.authenticatorData;
+      requestBody.webauthn_client_data = webauthnData.clientData;
+      requestBody.signature_payload = webauthnData.signaturePayload;
+    }
+    
+    // Get JWT token from localStorage if available
+    const token = localStorage.getItem('auth_token');
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'X-API-Key': this.dataConsumerKey,
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      },
+      body: JSON.stringify(requestBody)
+    });
+    
+    console.log('⚡ GeoLink Execute Contract API response status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`GeoLink API error: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+    
+    const data = await response.json();
+    console.log('⚡ GeoLink Execute Contract API response data:', data);
+    return data;
+  }
+
+  // Execute smart wallet payment
+  async executeSmartWalletPayment(
+    destination: string,
+    amount: number,
+    asset: string,
+    userPublicKey: string,
+    userSecretKey: string,
+    ruleId: number,
+    webauthnData?: {
+      signature: string;
+      authenticatorData: string;
+      clientData: string;
+      signaturePayload: string;
+    },
+    updateId?: number,
+    matchedPublicKey?: string
+  ) {
+    const url = `${this.baseUrl}/api/smart-wallet/execute-payment`;
+    console.log('⚡ GeoLink Smart Wallet Payment API call:', {
+      url,
+      destination: destination.substring(0, 8) + '...',
+      amount,
+      asset,
+      ruleId,
+      hasWebAuthn: !!webauthnData
+    });
+    
+    const requestBody: any = {
+      destination,
+      amount,
+      asset,
+      user_public_key: userPublicKey,
+      user_secret_key: userSecretKey,
+      rule_id: ruleId
+    };
+    
+    if (webauthnData) {
+      requestBody.webauthn_signature = webauthnData.signature;
+      requestBody.webauthn_authenticator_data = webauthnData.authenticatorData;
+      requestBody.webauthn_client_data = webauthnData.clientData;
+      requestBody.signature_payload = webauthnData.signaturePayload;
+    }
+    
+    if (updateId) {
+      requestBody.update_id = updateId;
+    }
+    
+    if (matchedPublicKey) {
+      requestBody.matched_public_key = matchedPublicKey;
+    }
+    
+    // Get JWT token from localStorage if available
+    const token = localStorage.getItem('auth_token');
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'X-API-Key': this.dataConsumerKey,
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      },
+      body: JSON.stringify(requestBody)
+    });
+    
+    console.log('⚡ GeoLink Smart Wallet Payment API response status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`GeoLink API error: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+    
+    const data = await response.json();
+    console.log('⚡ GeoLink Smart Wallet Payment API response data:', data);
+    return data;
+  }
 }
